@@ -8,6 +8,7 @@
         <ToolBar orientation="VERTICAL">
             <Button fx:id="classBtn" maxWidth="Infinity" onMouseClicked="#classSelectAction" text="Class" />
             <Button fx:id="propBtn" maxWidth="Infinity" onMouseClicked="#propSelectAction" text="Property" />
+            <Button fx:id="literalBtn" maxWidth="Infinity" onMouseClicked="#literalSelectAction" text="Literal"/>
             <Separator />
             <Button fx:id="exportTllBtn" maxWidth="Infinity" onMouseClicked="#exportTtlAction" text="Export as .ttl" />
             <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png" />

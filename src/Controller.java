@@ -5,6 +5,10 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 
 public class Controller {
+    enum Type {
+        CLASS, PROPERTY, LITERAL, UNKNOWN
+    }
+
     public Button classBtn;
     public Button propBtn;
     public Button exportTllBtn;
@@ -12,9 +16,25 @@ public class Controller {
     public Label statusLbl;
     public Pane drawPane;
     public Label drawStatusLbl;
+    public Button literalBtn;
 
-    @FXML protected void classSelectAction() { drawStatusLbl.setText("Class selected"); }
-    @FXML protected void propSelectAction()  { drawStatusLbl.setText("Property selected"); }
+    private Type selectedType = Type.CLASS;
+
+    @FXML protected void classSelectAction() {
+        drawStatusLbl.setText("Class selected");
+        selectedType = Type.CLASS;
+    }
+
+    @FXML protected void propSelectAction()  {
+        drawStatusLbl.setText("Property selected");
+        selectedType = Type.PROPERTY;
+    }
+
+    @FXML protected void literalSelectAction() {
+        drawStatusLbl.setText("Literal selected");
+        selectedType = Type.LITERAL;
+    }
+
     @FXML protected void exportTtlAction() {}
     @FXML protected void exportPngAction() {}
 
