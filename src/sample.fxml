@@ -3,13 +3,18 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Pane?>
-<BorderPane xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller">
+<BorderPane fx:id="root"
+            xmlns="http://javafx.com/javafx/8.0.172-ea"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="Controller">
     <left>
         <ToolBar orientation="VERTICAL">
-            <Button fx:id="classBtn" maxWidth="Infinity" onMouseClicked="#classSelectAction" text="Class" />
-            <Button fx:id="propBtn" maxWidth="Infinity" onMouseClicked="#propSelectAction" text="Property" />
+            <Button fx:id="classBtn"   maxWidth="Infinity" onMouseClicked="#classSelectAction"   text="Class" />
+            <Button fx:id="propBtn"    maxWidth="Infinity" onMouseClicked="#propSelectAction"    text="Property" />
             <Button fx:id="literalBtn" maxWidth="Infinity" onMouseClicked="#literalSelectAction" text="Literal"/>
-            <Separator />
+            <Separator/>
+            <Button fx:id="addPrefixBtn" maxWidth="Infinity" onMouseClicked="#addPrefixAction" text="Add New Prefix" />
+            <Separator/>
             <Button fx:id="exportTllBtn" maxWidth="Infinity" onMouseClicked="#exportTtlAction" text="Export as .ttl" />
             <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png" />
             <Separator />
@@ -25,6 +30,6 @@
         </ToolBar>
     </top>
    <center>
-      <Pane fx:id="drawPane" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" onMouseClicked="#inPane"/>
+      <Pane fx:id="drawPane" prefHeight="200.0" prefWidth="200.0" onMouseClicked="#inPane"/>
    </center>
 </BorderPane>
