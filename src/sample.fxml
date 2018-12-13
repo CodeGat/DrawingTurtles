@@ -30,6 +30,6 @@
         </ToolBar>
     </top>
    <center>
-      <Pane fx:id="drawPane" prefHeight="200.0" prefWidth="200.0" onMouseClicked="#inPane"/>
+      <Pane fx:id="drawPane" prefHeight="200.0" prefWidth="200.0" onMouseClicked="#addElementAction"/>
    </center>
 </BorderPane>
