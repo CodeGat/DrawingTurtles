@@ -1,4 +1,5 @@
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -10,7 +11,9 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -31,10 +34,8 @@ public class Controller {
     public Label drawStatusLbl;
 
     private Type selectedType = Type.CLASS;
-    private ArrayList<String>     prefixes = new ArrayList<>();
-    private ArrayList<Class>      classes  = new ArrayList<>();
-    private ArrayList<Class>      literals = new ArrayList<>();
-    private ArrayList<Connection> props    = new ArrayList<>();
+    private ArrayList<String>    prefixes = new ArrayList<>();
+    private ArrayList<StackPane> elements = new ArrayList<>();
 
     @FXML protected void classSelectAction() {
         drawStatusLbl.setText("Class selected");
@@ -58,17 +59,19 @@ public class Controller {
 
         Optional<String> dialogResult = dialog.showAndWait();
         dialogResult.ifPresent(prefix -> {
-            if (prefix.matches("[a-z]* : .*")){
-                prefixes.add(prefix);
-                System.out.println("Added");
-            } else {
-                System.out.println("Not Added");
-                showPrefixMalformedAlert();
-            }
+            if (prefix.matches("[a-z]* : .*")) prefixes.add(prefix);
+            else showPrefixMalformedAlert();
         });
     }
 
-    @FXML protected void exportTtlAction() {}
+    @FXML protected void exportTtlAction() {
+        for (Node child : drawPane.getChildren()) {
+            elements.add((StackPane) child);
+        }
+        Converter converter = new Converter(prefixes, elements);
+        converter.convertGraph();
+    }
+
     @FXML protected void exportPngAction() {}
 
     @FXML protected void addElementAction(MouseEvent mouseEvent) {
@@ -121,13 +124,7 @@ public class Controller {
         dialog.setHeaderText("Can be set as defined in Turtle Syntax");
 
         Optional<String> optDialogResult = dialog.showAndWait();
-
-        if (optDialogResult.isPresent()) {
-            String diagResult = optDialogResult.get();
-            classes.add(new Class(Class.Type.CLASS, diagResult));
-            return new Label(diagResult);
-        }
-        return null;
+        return optDialogResult.map(Label::new).orElse(null);
     }
 
     private void showPrefixMalformedAlert() {
