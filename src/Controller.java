@@ -14,13 +14,13 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
 
 public class Controller {
-    enum Type {
-        CLASS, PROPERTY, LITERAL
-    }
+    enum Type { CLASS, PROPERTY, LITERAL }
 
     public BorderPane root;
     public Button classBtn;
@@ -65,11 +65,33 @@ public class Controller {
     }
 
     @FXML protected void exportTtlAction() {
+        /// TODO: 14/12/2018 make sure the elements array is nullified, or use a Set
         for (Node child : drawPane.getChildren()) {
             elements.add((StackPane) child);
         }
-        Converter converter = new Converter(prefixes, elements);
-        converter.convertGraph();
+
+        File saveFile = showSaveFileDialog();
+        if (saveFile != null){
+            String ttl = Converter.convertGraphToTtlString(prefixes, elements);
+            try {
+                statusLbl.setText(saveFile.createNewFile() ? "File saved." : "File not saved.");
+                FileWriter writer = new FileWriter(saveFile);
+                writer.write(ttl);
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } else statusLbl.setText("File save cancelled.");
+    }
+
+    private File showSaveFileDialog() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialFileName("ontology.ttl");
+        fileChooser.setTitle("Save Turtle As");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+        return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
 
     @FXML protected void exportPngAction() {}

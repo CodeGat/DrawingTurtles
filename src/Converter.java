@@ -5,34 +5,21 @@ import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 class Converter {
-    private ArrayList<String>    prefixes;
-    private ArrayList<StackPane> elements;
+    private static ArrayList<String>    prefixes;
+    private static ArrayList<StackPane> elements;
 
-    Converter(ArrayList<String> prefixes, ArrayList<StackPane> elements) {
-        this.prefixes = prefixes;
-        this.elements = elements;
+
+    static String convertGraphToTtlString(ArrayList<String> prefixes, ArrayList<StackPane> elements) {
+        Converter.prefixes = prefixes;
+        Converter.elements = elements;
+
+        return convertPrefixes() + convertElements();
     }
 
-
-    void convertGraph() {
-        String fileString = convertPrefixes() + convertElements();
-        Path file = Paths.get("ontology.ttl");
-        try {
-            Files.write(file, fileString.getBytes("UTF-8"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private String convertPrefixes() {
+    private static String convertPrefixes() {
         StringBuilder prefixStr = new StringBuilder();
 
         for (String prefix : prefixes){
@@ -48,7 +35,7 @@ class Converter {
         return prefixStr.toString();
     }
 
-    private String convertElements() {
+    private static String convertElements() {
         StringBuilder classStrs = new StringBuilder("\n##################################################\n" +
                 "#####            Ontology Classes            #####\n" +
                 "##################################################\n\n");
@@ -70,17 +57,17 @@ class Converter {
         return classStrs + propStrs.toString() + literalStrs;
     }
 
-    private String convertElementProperty(Node[] nodes) {
+    private static String convertElementProperty(Node[] nodes) {
         // TODO: 13/12/2018 have both connections for property
         return null;
     }
 
-    private String convertElementLiteral(Node[] nodes) {
+    private static String convertElementLiteral(Node[] nodes) {
         // TODO: 13/12/2018 search for connections to it, add as property of connected
         return null;
     }
 
-    private String convertElementClass(Node[] nodes) {
+    private static String convertElementClass(Node[] nodes) {
         String className = ((Label) nodes[1]).getText();
         if (className.contains(":")) return className + " a owl:Class .\n";
         else return "<" + className + "> a owl:Class .";
