@@ -1,3 +1,4 @@
+import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -10,6 +11,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 
@@ -29,13 +31,18 @@ public class Controller {
     public Button addPrefixBtn;
     public Button exportTllBtn;
     public Button exportPngBtn;
-    public Label statusLbl;
-    public Pane drawPane;
-    public Label drawStatusLbl;
+    public Label  statusLbl;
+    public Pane   drawPane;
+    public Label  drawStatusLbl;
 
     private Type selectedType = Type.CLASS;
     private ArrayList<String>    prefixes = new ArrayList<>();
     private ArrayList<StackPane> elements = new ArrayList<>();
+
+    // Related to making a connection between things, can be classified
+    private double propSrcX, propSrcY, propDestX, propDestY;
+    public static EventTarget propSrcNode, propDestNode;
+    private boolean srcClick = true;
 
     @FXML protected void classSelectAction() {
         drawStatusLbl.setText("Class selected");
@@ -59,7 +66,7 @@ public class Controller {
 
         Optional<String> dialogResult = dialog.showAndWait();
         dialogResult.ifPresent(prefix -> {
-            if (prefix.matches("[a-z]* : .*")) prefixes.add(prefix);
+            if (prefix.matches("[a-z]*\\s*:\\s*.*")) prefixes.add(prefix);
             else showPrefixMalformedAlert();
         });
     }
@@ -97,45 +104,87 @@ public class Controller {
     @FXML protected void exportPngAction() {}
 
     @FXML protected void addElementAction(MouseEvent mouseEvent) {
-        if (selectedType == Type.CLASS){
-            StackPane compiledElement = new StackPane();
-            compiledElement.setLayoutX(mouseEvent.getX());
-            compiledElement.setLayoutY(mouseEvent.getY());
-
-            Ellipse   elementType     = new Ellipse();
-            elementType.setCenterX(mouseEvent.getX());
-            elementType.setCenterY(mouseEvent.getY());
-            elementType.setRadiusX(100);
-            elementType.setRadiusY(50);
-            elementType.setFill(Color.TRANSPARENT);
-            elementType.setStroke(Color.BLACK);
-            Label elementName = showNameElementDialog();
-
-            if (elementName != null) {
-                compiledElement.getChildren().addAll(elementType, elementName);
-                drawPane.getChildren().add(compiledElement);
-            }
-
-        } else if (selectedType == Type.LITERAL){ // TODO: 13/12/2018 Set dynamic height based on text, draggable, etc.
-            StackPane compiledElement = new StackPane();
-            compiledElement.setLayoutX(mouseEvent.getX());
-            compiledElement.setLayoutY(mouseEvent.getY());
-
-            Rectangle elementType = new Rectangle();
-            elementType.setWidth(100);
-            elementType.setHeight(70);
-            elementType.setFill(Color.TRANSPARENT);
-            elementType.setStroke(Color.BLACK);
-
-            Label elementName = showNameElementDialog();
-
-            if (elementName != null) {
-                compiledElement.getChildren().addAll(elementType, elementName);
-                drawPane.getChildren().add(compiledElement);
-            }
-
+        if (mouseEvent.isStillSincePress() && selectedType == Type.CLASS){
+            addClassSubaction(mouseEvent);
+        } else if (mouseEvent.isStillSincePress() && selectedType == Type.LITERAL){
+            addLiteralSubaction(mouseEvent);
         } else if (selectedType == Type.PROPERTY) {
-            System.out.println("A Property with nothing.");
+            addPropertySubaction(mouseEvent);
+        }
+    }
+
+    private void addLiteralSubaction(MouseEvent mouseEvent){
+        StackPane compiledElement = new StackPane();
+        compiledElement.setLayoutX(mouseEvent.getX());
+        compiledElement.setLayoutY(mouseEvent.getY());
+
+        Rectangle elementType = new Rectangle();
+        elementType.setWidth(100);
+        elementType.setHeight(70);
+        elementType.setFill(Color.TRANSPARENT);
+        elementType.setStroke(Color.BLACK);
+
+        Label elementName = showNameElementDialog();
+
+        if (elementName != null) {
+            compiledElement.getChildren().addAll(elementType, elementName);
+            drawPane.getChildren().add(compiledElement);
+        }
+    }
+
+    private void addClassSubaction(MouseEvent mouseEvent){
+        StackPane compiledElement = new StackPane();
+        compiledElement.setLayoutX(mouseEvent.getX());
+        compiledElement.setLayoutY(mouseEvent.getY());
+
+        Ellipse elementType = new Ellipse();
+        elementType.setCenterX(mouseEvent.getX());
+        elementType.setCenterY(mouseEvent.getY());
+        elementType.setRadiusX(100);
+        elementType.setRadiusY(50);
+        elementType.setFill(Color.TRANSPARENT);
+        elementType.setStroke(Color.BLACK);
+
+        Label elementName = showNameElementDialog();
+
+        if (elementName != null) {
+            compiledElement.getChildren().addAll(elementType, elementName);
+            drawPane.getChildren().add(compiledElement);
+        }
+    }
+
+    // TODO: 15/12/2018 Check if eventTarget is the drawPane, show some feedback on first click
+    private void addPropertySubaction(MouseEvent mouseEvent){
+        if (srcClick){
+            propSrcX = mouseEvent.getX();
+            propSrcY = mouseEvent.getY();
+            propSrcNode = ((Node)mouseEvent.getTarget()).getParent();
+            srcClick = false;
+            System.out.println("In first click: " + propSrcNode.toString());
+        } else {
+            propDestX = mouseEvent.getX();
+            propDestY = mouseEvent.getY();
+
+            StackPane compiledProperty = new StackPane();
+            compiledProperty.setLayoutX(propSrcX < propDestX ? propSrcX : propDestX);
+            compiledProperty.setLayoutY(propSrcY < propDestY ? propSrcY : propDestY);
+
+            Line propertyLine = new Line();
+            propertyLine.setStartX(propSrcX);
+            propertyLine.setStartY(propSrcY);
+            propertyLine.setEndX(mouseEvent.getX());
+            propertyLine.setEndY(mouseEvent.getY());
+
+            Label propertyName = showNameElementDialog();
+
+            if (propertyName != null){
+                compiledProperty.getChildren().addAll(propertyLine, propertyName);
+                drawPane.getChildren().add(compiledProperty);
+            }
+
+            propDestNode = ((Node)mouseEvent.getTarget()).getParent();
+            srcClick = true;
+            System.out.println("In second click: " + propDestNode.toString());
         }
     }
 

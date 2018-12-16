@@ -59,7 +59,17 @@ class Converter {
 
     private static String convertElementProperty(Node[] nodes) {
         // TODO: 13/12/2018 have both connections for property
-        return null;
+        // TODO: 16/12/2018 stackpane conversion breaks when clicking on label or shape... 
+        String propertyName = ((Label) nodes[1]).getText();
+        if (propertyName.contains(":")) {
+            return propertyName + " rdf:type owl:ObjectProperty ;\n" +
+                    "\trdfs:domain " + ((StackPane) Controller.propSrcNode).getChildren().get(1) + " ;\n" +
+                    "\trdfs:range " + ((StackPane) Controller.propDestNode).getChildren().get(1) + " .";
+        } else {
+            return "<" + propertyName + "> rdf:type owl:ObjectProperty ;\n" +
+                    "\trdfs:domain " + ((StackPane) Controller.propSrcNode).getChildren().get(1) + " ;\n" +
+                    "\trdfs:range " + ((StackPane) Controller.propDestNode).getChildren().get(1) + " .\n";
+        }
     }
 
     private static String convertElementLiteral(Node[] nodes) {
