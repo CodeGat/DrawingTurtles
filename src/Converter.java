@@ -97,6 +97,7 @@ class Converter {
     }
 
     private static void convertLiteral(GraphClass graphClass) {
+        ArrayList<GraphProperty> markRemovable = new ArrayList<>();
         for (GraphProperty property : properties){
             String trimClassString;
             String key;
@@ -105,12 +106,12 @@ class Converter {
                 key = property.getSubject().getName();
                 String classString = classStrings.get(key);
                 trimClassString = classString.substring(0, classString.length() - 2);
-                properties.remove(property);
+                markRemovable.add(property);
             } else if (property.getSubject().getName().equals(graphClass.getName())){
-                key = property.getObject().getName();//
+                key = property.getObject().getName();
                 String classString = classStrings.get(key);
                 trimClassString = classString.substring(0, classString.length() - 2);
-                properties.remove(property);
+                markRemovable.add(property);
             } else continue;
 
             String pname = property.getName();
@@ -121,5 +122,7 @@ class Converter {
 
             classStrings.put(key, trimClassString);
         }
+
+        properties.removeAll(markRemovable);
     }
 }
