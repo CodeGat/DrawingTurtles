@@ -6,8 +6,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Shape;
 
-import java.util.Comparator;
-
 public class GraphClass {
 
     public enum GraphElemType {
@@ -26,8 +24,8 @@ public class GraphClass {
     public GraphClass(EventTarget element, double x, double y){
         StackPane parent = (StackPane) element;
 
-        this.name = ((Label) parent.getChildren().get(0)).getText();
-        this.type = (parent.getChildren().get(1) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
+        this.name = ((Label) parent.getChildren().get(1)).getText();
+        this.type = (parent.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
         this.x = x;
         this.y = y;
     }

@@ -1,3 +1,5 @@
+import Graph.GraphClass;
+import Graph.GraphProperty;
 import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -37,11 +39,10 @@ public class Controller {
 
     private Type selectedType = Type.CLASS;
     private ArrayList<String>    prefixes = new ArrayList<>();
-    private ArrayList<StackPane> elements = new ArrayList<>();
+    private ArrayList<GraphProperty> properties = new ArrayList<>();
+    private ArrayList<GraphClass> classes = new ArrayList<>();
 
-    // Related to making a connection between things, can be classified
-    private double propSrcX, propSrcY, propDestX, propDestY;
-    public static EventTarget propSrcNode, propDestNode;
+    private GraphClass sub;
     private boolean srcClick = true;
 
     @FXML protected void classSelectAction() {
@@ -72,14 +73,9 @@ public class Controller {
     }
 
     @FXML protected void exportTtlAction() {
-        /// TODO: 14/12/2018 make sure the elements array is nullified, or use a Set
-        for (Node child : drawPane.getChildren()) {
-            elements.add((StackPane) child);
-        }
-
         File saveFile = showSaveFileDialog();
         if (saveFile != null){
-            String ttl = Converter.convertGraphToTtlString(prefixes, elements);
+            String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties);
             try {
                 statusLbl.setText(saveFile.createNewFile() ? "File saved." : "File not saved.");
                 FileWriter writer = new FileWriter(saveFile);
@@ -129,6 +125,7 @@ public class Controller {
         if (elementName != null) {
             compiledElement.getChildren().addAll(elementType, elementName);
             drawPane.getChildren().add(compiledElement);
+            classes.add(new GraphClass(elementType, elementName));
         }
     }
 
@@ -150,41 +147,50 @@ public class Controller {
         if (elementName != null) {
             compiledElement.getChildren().addAll(elementType, elementName);
             drawPane.getChildren().add(compiledElement);
+            classes.add(new GraphClass(elementType, elementName));
         }
     }
 
     // TODO: 15/12/2018 Check if eventTarget is the drawPane, show some feedback on first click
     private void addPropertySubaction(MouseEvent mouseEvent){
-        if (srcClick){
-            propSrcX = mouseEvent.getX();
-            propSrcY = mouseEvent.getY();
-            propSrcNode = ((Node)mouseEvent.getTarget()).getParent();
+        EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
+        boolean isInsideElement = !(parent instanceof BorderPane);
+
+        if (srcClick && isInsideElement){
+            sub = new GraphClass(parent, mouseEvent.getX(), mouseEvent.getY());
+
             srcClick = false;
-            System.out.println("In first click: " + propSrcNode.toString());
-        } else {
-            propDestX = mouseEvent.getX();
-            propDestY = mouseEvent.getY();
+            System.out.println("In first click: " + sub.getName());
+        } else if (isInsideElement) {
+            GraphClass obj = new GraphClass(parent, mouseEvent.getX(), mouseEvent.getY());
 
             StackPane compiledProperty = new StackPane();
-            compiledProperty.setLayoutX(propSrcX < propDestX ? propSrcX : propDestX);
-            compiledProperty.setLayoutY(propSrcY < propDestY ? propSrcY : propDestY);
+            compiledProperty.setLayoutX(sub.getX() < obj.getX() ? sub.getX() : obj.getX());
+            compiledProperty.setLayoutY(sub.getY() < obj.getY() ? sub.getY() : obj.getY());
 
             Line propertyLine = new Line();
-            propertyLine.setStartX(propSrcX);
-            propertyLine.setStartY(propSrcY);
-            propertyLine.setEndX(mouseEvent.getX());
-            propertyLine.setEndY(mouseEvent.getY());
+            propertyLine.setStartX(sub.getX());
+            propertyLine.setStartY(sub.getY());
+            propertyLine.setEndX(obj.getX());
+            propertyLine.setEndY(obj.getY());
 
             Label propertyName = showNameElementDialog();
 
             if (propertyName != null){
                 compiledProperty.getChildren().addAll(propertyLine, propertyName);
                 drawPane.getChildren().add(compiledProperty);
+                properties.add(new GraphProperty(propertyName, sub, obj));
             }
 
-            propDestNode = ((Node)mouseEvent.getTarget()).getParent();
             srcClick = true;
-            System.out.println("In second click: " + propDestNode.toString());
+            System.out.println("In second click: " + obj.getName());
+        } else {
+            srcClick = true;
+            System.out.println(
+                    "Not in pane, start again: " +
+                            "\n\tTarget: " + mouseEvent.getTarget().toString() +
+                            "\n\tParent: " + ((Node) mouseEvent.getTarget()).getParent().toString());
+
         }
     }
 
