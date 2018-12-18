@@ -58,7 +58,7 @@ class Converter {
             if (name.contains(":")) {
                 propStr = name + " rdf:type owl:ObjectProperty ;\n" +
                         "\trdfs:domain " + property.getSubject().getName() + " ;\n" +
-                        "\trdfs:range " + property.getObject().getName() + " .";
+                        "\trdfs:range " + property.getObject().getName() + " .\n";
                 propStrs.append(propStr);
             } else {
                 propStr = "<" + name + "> rdf:type owl:ObjectProperty ;\n" +
@@ -94,7 +94,7 @@ class Converter {
 
     private static String convertClass(String name) {
         if (name.contains(":")) return name + " a owl:Class .\n";
-        else return "<" + name + "> a owl:Class .";
+        else return "<" + name + "> a owl:Class .\n";
     }
 
     private static String convertLiteral(GraphClass graphClass) {
