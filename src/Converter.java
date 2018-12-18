@@ -10,8 +10,10 @@ class Converter {
     private static ArrayList<GraphProperty> properties;
     private static HashMap<String, String>  classStrings;
 
-
-    static String convertGraphToTtlString(ArrayList<String> prefixes, ArrayList<GraphClass> classes, ArrayList<GraphProperty> properties) {
+    static String convertGraphToTtlString(
+            ArrayList<String> prefixes,
+            ArrayList<GraphClass> classes,
+            ArrayList<GraphProperty> properties) {
         Converter.prefixes     = prefixes;
         Converter.classes      = classes;
         Converter.properties   = properties;
@@ -45,11 +47,11 @@ class Converter {
     }
 
     private static String convertGProperties() {
-        // TODO: 13/12/2018 have both connections for property
-        // TODO: 16/12/2018 stackpane conversion breaks when clicking on label or shape...
-        StringBuilder propStrs = new StringBuilder("\n##################################################\n" +
+        StringBuilder propStrs = new StringBuilder(
+                "\n##################################################\n" +
                 "#####          Ontology Properties           #####\n" +
-                "##################################################\n\n");
+                "##################################################\n\n"
+        );
 
         for (GraphProperty property : properties){
             String name = property.getName();
@@ -70,34 +72,54 @@ class Converter {
         return propStrs.toString();
     }
 
-    // TODO: 13/12/2018 search for connections to it, add as property of connected
     private static String convertGClasses() {
-        StringBuilder classStrs = new StringBuilder("\n##################################################\n" +
+        StringBuilder classStrs = new StringBuilder(
+                "##################################################\n" +
                 "#####            Ontology Classes            #####\n" +
-                "##################################################\n\n");
+                "##################################################\n\n"
+        );
 
         for (GraphClass graphClass : classes){
             String name = graphClass.getName();
 
-            if (graphClass.getType() == GraphClass.GraphElemType.CLASS){
-                classStrings.put(name, convertClass(name));
-                classStrs.append(convertClass(name));
-            } else if (graphClass.getType() == GraphClass.GraphElemType.LITERAL) {
-                System.out.println("Skipping literal: " + graphClass.getName());
-            }
+            if      (graphClass.getType() == GraphClass.GraphElemType.CLASS)   convertClass(name);
+            else if (graphClass.getType() == GraphClass.GraphElemType.LITERAL) convertLiteral(graphClass);
         }
 
-        classStrings.forEach((k, v) -> System.out.println(k + " : " + v));
+        classStrings.values().forEach(classStrs::append);
 
         return classStrs.toString();
     }
 
-    private static String convertClass(String name) {
-        if (name.contains(":")) return name + " a owl:Class .\n";
-        else return "<" + name + "> a owl:Class .\n";
+    private static void convertClass(String name) {
+        if (name.contains(":")) classStrings.put(name, name + " a owl:Class .\n");
+        else classStrings.put(name, "<" + name + "> a owl:Class .\n");
     }
 
-    private static String convertLiteral(GraphClass graphClass) {
-        return null;
+    private static void convertLiteral(GraphClass graphClass) {
+        for (GraphProperty property : properties){
+            String trimClassString;
+            String key;
+
+            if (property.getObject().getName().equals(graphClass.getName())){
+                key = property.getSubject().getName();
+                String classString = classStrings.get(key);
+                trimClassString = classString.substring(0, classString.length() - 2);
+                properties.remove(property);
+            } else if (property.getSubject().getName().equals(graphClass.getName())){
+                key = property.getObject().getName();//
+                String classString = classStrings.get(key);
+                trimClassString = classString.substring(0, classString.length() - 2);
+                properties.remove(property);
+            } else continue;
+
+            String pname = property.getName();
+            String gname = graphClass.getName();
+            trimClassString =  trimClassString + ";\n\t" +
+                    (pname.contains(":") ? pname : "<" + pname + ">") + " " +
+                    (gname.contains(":") ? gname : "<" + gname + ">") + " .\n";
+
+            classStrings.put(key, trimClassString);
+        }
     }
 }
