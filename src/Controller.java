@@ -159,9 +159,9 @@ public class Controller {
 
         if (srcClick && isInsideElement){
             sub = new GraphClass(parent, mouseEvent.getX(), mouseEvent.getY());
-
             srcClick = false;
-            System.out.println("In first click: " + sub.getName());
+            drawStatusLbl.setText("Subject selected. Click another element for the Object.");
+
         } else if (isInsideElement) {
             GraphClass obj = new GraphClass(parent, mouseEvent.getX(), mouseEvent.getY());
 
@@ -181,17 +181,12 @@ public class Controller {
                 compiledProperty.getChildren().addAll(propertyLine, propertyName);
                 drawPane.getChildren().add(compiledProperty);
                 properties.add(new GraphProperty(propertyName, sub, obj));
+                statusLbl.setText("Property " + propertyName.getText() + " created. ");
             }
-
             srcClick = true;
-            System.out.println("In second click: " + obj.getName());
         } else {
             srcClick = true;
-            System.out.println(
-                    "Not in pane, start again: " +
-                            "\n\tTarget: " + mouseEvent.getTarget().toString() +
-                            "\n\tParent: " + ((Node) mouseEvent.getTarget()).getParent().toString());
-
+            drawStatusLbl.setText("Property: Did not select a Class or Literal. Try again.");
         }
     }
 
