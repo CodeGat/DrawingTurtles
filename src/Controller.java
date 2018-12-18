@@ -15,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 
 import java.io.File;
@@ -120,7 +121,7 @@ public class Controller {
         elementType.setFill(Color.TRANSPARENT);
         elementType.setStroke(Color.BLACK);
 
-        Label elementName = showNameElementDialog();
+        Text elementName = showNameElementDialog();
 
         if (elementName != null) {
             compiledElement.getChildren().addAll(elementType, elementName);
@@ -142,7 +143,7 @@ public class Controller {
         elementType.setFill(Color.TRANSPARENT);
         elementType.setStroke(Color.BLACK);
 
-        Label elementName = showNameElementDialog();
+        Text elementName = showNameElementDialog();
 
         if (elementName != null) {
             compiledElement.getChildren().addAll(elementType, elementName);
@@ -174,7 +175,7 @@ public class Controller {
             propertyLine.setEndX(obj.getX());
             propertyLine.setEndY(obj.getY());
 
-            Label propertyName = showNameElementDialog();
+            Text propertyName = showNameElementDialog();
 
             if (propertyName != null){
                 compiledProperty.getChildren().addAll(propertyLine, propertyName);
@@ -194,14 +195,14 @@ public class Controller {
         }
     }
 
-    private Label showNameElementDialog() {
+    private Text showNameElementDialog() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setGraphic(null);
         dialog.setTitle("Add Ontology Element");
         dialog.setHeaderText("Can be set as defined in Turtle Syntax");
 
         Optional<String> optDialogResult = dialog.showAndWait();
-        return optDialogResult.map(Label::new).orElse(null);
+        return optDialogResult.map(Text::new).orElse(null);
     }
 
     private void showPrefixMalformedAlert() {

@@ -1,18 +1,16 @@
 package Graph;
 
-import javafx.scene.control.Label;
+import javafx.scene.text.Text;
 
 public class GraphProperty {
     private String name;
     private GraphClass subject, object;
 
-    public GraphProperty (Label name, GraphClass subject, GraphClass object){
+    public GraphProperty (Text name, GraphClass subject, GraphClass object){
         this.name = name.getText();
         this.subject = subject;
         this.object = object;
     }
-
-
 
     public String getName() {
         return name;
