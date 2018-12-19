@@ -116,9 +116,8 @@ class Converter {
 
             String pname = property.getName();
             String gname = graphClass.getName();
-            trimClassString =  trimClassString + ";\n\t" +
-                    (pname.contains(":") ? pname : "<" + pname + ">") + " " +
-                    (gname.contains(":") ? gname : "<" + gname + ">") + " .\n";
+            trimClassString += ";\n\t" + (pname.contains(":") ? pname : "<" + pname + ">") + " " +
+                    (gname.contains(":") || gname.contains("\"") ? gname : "<" + gname + ">") + " .\n";
 
             classStrings.put(key, trimClassString);
         }
