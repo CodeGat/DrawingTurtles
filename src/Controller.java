@@ -34,6 +34,7 @@ public class Controller {
     public Button addPrefixBtn;
     public Button exportTllBtn;
     public Button exportPngBtn;
+    public Button instrBtn;
     public Label  statusLbl;
     public Pane   drawPane;
     public Label  drawStatusLbl;
@@ -89,15 +90,6 @@ public class Controller {
         } else statusLbl.setText("File save cancelled.");
     }
 
-    private File showSaveFileDialog() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialFileName("ontology.ttl");
-        fileChooser.setTitle("Save Turtle As");
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
-
-        return fileChooser.showSaveDialog(root.getScene().getWindow());
-    }
-
     @FXML protected void exportPngAction() {}
 
     @FXML protected void addElementAction(MouseEvent mouseEvent) {
@@ -109,6 +101,27 @@ public class Controller {
             addPropertySubaction(mouseEvent);
         }
     }
+
+    @FXML protected void showInstructionsAction() {
+        showInstructionsDialog();
+    }
+
+    private void showInstructionsDialog() {
+        Alert instrDialog = new Alert(Alert.AlertType.INFORMATION);
+        instrDialog.setTitle("Instructions on using Drawing Turtles");
+        instrDialog.setHeaderText(null);
+        instrDialog.setContentText(
+                "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
+                        " add to the canvas, then click somewhere valid on the canvas. Add a name (even in .ttl synta" +
+                        "x!) and the item will be created in that position. \nIn regards to the Property button, you " +
+                        "must click on a valid (already existing) element in the graph as the subject, and then anoth" +
+                        "er as the object. If you click on something that is not a Class or Literal, you will need to" +
+                        " click the subject-object pair again. \n"
+        );
+
+        instrDialog.showAndWait();
+    }
+
 
     private void addLiteralSubaction(MouseEvent mouseEvent){
         StackPane compiledElement = new StackPane();
@@ -152,7 +165,6 @@ public class Controller {
         }
     }
 
-    // TODO: 15/12/2018 Check if eventTarget is the drawPane, show some feedback on first click
     private void addPropertySubaction(MouseEvent mouseEvent){
         EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
         boolean isInsideElement = !(parent instanceof BorderPane);
@@ -160,7 +172,7 @@ public class Controller {
         if (srcClick && isInsideElement){
             sub = new GraphClass(parent, mouseEvent.getX(), mouseEvent.getY());
             srcClick = false;
-            drawStatusLbl.setText("Subject selected. Click another element for the Object.");
+            statusLbl.setText("Subject selected. Click another element for the Object.");
 
         } else if (isInsideElement) {
             GraphClass obj = new GraphClass(parent, mouseEvent.getX(), mouseEvent.getY());
@@ -186,7 +198,7 @@ public class Controller {
             srcClick = true;
         } else {
             srcClick = true;
-            drawStatusLbl.setText("Property: Did not select a Class or Literal. Try again.");
+            statusLbl.setText("Property: Did not select a Class or Literal. Try again.");
         }
     }
 
@@ -198,6 +210,15 @@ public class Controller {
 
         Optional<String> optDialogResult = dialog.showAndWait();
         return optDialogResult.map(Text::new).orElse(null);
+    }
+
+    private File showSaveFileDialog() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialFileName("ontology.ttl");
+        fileChooser.setTitle("Save Turtle As");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+        return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
 
     private void showPrefixMalformedAlert() {

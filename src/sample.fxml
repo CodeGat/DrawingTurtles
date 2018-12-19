@@ -18,6 +18,7 @@
             <Button fx:id="exportTllBtn" maxWidth="Infinity" onMouseClicked="#exportTtlAction" text="Export as .ttl" />
             <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png" />
             <Separator />
+            <Button fx:id="instrBtn" maxWidth="Infinity" onMouseClicked="#showInstructionsAction" text="Instructions"/>
         </ToolBar>
     </left>
     <top>
