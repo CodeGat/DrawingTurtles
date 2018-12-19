@@ -1,12 +1,15 @@
 import Graph.GraphClass;
 import Graph.GraphProperty;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -18,6 +21,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 
+import javax.imageio.ImageIO;
+import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -75,14 +80,18 @@ public class Controller {
     }
 
     @FXML protected void exportTtlAction() {
-        File saveFile = showSaveFileDialog();
+        File saveFile = showSaveFileDialog(
+                "ontology.ttl",
+                "Save Turtle Ontology As",
+                null
+        );
         if (saveFile != null){
             String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties);
             try {
-                statusLbl.setText(saveFile.createNewFile() ? "File saved." : "File overwritten.");
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(ttl);
                 writer.close();
+                statusLbl.setText("File saved.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -90,7 +99,23 @@ public class Controller {
         } else statusLbl.setText("File save cancelled.");
     }
 
-    @FXML protected void exportPngAction() {}
+    @FXML protected void exportPngAction() {
+        File saveFile = showSaveFileDialog(
+                "ontology.png",
+                "Save Graph Image As",
+                new FileChooser.ExtensionFilter("png files (*.png)", "*.png")
+        );
+        if (saveFile != null){
+            try {
+                WritableImage writableImage = drawPane.snapshot(new SnapshotParameters(), null);
+                RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
+                ImageIO.write(renderedImage, "png", saveFile);
+                statusLbl.setText("File saved.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else statusLbl.setText("Image save cancelled.");
+    }
 
     @FXML protected void addElementAction(MouseEvent mouseEvent) {
         if (mouseEvent.isStillSincePress() && selectedType == Type.CLASS){
@@ -103,25 +128,8 @@ public class Controller {
     }
 
     @FXML protected void showInstructionsAction() {
-        showInstructionsDialog();
+        showInstructionsAlert();
     }
-
-    private void showInstructionsDialog() {
-        Alert instrDialog = new Alert(Alert.AlertType.INFORMATION);
-        instrDialog.setTitle("Instructions on using Drawing Turtles");
-        instrDialog.setHeaderText(null);
-        instrDialog.setContentText(
-                "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
-                        " add to the canvas, then click somewhere valid on the canvas. Add a name (even in .ttl synta" +
-                        "x!) and the item will be created in that position. \nIn regards to the Property button, you " +
-                        "must click on a valid (already existing) element in the graph as the subject, and then anoth" +
-                        "er as the object. If you click on something that is not a Class or Literal, you will need to" +
-                        " click the subject-object pair again. \n"
-        );
-
-        instrDialog.showAndWait();
-    }
-
 
     private void addLiteralSubaction(MouseEvent mouseEvent){
         StackPane compiledElement = new StackPane();
@@ -212,10 +220,14 @@ public class Controller {
         return optDialogResult.map(Text::new).orElse(null);
     }
 
-    private File showSaveFileDialog() {
+    private File showSaveFileDialog(
+            String initialFileName,
+            String windowTitle,
+            FileChooser.ExtensionFilter extensionFilter) {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialFileName("ontology.ttl");
-        fileChooser.setTitle("Save Turtle As");
+        fileChooser.setInitialFileName(initialFileName);
+        fileChooser.setTitle(windowTitle);
+        fileChooser.setSelectedExtensionFilter(extensionFilter);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         return fileChooser.showSaveDialog(root.getScene().getWindow());
@@ -229,5 +241,21 @@ public class Controller {
                 "The malformed prefix was discarded, try again.\n" +
                 "Example: \"foaf : http://xmlns.com/foaf/0.1/\"");
         alert.showAndWait();
+    }
+
+    private void showInstructionsAlert() {
+        Alert instrDialog = new Alert(Alert.AlertType.INFORMATION);
+        instrDialog.setTitle("Instructions on using Drawing Turtles");
+        instrDialog.setHeaderText(null);
+        instrDialog.setContentText(
+                "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
+                        " add to the canvas, then click somewhere valid on the canvas. Add a name (even in .ttl synta" +
+                        "x!) and the item will be created in that position. \nIn regards to the Property button, you " +
+                        "must click on a valid (already existing) element in the graph as the subject, and then anoth" +
+                        "er as the object. If you click on something that is not a Class or Literal, you will need to" +
+                        " click the subject-object pair again. \n"
+        );
+
+        instrDialog.showAndWait();
     }
 }
