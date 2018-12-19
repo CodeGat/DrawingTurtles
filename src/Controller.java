@@ -220,12 +220,9 @@ public class Controller {
         return optDialogResult.map(Text::new).orElse(null);
     }
 
-    private File showSaveFileDialog(
-            String initialFileName,
-            String windowTitle,
-            FileChooser.ExtensionFilter extensionFilter) {
+    private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extensionFilter) {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialFileName(initialFileName);
+        fileChooser.setInitialFileName(fileName);
         fileChooser.setTitle(windowTitle);
         fileChooser.setSelectedExtensionFilter(extensionFilter);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
