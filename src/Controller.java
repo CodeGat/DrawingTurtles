@@ -136,19 +136,19 @@ public class Controller {
         compiledElement.setLayoutX(mouseEvent.getX());
         compiledElement.setLayoutY(mouseEvent.getY());
 
+        Text elementName = showNameElementDialog();
+        if (elementName == null) return;
+        double textWidth = elementName.getBoundsInLocal().getWidth();
+
         Rectangle elementType = new Rectangle();
-        elementType.setWidth(100);
-        elementType.setHeight(70);
+        elementType.setHeight(75);
+        elementType.setWidth(textWidth > 125 ? textWidth + 15 : 125);
         elementType.setFill(Color.TRANSPARENT);
         elementType.setStroke(Color.BLACK);
 
-        Text elementName = showNameElementDialog();
-
-        if (elementName != null) {
-            compiledElement.getChildren().addAll(elementType, elementName);
-            drawPane.getChildren().add(compiledElement);
-            classes.add(new GraphClass(elementType, elementName));
-        }
+        compiledElement.getChildren().addAll(elementType, elementName);
+        drawPane.getChildren().add(compiledElement);
+        classes.add(new GraphClass(elementType, elementName));
     }
 
     private void addClassSubaction(MouseEvent mouseEvent){
@@ -156,21 +156,21 @@ public class Controller {
         compiledElement.setLayoutX(mouseEvent.getX());
         compiledElement.setLayoutY(mouseEvent.getY());
 
+        Text elementName = showNameElementDialog();
+        if (elementName == null) return;
+        double textWidth = elementName.getBoundsInLocal().getWidth();
+
         Ellipse elementType = new Ellipse();
         elementType.setCenterX(mouseEvent.getX());
         elementType.setCenterY(mouseEvent.getY());
-        elementType.setRadiusX(100);
-        elementType.setRadiusY(50);
+        elementType.setRadiusX(textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5);
+        elementType.setRadiusY(37.5);
         elementType.setFill(Color.TRANSPARENT);
         elementType.setStroke(Color.BLACK);
 
-        Text elementName = showNameElementDialog();
-
-        if (elementName != null) {
-            compiledElement.getChildren().addAll(elementType, elementName);
-            drawPane.getChildren().add(compiledElement);
-            classes.add(new GraphClass(elementType, elementName));
-        }
+        compiledElement.getChildren().addAll(elementType, elementName);
+        drawPane.getChildren().add(compiledElement);
+        classes.add(new GraphClass(elementType, elementName));
     }
 
     private void addPropertySubaction(MouseEvent mouseEvent){
