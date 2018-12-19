@@ -12,8 +12,8 @@ public class GraphClass {
         CLASS, LITERAL
     }
 
-    private GraphElemType type;
-    private String name;
+    private final GraphElemType type;
+    private final String name;
     private double x, y;
 
     public GraphClass(Shape type, Text name){

@@ -39,9 +39,9 @@ public class Controller {
     public Label  drawStatusLbl;
 
     private Type selectedType = Type.CLASS;
-    private ArrayList<String>    prefixes = new ArrayList<>();
-    private ArrayList<GraphProperty> properties = new ArrayList<>();
-    private ArrayList<GraphClass> classes = new ArrayList<>();
+    private final ArrayList<String>    prefixes = new ArrayList<>();
+    private final ArrayList<GraphProperty> properties = new ArrayList<>();
+    private final ArrayList<GraphClass> classes = new ArrayList<>();
 
     private GraphClass sub;
     private boolean srcClick = true;
@@ -78,7 +78,7 @@ public class Controller {
         if (saveFile != null){
             String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties);
             try {
-                statusLbl.setText(saveFile.createNewFile() ? "File saved." : "File not saved.");
+                statusLbl.setText(saveFile.createNewFile() ? "File saved." : "File overwritten.");
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(ttl);
                 writer.close();
