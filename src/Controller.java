@@ -4,6 +4,7 @@ import Graph.Arrow;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventTarget;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Alert;
@@ -12,9 +13,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
@@ -29,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
 
+// TODO: 19/12/2018 Make ": URI" a valid prefix
 public class Controller {
     enum Type { CLASS, PROPERTY, LITERAL }
 
@@ -195,9 +195,15 @@ public class Controller {
             propertyArrow.setEndX(obj.getX());
             propertyArrow.setEndY(obj.getY());
 
-            Text propertyName = showNameElementDialog();
+            Text propertyName0 = showNameElementDialog();
 
-            if (propertyName != null){
+            if (propertyName0 != null){
+                Label propertyName = new Label(propertyName0.getText());
+                propertyName.setBackground(new Background(new BackgroundFill(
+                        Color.web("F4F4F4"),
+                        CornerRadii.EMPTY,
+                        Insets.EMPTY
+                )));
                 compiledProperty.getChildren().addAll(propertyArrow, propertyName);
                 drawPane.getChildren().add(compiledProperty);
                 properties.add(new GraphProperty(propertyName, sub, obj));

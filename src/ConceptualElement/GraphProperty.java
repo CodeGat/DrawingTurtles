@@ -1,13 +1,13 @@
 package ConceptualElement;
 
-import javafx.scene.text.Text;
+import javafx.scene.control.Label;
 
 public class GraphProperty {
     private final String name;
     private final GraphClass subject;
     private final GraphClass object;
 
-    public GraphProperty (Text name, GraphClass subject, GraphClass object){
+    public GraphProperty (Label name, GraphClass subject, GraphClass object){
         this.name = name.getText();
         this.subject = subject;
         this.object = object;
