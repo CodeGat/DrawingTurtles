@@ -1,4 +1,4 @@
-package Graph;
+package ConceptualElement;
 
 import javafx.event.EventTarget;
 import javafx.scene.layout.StackPane;

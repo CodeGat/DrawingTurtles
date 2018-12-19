@@ -1,5 +1,5 @@
-import Graph.GraphClass;
-import Graph.GraphProperty;
+import ConceptualElement.GraphClass;
+import ConceptualElement.GraphProperty;
 
 import java.util.ArrayList;
 import java.util.HashMap;

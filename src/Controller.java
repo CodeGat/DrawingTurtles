@@ -1,5 +1,6 @@
-import Graph.GraphClass;
-import Graph.GraphProperty;
+import ConceptualElement.GraphClass;
+import ConceptualElement.GraphProperty;
+import Graph.Arrow;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventTarget;
 import javafx.fxml.FXML;
@@ -16,7 +17,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
-import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
@@ -102,7 +102,7 @@ public class Controller {
     @FXML protected void exportPngAction() {
         File saveFile = showSaveFileDialog(
                 "ontology.png",
-                "Save Graph Image As",
+                "Save ConceptualElement Image As",
                 new FileChooser.ExtensionFilter("png files (*.png)", "*.png")
         );
         if (saveFile != null){
@@ -189,16 +189,16 @@ public class Controller {
             compiledProperty.setLayoutX(sub.getX() < obj.getX() ? sub.getX() : obj.getX());
             compiledProperty.setLayoutY(sub.getY() < obj.getY() ? sub.getY() : obj.getY());
 
-            Line propertyLine = new Line();
-            propertyLine.setStartX(sub.getX());
-            propertyLine.setStartY(sub.getY());
-            propertyLine.setEndX(obj.getX());
-            propertyLine.setEndY(obj.getY());
+            Arrow propertyArrow = new Arrow();
+            propertyArrow.setStartX(sub.getX());
+            propertyArrow.setStartY(sub.getY());
+            propertyArrow.setEndX(obj.getX());
+            propertyArrow.setEndY(obj.getY());
 
             Text propertyName = showNameElementDialog();
 
             if (propertyName != null){
-                compiledProperty.getChildren().addAll(propertyLine, propertyName);
+                compiledProperty.getChildren().addAll(propertyArrow, propertyName);
                 drawPane.getChildren().add(compiledProperty);
                 properties.add(new GraphProperty(propertyName, sub, obj));
                 statusLbl.setText("Property " + propertyName.getText() + " created. ");

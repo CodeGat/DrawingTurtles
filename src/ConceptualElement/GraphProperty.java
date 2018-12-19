@@ -1,4 +1,4 @@
-package Graph;
+package ConceptualElement;
 
 import javafx.scene.text.Text;
 
