@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 // TODO: 19/12/2018 Make ": URI" a valid prefix
+// TODO: 19/12/2018 Make canvas scrollable
+// TODO: 19/12/2018 Make savable
 public class Controller {
     enum Type { CLASS, PROPERTY, LITERAL }
 
@@ -143,7 +145,7 @@ public class Controller {
         Rectangle elementType = new Rectangle();
         elementType.setHeight(75);
         elementType.setWidth(textWidth > 125 ? textWidth + 15 : 125);
-        elementType.setFill(Color.TRANSPARENT);
+        elementType.setFill(Color.web("f4f4f4"));
         elementType.setStroke(Color.BLACK);
 
         compiledElement.getChildren().addAll(elementType, elementName);
@@ -165,7 +167,7 @@ public class Controller {
         elementType.setCenterY(mouseEvent.getY());
         elementType.setRadiusX(textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5);
         elementType.setRadiusY(37.5);
-        elementType.setFill(Color.TRANSPARENT);
+        elementType.setFill(Color.web("f4f4f4"));
         elementType.setStroke(Color.BLACK);
 
         compiledElement.getChildren().addAll(elementType, elementName);
@@ -196,19 +198,21 @@ public class Controller {
             propertyArrow.setEndY(obj.getY());
 
             Text propertyName0 = showNameElementDialog();
-
-            if (propertyName0 != null){
-                Label propertyName = new Label(propertyName0.getText());
-                propertyName.setBackground(new Background(new BackgroundFill(
-                        Color.web("F4F4F4"),
-                        CornerRadii.EMPTY,
-                        Insets.EMPTY
-                )));
-                compiledProperty.getChildren().addAll(propertyArrow, propertyName);
-                drawPane.getChildren().add(compiledProperty);
-                properties.add(new GraphProperty(propertyName, sub, obj));
-                statusLbl.setText("Property " + propertyName.getText() + " created. ");
+            if (propertyName0 == null){
+                srcClick = true;
+                return;
             }
+
+            Label propertyName = new Label(propertyName0.getText());
+            propertyName.setBackground(new Background(new BackgroundFill(
+                    Color.web("F4F4F4"),
+                    CornerRadii.EMPTY,
+                    Insets.EMPTY
+            )));
+            compiledProperty.getChildren().addAll(propertyArrow, propertyName);
+            drawPane.getChildren().add(compiledProperty);
+            properties.add(new GraphProperty(propertyName, sub, obj));
+            statusLbl.setText("Property " + propertyName.getText() + " created. ");
             srcClick = true;
         } else {
             srcClick = true;
