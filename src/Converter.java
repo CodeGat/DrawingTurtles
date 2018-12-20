@@ -35,9 +35,12 @@ class Converter {
 
     private static String convertPrefixes() {
         StringBuilder prefixStrs = new StringBuilder();
+        prefixStrs.append("@prefix rdf : <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.\n");
+        prefixStrs.append("@prefix rdfs : <http://www.w3.org/2000/01/rdf-schema#>.\n");
+        prefixStrs.append("@prefix owl : <>.\n");
 
         for (String prefix : prefixes){
-            String[] splitPrefix = prefix.split("\\s:\\s");
+            String[] splitPrefix = prefix.split(":", 2);
             String   prefixStr = "@prefix " + splitPrefix[0] + " : <" + splitPrefix[1] + "> .\n";
 
             prefixStrs.append(prefixStr);
@@ -92,8 +95,8 @@ class Converter {
     }
 
     private static void convertClass(String name) {
-        if (name.contains(":")) classStrings.put(name, name + " a owl:Class .\n");
-        else classStrings.put(name, "<" + name + "> a owl:Class .\n");
+        if (name.contains(":")) classStrings.put(name, name + " a owl:Class .\n\n");
+        else classStrings.put(name, "<" + name + "> a owl:Class .\n\n");
     }
 
     private static void convertLiteral(GraphClass graphClass) {
@@ -105,19 +108,19 @@ class Converter {
             if (property.getObject().getName().equals(graphClass.getName())){
                 key = property.getSubject().getName();
                 String classString = classStrings.get(key);
-                trimClassString = classString.substring(0, classString.length() - 2);
+                trimClassString = classString.substring(0, classString.length() - 3);
                 markRemovable.add(property);
             } else if (property.getSubject().getName().equals(graphClass.getName())){
                 key = property.getObject().getName();
                 String classString = classStrings.get(key);
-                trimClassString = classString.substring(0, classString.length() - 2);
+                trimClassString = classString.substring(0, classString.length() - 3);
                 markRemovable.add(property);
             } else continue;
 
             String pname = property.getName();
             String gname = graphClass.getName();
             trimClassString += ";\n\t" + (pname.contains(":") ? pname : "<" + pname + ">") + " " +
-                    (gname.contains(":") || gname.contains("\"") ? gname : "<" + gname + ">") + " .\n";
+                    (gname.contains(":") || gname.contains("\"") ? gname : "<" + gname + ">") + " .\n\n";
 
             classStrings.put(key, trimClassString);
         }

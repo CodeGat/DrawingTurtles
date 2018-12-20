@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
 
-// TODO: 19/12/2018 Make ": URI" a valid prefix
 // TODO: 19/12/2018 Make canvas scrollable
 // TODO: 19/12/2018 Make savable
 public class Controller {
@@ -230,11 +229,11 @@ public class Controller {
         return optDialogResult.map(Text::new).orElse(null);
     }
 
-    private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extensionFilter) {
+    private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
         fileChooser.setTitle(windowTitle);
-        fileChooser.setSelectedExtensionFilter(extensionFilter);
+        fileChooser.setSelectedExtensionFilter(extFilter);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         return fileChooser.showSaveDialog(root.getScene().getWindow());
