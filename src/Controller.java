@@ -69,15 +69,15 @@ public class Controller {
     }
 
     @FXML protected void addPrefixAction() {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Add Ontology Prefix");
-        dialog.setHeaderText("Of the form: <prefix name> : <URI prefix>");
+        String prefixResult = showAddPrefixesDialog();
 
-        Optional<String> dialogResult = dialog.showAndWait();
-        dialogResult.ifPresent(prefix -> {
-            if (prefix.matches("[a-z]*\\s*:\\s*.*")) prefixes.add(prefix);
-            else showPrefixMalformedAlert();
-        });
+        if (prefixResult == null) return;
+        String[] prefixList = prefixResult.split(", ");
+
+        for (String prefix : prefixList){
+            if (prefix.matches("[a-z]* : .*")) prefixes.add(prefix);
+            else showPrefixMalformedAlert(prefix);
+        }
     }
 
     @FXML protected void exportTtlAction() {
@@ -219,6 +219,15 @@ public class Controller {
         }
     }
 
+    private String showAddPrefixesDialog() {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Add Ontology Prefixes");
+        dialog.setHeaderText("Of the form: <prefix name> : <URI prefix>\nCan add multiple as comma-seperated values.");
+
+        Optional<String> optPrefixResult = dialog.showAndWait();
+        return optPrefixResult.map(String::new).orElse(null);
+    }
+
     private Text showNameElementDialog() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setGraphic(null);
@@ -239,12 +248,12 @@ public class Controller {
         return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
 
-    private void showPrefixMalformedAlert() {
+    private void showPrefixMalformedAlert(String badPrefix) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setHeaderText(null);
-        alert.setContentText("Prefix was not of the form:\n" +
+        alert.setContentText("Prefix: " + badPrefix + " was not of the form:\n" +
                 "\"<prefix name> : <URI prefix>\"\n" +
-                "The malformed prefix was discarded, try again.\n" +
+                "This malformed prefix was discarded, try again.\n" +
                 "Example: \"foaf : http://xmlns.com/foaf/0.1/\"");
         alert.showAndWait();
     }
