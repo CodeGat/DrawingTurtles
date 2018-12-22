@@ -1,6 +1,7 @@
 import ConceptualElement.GraphClass;
 import ConceptualElement.GraphProperty;
 import Graph.Arrow;
+import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventTarget;
 import javafx.fxml.FXML;
@@ -16,20 +17,20 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-
 import javax.imageio.ImageIO;
 import java.awt.image.RenderedImage;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 
 // TODO: 19/12/2018 Make canvas scrollable
 // TODO: 19/12/2018 Make savable
+// TODO: 23/12/2018 tie property sub, obj to already created class, lit.
 public class Controller {
     enum Type { CLASS, PROPERTY, LITERAL }
 
@@ -38,6 +39,8 @@ public class Controller {
     public Button propBtn;
     public Button literalBtn;
     public Button addPrefixBtn;
+    public Button saveGraphBtn;
+    public Button loadGraphBtn;
     public Button exportTllBtn;
     public Button exportPngBtn;
     public Button instrBtn;
@@ -46,9 +49,9 @@ public class Controller {
     public Label  drawStatusLbl;
 
     private Type selectedType = Type.CLASS;
-    private final ArrayList<String>    prefixes = new ArrayList<>();
+    private final ArrayList<String>        prefixes   = new ArrayList<>();
     private final ArrayList<GraphProperty> properties = new ArrayList<>();
-    private final ArrayList<GraphClass> classes = new ArrayList<>();
+    private final ArrayList<GraphClass>    classes    = new ArrayList<>();
 
     private GraphClass sub;
     private boolean srcClick = true;
@@ -78,6 +81,176 @@ public class Controller {
             if (prefix.matches("[a-z]* : .*")) prefixes.add(prefix);
             else showPrefixMalformedAlert(prefix);
         }
+    }
+
+    @FXML protected void saveGraphAction() {
+        File saveFile = showSaveFileDialog("graph.gat", "Save Graph As", null);
+        if (saveFile != null){
+            String filetext = traverseCanvas();
+            try {
+                FileWriter writer = new FileWriter(saveFile);
+                writer.write(filetext);
+                writer.flush();
+                writer.close();
+                statusLbl.setText("File saved.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } else statusLbl.setText("File save cancelled.");
+    }
+
+    private String traverseCanvas() {
+        StringBuilder result = new StringBuilder();
+
+        for (Node compiledElement : drawPane.getChildren()){
+            ObservableList<Node> subelements = ((StackPane) compiledElement).getChildrenUnmodifiable();
+            result.append("[");
+            if (subelements.get(0) instanceof Ellipse){
+                Ellipse e = (Ellipse) subelements.get(0);
+                String shapeInfo = "E"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
+                        e.getRadiusY() + "|" + e.getFill().toString();
+                String shapeName = "=" + ((Text) subelements.get(1)).getText();
+                result.append(shapeInfo).append(shapeName);
+            } else if (subelements.get(0) instanceof Rectangle){
+                Rectangle r = (Rectangle) subelements.get(0);
+
+                String shapeInfo = "R" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
+                        r.getWidth() + "|" + r.getHeight() + "|" + r.getFill().toString();
+                String shapeName = "=" + ((Text) subelements.get(1)).getText();
+                result.append(shapeInfo).append(shapeName);
+            } else if (subelements.get(0) instanceof Arrow){
+                Arrow a = (Arrow) subelements.get(0);
+                Line  l = a.getLine();
+                String shapeInfo = "A" + l.getStartX() + "|" + l.getStartY() + "|" + l.getEndX() + "|" + l.getEndY();
+                String shapeName = "=" + ((Label) subelements.get(1)).getText();
+                result.append(shapeInfo).append(shapeName);
+            } else statusLbl.setText("TRAVERSAL FAILED. Berate the programmer for not generifying the traversal algorithm.");
+
+            result.append("]");
+        }
+
+        return result.toString();
+    }
+
+    @FXML protected void loadGraphAction() {
+        System.out.println("BEFORE LOAD:");
+        DebugUtil.dump(drawPane);
+        File loadFile = showLoadFileDialog("Open Graph File");
+        if (loadFile != null){
+            drawPane.getChildren().clear();
+            prefixes.clear();
+            classes.clear();
+            properties.clear();
+
+            try (FileReader reader = new FileReader(loadFile)){
+                char[] rawGraph = new char[1000];
+                if (reader.read(rawGraph) == 0 ) statusLbl.setText("Read failed: nothing in file.");
+                bindGraph(new String(rawGraph));
+                System.out.println("AFTER LOAD:");
+                DebugUtil.dump(drawPane);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } else statusLbl.setText("File load cancelled.");
+    }
+
+    private void bindGraph(String graph) {
+        String[] elements = Arrays.stream(graph.split("]\\[|\\[|]"))
+                .filter(s -> !s.equals(""))
+                .toArray(String[]::new);
+
+        for (String element : elements){
+            if (element.charAt(0) == 'R') {
+                System.out.println("Rectangle - " + element);
+                bindLiteral(element);
+            } else if (element.charAt(0) == 'E') {
+                System.out.println("Ellipse - " + element);
+                bindClass(element);
+            } else if (element.charAt(0) == 'A') {
+                System.out.println("Arrow - " + element);
+                bindProperty(element);
+            }
+        }
+    }
+
+    private void bindLiteral(String lit) {
+        String[] litElements = lit.split("=");
+        String[] litInfo = litElements[0].substring(1).split("\\|");
+        String   litName = litElements[1];
+
+        StackPane compiledLit = new StackPane();
+        compiledLit.setLayoutX(Double.valueOf(litInfo[0]));
+        compiledLit.setLayoutY(Double.valueOf(litInfo[1]));
+
+        Rectangle rect = new Rectangle();
+        rect.setWidth(Double.valueOf(litInfo[2]));
+        rect.setHeight(Double.valueOf(litInfo[3]));
+        rect.setFill(Color.web(litInfo[4]));
+        rect.setStroke(Color.BLACK);
+
+        Text name = new Text(litName);
+
+        compiledLit.getChildren().addAll(rect, name);
+        drawPane.getChildren().add(compiledLit);
+        classes.add(new GraphClass(rect, name));
+    }
+
+    private void bindClass(String cls) {
+        String[] clsElements = cls.split("=");
+        String[] clsInfo     = clsElements[0].substring(1).split("\\|");
+        String   clsName     = clsElements[1];
+
+        StackPane compiledCls = new StackPane();
+        compiledCls.setLayoutX(Double.valueOf(clsInfo[0]));
+        compiledCls.setLayoutY(Double.valueOf(clsInfo[1]));
+
+        Ellipse ellipse = new Ellipse();
+        ellipse.setCenterX(Double.valueOf(clsInfo[0]));
+        ellipse.setCenterY(Double.valueOf(clsInfo[1]));
+        ellipse.setRadiusX(Double.valueOf(clsInfo[2]));
+        ellipse.setRadiusY(Double.valueOf(clsInfo[3]));
+        ellipse.setFill(Color.web(clsInfo[4]));
+        ellipse.setStroke(Color.BLACK);
+
+        Text name = new Text(clsName);
+
+        compiledCls.getChildren().addAll(ellipse, name);
+        drawPane.getChildren().add(compiledCls);
+        classes.add(new GraphClass(ellipse, name));
+    }
+
+    private void bindProperty(String prop) { //maybe just get parent xy?
+        String[] propElements = prop.split("=");
+        String[] propInfo     = propElements[0].substring(1).split("\\|");
+        String   propName     = propElements[1];
+        double sx = Double.valueOf(propInfo[0]);
+        double sy = Double.valueOf(propInfo[1]);
+        double ex = Double.valueOf(propInfo[2]);
+        double ey = Double.valueOf(propInfo[3]);
+
+        StackPane compiledProp = new StackPane();
+        compiledProp.setLayoutX(sx < ex ? sx : ex);
+        compiledProp.setLayoutY(sy < ey ? sy : ey);
+
+        Arrow arrow = new Arrow();
+        arrow.setStartX(sx);
+        arrow.setStartY(sy);
+        arrow.setEndX(ex);
+        arrow.setEndY(ey);
+
+        Label name = new Label(propName);
+        name.setBackground(new Background(new BackgroundFill(Color.web("f4f4f4"), CornerRadii.EMPTY, Insets.EMPTY)));
+
+        compiledProp.getChildren().addAll(arrow, name);
+        drawPane.getChildren().add(compiledProp);
+        properties.add(new GraphProperty(name, bindClassUnder(sx, sy), bindClassUnder(ex, ey)));
+    }
+
+    private GraphClass bindClassUnder(double x, double y) {
+        for (GraphClass klass : classes) if (klass.getBounds().contains(x, y)) return klass;
+        return null;
     }
 
     @FXML protected void exportTtlAction() {
@@ -138,7 +311,7 @@ public class Controller {
         compiledElement.setLayoutY(mouseEvent.getY());
 
         Text elementName = showNameElementDialog();
-        if (elementName == null) return;
+        if (elementName == null || elementName.getText().equals("")) return;
         double textWidth = elementName.getBoundsInLocal().getWidth();
 
         Rectangle elementType = new Rectangle();
@@ -158,7 +331,7 @@ public class Controller {
         compiledElement.setLayoutY(mouseEvent.getY());
 
         Text elementName = showNameElementDialog();
-        if (elementName == null) return;
+        if (elementName == null || elementName.getText().equals("")) return;
         double textWidth = elementName.getBoundsInLocal().getWidth();
 
         Ellipse elementType = new Ellipse();
@@ -246,6 +419,14 @@ public class Controller {
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         return fileChooser.showSaveDialog(root.getScene().getWindow());
+    }
+
+    private File showLoadFileDialog(String windowTitle){
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(windowTitle);
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+        return fileChooser.showOpenDialog(root.getScene().getWindow());
     }
 
     private void showPrefixMalformedAlert(String badPrefix) {

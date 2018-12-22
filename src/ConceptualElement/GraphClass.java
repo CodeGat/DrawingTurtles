@@ -17,15 +17,17 @@ public class GraphClass {
 
     private GraphElemType type;
     private String name;
+    private StackPane parent;
     private double x, y;
 
     public GraphClass(Shape type, Text name){
         this.name = name.getText();
         this.type = (type instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
+        this.parent = (StackPane) type.getParent();
     }
 
     public GraphClass(EventTarget element, double x, double y){
-        StackPane parent = (StackPane) element;
+        parent = (StackPane) element;
 
         this.name = ((Text) parent.getChildren().get(1)).getText();
         this.type = (parent.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
@@ -68,5 +70,10 @@ public class GraphClass {
 
     public double getY() {
         return y;
+    }
+
+    //correct?
+    public Bounds getBounds(){
+        return parent.getBoundsInParent();
     }
 }

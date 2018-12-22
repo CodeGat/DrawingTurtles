@@ -97,13 +97,9 @@ public class Arrow extends Group {
         return line.getEndX();
     }
 
-    private DoubleProperty endXProperty() {
-        return line.endXProperty();
-    }
+    private DoubleProperty endXProperty() { return line.endXProperty(); }
 
-    public final void setEndY(double value) {
-        line.setEndY(value);
-    }
+    public final void setEndY(double value) { line.setEndY(value); }
 
     private double getEndY() {
         return line.getEndY();
@@ -113,4 +109,5 @@ public class Arrow extends Group {
         return line.endYProperty();
     }
 
+    public Line getLine() { return line; }
 }
