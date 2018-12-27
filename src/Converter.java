@@ -30,7 +30,12 @@ class Converter {
             else return 0;
         });
 
-        return convertPrefixes() + convertGClasses() + convertGProperties();
+        String stringPrefixes = convertPrefixes();
+        String stringProperties = convertGProperties();
+        String stringClasses  = convertGClasses();
+
+
+        return stringPrefixes + stringClasses + stringProperties;
     }
 
     private static String convertPrefixes() {

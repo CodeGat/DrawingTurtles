@@ -1,6 +1,7 @@
 package ConceptualElement;
 
 import javafx.event.EventTarget;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Ellipse;
@@ -72,8 +73,20 @@ public class GraphClass {
         return y;
     }
 
-    //correct?
+    // needed as box is malformed.
     public Bounds getBounds(){
-        return parent.getBoundsInParent();
+        if (type == GraphElemType.LITERAL){
+            return parent.getBoundsInParent();
+        } else {
+            Ellipse e = (Ellipse) parent.getChildrenUnmodifiable().get(0);
+            Bounds ebounds = e.getBoundsInParent();
+
+            return new BoundingBox(
+                    ebounds.getMinX() + e.getRadiusX(),
+                    ebounds.getMinY() + e.getRadiusY(),
+                    e.getRadiusX() * 2 + 2,
+                    e.getRadiusY() * 2 + 2
+            );
+        }
     }
 }

@@ -5,6 +5,8 @@ import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventTarget;
 import javafx.fxml.FXML;
+import javafx.geometry.BoundingBox;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
@@ -27,12 +29,15 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 // TODO: 19/12/2018 Make canvas scrollable
-// TODO: 19/12/2018 Make savable
-// TODO: 23/12/2018 tie property sub, obj to already created class, lit.
+// TODO: 23/12/2018 tie property sub, obj to already created class, lit rather than new one.
 public class Controller {
     enum Type { CLASS, PROPERTY, LITERAL }
+
+    private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
     public BorderPane root;
     public Button classBtn;
@@ -134,9 +139,7 @@ public class Controller {
     }
 
     @FXML protected void loadGraphAction() {
-        System.out.println("BEFORE LOAD:");
-        DebugUtil.dump(drawPane);
-        File loadFile = showLoadFileDialog("Open Graph File");
+        File loadFile = showLoadFileDialog();
         if (loadFile != null){
             drawPane.getChildren().clear();
             prefixes.clear();
@@ -144,11 +147,9 @@ public class Controller {
             properties.clear();
 
             try (FileReader reader = new FileReader(loadFile)){
-                char[] rawGraph = new char[1000];
+                char[] rawGraph = new char[10000];
                 if (reader.read(rawGraph) == 0 ) statusLbl.setText("Read failed: nothing in file.");
                 bindGraph(new String(rawGraph));
-                System.out.println("AFTER LOAD:");
-                DebugUtil.dump(drawPane);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -163,13 +164,10 @@ public class Controller {
 
         for (String element : elements){
             if (element.charAt(0) == 'R') {
-                System.out.println("Rectangle - " + element);
                 bindLiteral(element);
             } else if (element.charAt(0) == 'E') {
-                System.out.println("Ellipse - " + element);
                 bindClass(element);
             } else if (element.charAt(0) == 'A') {
-                System.out.println("Arrow - " + element);
                 bindProperty(element);
             }
         }
@@ -245,11 +243,21 @@ public class Controller {
 
         compiledProp.getChildren().addAll(arrow, name);
         drawPane.getChildren().add(compiledProp);
-        properties.add(new GraphProperty(name, bindClassUnder(sx, sy), bindClassUnder(ex, ey)));
+        properties.add(new GraphProperty(
+                name,
+                bindClassUnder(sx, sy),
+                bindClassUnder(ex, ey))
+        );
     }
 
     private GraphClass bindClassUnder(double x, double y) {
-        for (GraphClass klass : classes) if (klass.getBounds().contains(x, y)) return klass;
+        for (GraphClass klass : classes) {
+            Bounds classBounds = klass.getBounds();
+            Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
+
+            if (classBounds.intersects(pointBounds)) return klass;
+        }
+        LOGGER.log(Level.SEVERE, "no class was found within ("+x+", "+y+"), left unbound. ");
         return null;
     }
 
@@ -381,6 +389,7 @@ public class Controller {
                     CornerRadii.EMPTY,
                     Insets.EMPTY
             )));
+
             compiledProperty.getChildren().addAll(propertyArrow, propertyName);
             drawPane.getChildren().add(compiledProperty);
             properties.add(new GraphProperty(propertyName, sub, obj));
@@ -421,9 +430,9 @@ public class Controller {
         return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
 
-    private File showLoadFileDialog(String windowTitle){
+    private File showLoadFileDialog(){
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle(windowTitle);
+        fileChooser.setTitle("Open Graph File");
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         return fileChooser.showOpenDialog(root.getScene().getWindow());
