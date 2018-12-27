@@ -14,6 +14,10 @@
             <Button fx:id="literalBtn" maxWidth="Infinity" onMouseClicked="#literalSelectAction" text="Literal"/>
             <Separator/>
             <Button fx:id="addPrefixBtn" maxWidth="Infinity" onMouseClicked="#addPrefixAction" text="Add New Prefix" />
+            <Button fx:id="savePrefixBtn" maxWidth="Infinity" onMouseClicked="#savePrefixAction" text="Save Prefixes"/>
+            <Button fx:id="loadPrefixBtn" maxWidth="Infinity" onMouseClicked="#loadPrefixAction" text="Load Prefixes"/>
+            <Button fx:id="showPrefixBtn" maxWidth="Infinity" onMouseClicked="#showPrefixAction" text="Show Prefixes"/>
+            <Button fx:id="clearPrefixBtn" maxWidth="Infinity" onMouseClicked="#clearPrefixAction" text="Clear Prefixes"/>
             <Separator/>
             <Button fx:id="saveGraphBtn" maxWidth="Infinity" onMouseClicked="#saveGraphAction" text="Save Graph" />
             <Button fx:id="loadGraphBtn" maxWidth="Infinity" onMouseClicked="#loadGraphAction" text="Load Graph" />

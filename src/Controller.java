@@ -32,8 +32,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-// TODO: 19/12/2018 Make canvas scrollable
-// TODO: 23/12/2018 tie property sub, obj to already created class, lit rather than new one.
 public class Controller {
     enum Type { CLASS, PROPERTY, LITERAL }
 
@@ -44,6 +42,10 @@ public class Controller {
     public Button propBtn;
     public Button literalBtn;
     public Button addPrefixBtn;
+    public Button savePrefixBtn;
+    public Button loadPrefixBtn;
+    public Button showPrefixBtn;
+    public Button clearPrefixBtn;
     public Button saveGraphBtn;
     public Button loadGraphBtn;
     public Button exportTllBtn;
@@ -88,6 +90,59 @@ public class Controller {
         }
     }
 
+    @FXML protected void savePrefixAction(){
+        File saveFile = showSaveFileDialog(
+                "prefixes.txt",
+                "Save Prefixes",
+                new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt")
+        );
+        if (saveFile != null){
+            StringBuilder prefixesToSave = new StringBuilder();
+            for (String prefix : prefixes)
+                prefixesToSave.append(prefix).append("\n");
+            prefixesToSave.deleteCharAt(prefixesToSave.length() - 1);
+
+            try {
+                FileWriter writer = new FileWriter(saveFile);
+                writer.write(prefixesToSave.toString());
+                writer.flush();
+                writer.close();
+                statusLbl.setText("Prefixes saved to file. ");
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, "failed to save prefixes: ", e);
+            }
+        } else statusLbl.setText("Prefixes save cancelled. ");
+    }
+
+    @FXML protected void loadPrefixAction(){
+        File loadFile = showLoadFileDialog("Load Prefixes");
+
+        if (loadFile != null){
+            try (FileReader reader = new FileReader(loadFile)){
+                char[] rawPrefixes = new char[10000];
+                if (reader.read(rawPrefixes) == 0) {
+                    statusLbl.setText("Read failed: nothing in file.");
+                    LOGGER.warning("Nothing in prefix file. ");
+                }
+                String[] strPrefixes = new String(rawPrefixes).trim().split("\\n");
+                for (String strPrefix : strPrefixes) if (!prefixes.contains(strPrefix)) prefixes.add(strPrefix);
+                statusLbl.setText("Prefixes loaded from file. ");
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, "Loading prefixes failed: ", e);
+            }
+        } else statusLbl.setText("Prefix Load cancelled.");
+
+    }
+
+    @FXML protected void showPrefixAction() {
+        showPrefixesAlert();
+    }
+
+    @FXML protected void clearPrefixAction() {
+        prefixes.clear();
+        statusLbl.setText("Prefixes cleared. ");
+    }
+
     @FXML protected void saveGraphAction() {
         File saveFile = showSaveFileDialog("graph.gat", "Save Graph As", null);
         if (saveFile != null){
@@ -99,7 +154,7 @@ public class Controller {
                 writer.close();
                 statusLbl.setText("File saved.");
             } catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE, "failed to save graph: ", e);
             }
 
         } else statusLbl.setText("File save cancelled.");
@@ -139,7 +194,7 @@ public class Controller {
     }
 
     @FXML protected void loadGraphAction() {
-        File loadFile = showLoadFileDialog();
+        File loadFile = showLoadFileDialog("Load Graph File");
         if (loadFile != null){
             drawPane.getChildren().clear();
             prefixes.clear();
@@ -148,13 +203,15 @@ public class Controller {
 
             try (FileReader reader = new FileReader(loadFile)){
                 char[] rawGraph = new char[10000];
-                if (reader.read(rawGraph) == 0 ) statusLbl.setText("Read failed: nothing in file.");
+                if (reader.read(rawGraph) == 0 ) {
+                    statusLbl.setText("Read failed: nothing in graph file.");
+                    LOGGER.warning("Nothing in graph file.");
+                }
                 bindGraph(new String(rawGraph));
             } catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
             }
-
-        } else statusLbl.setText("File load cancelled.");
+        } else statusLbl.setText("Graph load cancelled.");
     }
 
     private void bindGraph(String graph) {
@@ -163,13 +220,9 @@ public class Controller {
                 .toArray(String[]::new);
 
         for (String element : elements){
-            if (element.charAt(0) == 'R') {
-                bindLiteral(element);
-            } else if (element.charAt(0) == 'E') {
-                bindClass(element);
-            } else if (element.charAt(0) == 'A') {
-                bindProperty(element);
-            }
+            if      (element.charAt(0) == 'R') bindLiteral(element);
+            else if (element.charAt(0) == 'E') bindClass(element);
+            else if (element.charAt(0) == 'A') bindProperty(element);
         }
     }
 
@@ -275,7 +328,7 @@ public class Controller {
                 writer.close();
                 statusLbl.setText("File saved.");
             } catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE, "failed to export to .tll: ", e);
             }
 
         } else statusLbl.setText("File save cancelled.");
@@ -294,7 +347,7 @@ public class Controller {
                 ImageIO.write(renderedImage, "png", saveFile);
                 statusLbl.setText("File saved.");
             } catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE, "failed to export to .png: ", e);
             }
         } else statusLbl.setText("Image save cancelled.");
     }
@@ -430,9 +483,9 @@ public class Controller {
         return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
 
-    private File showLoadFileDialog(){
+    private File showLoadFileDialog(String title){
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Open Graph File");
+        fileChooser.setTitle(title);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         return fileChooser.showOpenDialog(root.getScene().getWindow());
@@ -449,10 +502,10 @@ public class Controller {
     }
 
     private void showInstructionsAlert() {
-        Alert instrDialog = new Alert(Alert.AlertType.INFORMATION);
-        instrDialog.setTitle("Instructions on using Drawing Turtles");
-        instrDialog.setHeaderText(null);
-        instrDialog.setContentText(
+        Alert instrAlert = new Alert(Alert.AlertType.INFORMATION);
+        instrAlert.setTitle("Instructions on using Drawing Turtles");
+        instrAlert.setHeaderText(null);
+        instrAlert.setContentText(
                 "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
                         " add to the canvas, then click somewhere valid on the canvas. Add a name (even in .ttl synta" +
                         "x!) and the item will be created in that position. \nIn regards to the Property button, you " +
@@ -461,6 +514,19 @@ public class Controller {
                         " click the subject-object pair again. \n"
         );
 
-        instrDialog.showAndWait();
+        instrAlert.showAndWait();
+    }
+
+    private void showPrefixesAlert() {
+        StringBuilder prefixBuilder = new StringBuilder();
+        prefixes.forEach(p -> prefixBuilder.append(p).append("\n"));
+        String prefixList = prefixBuilder.toString();
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Currently added Prefixes");
+        alert.setHeaderText(null);
+        alert.setContentText("These are the prefixes that are currently in this project, apart from the basic owl, r" +
+                "df, rdfs prefixes: \n" + (prefixList.length() == 0 ? "<none>" : prefixList));
+        alert.showAndWait();
     }
 }
