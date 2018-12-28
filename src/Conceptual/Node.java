@@ -1,4 +1,4 @@
-package ConceptualElement;
+package Conceptual;
 
 import javafx.event.EventTarget;
 import javafx.geometry.BoundingBox;
@@ -10,7 +10,10 @@ import javafx.scene.text.Text;
 
 import java.util.Arrays;
 
-public class GraphClass {
+/**
+ * A java-friendly conceptual representation of the graphs Literals and Classes.
+ */
+public class Node {
 
     public enum GraphElemType {
         CLASS, LITERAL
@@ -21,13 +24,25 @@ public class GraphClass {
     private StackPane parent;
     private double x, y;
 
-    public GraphClass(Shape type, Text name){
+    /**
+     * Constructor for the reconstitution of classes after a load.
+     * @param type the shape that corresponds to the type of element - either a Ellipse (Class) or Rectangle (Literal).
+     * @param name the associated Class or Literal name.
+     */
+    public Node(Shape type, Text name){
         this.name = name.getText();
         this.type = (type instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
         this.parent = (StackPane) type.getParent();
     }
 
-    public GraphClass(EventTarget element, double x, double y){
+    /**
+     * Constructor for the creation of a new GraphClass that doesn't yet exist.
+     * Allows the property arrow to start or end at the closest edge, making it look more natural.
+     * @param element the enclosing container for the shape and text
+     * @param x the x coordinate the mouse was at when clicked.
+     * @param y the y coordinate the mouse was at when clicked.
+     */
+    public Node(EventTarget element, double x, double y){
         parent = (StackPane) element;
 
         this.name = ((Text) parent.getChildren().get(1)).getText();
@@ -57,23 +72,11 @@ public class GraphClass {
         }
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public GraphElemType getType() {
-        return type;
-    }
-
-    public double getX() {
-        return x;
-    }
-
-    public double getY() {
-        return y;
-    }
-
-    // needed as box is malformed.
+    /**
+     * For literals, the bounds of the shape are close enough to the edges of the shape. For classes, the bounding box
+     * is malformed and needs to be adjusted.
+     * @return the tightest bounds for the GraphClass.
+     */
     public Bounds getBounds(){
         if (type == GraphElemType.LITERAL){
             return parent.getBoundsInParent();
@@ -89,4 +92,12 @@ public class GraphClass {
             );
         }
     }
+
+    public String getName() { return name; }
+
+    public GraphElemType getType() { return type; }
+
+    public double getX() { return x; }
+
+    public double getY() { return y; }
 }

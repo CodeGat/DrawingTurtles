@@ -1,29 +1,40 @@
-import ConceptualElement.GraphClass;
-import ConceptualElement.GraphProperty;
+import Conceptual.Edge;
+import Conceptual.Node;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * Class that is responsible for the conversion of a visual graph into a .ttl string.
+ */
 class Converter {
-    private static ArrayList<String>        prefixes;
-    private static ArrayList<GraphClass>    classes;
-    private static ArrayList<GraphProperty> properties;
-    private static HashMap<String, String>  classStrings;
+    private static ArrayList<String> prefixes;
+    private static ArrayList<Node>   classes;
+    private static ArrayList<Edge>   properties;
+    private static HashMap<String, String> classStrings;
 
+    /**
+     * The overarching method for conversion of a graph into a string.
+     * @param prefixes the Arraylist of known prefixes.
+     * @param classes the Arraylist of visual Classes and Literals.
+     * @param properties the Arraylist of visual Properties.
+     * @return a String representation of the graph as Turtle RDF syntax.
+     */
     static String convertGraphToTtlString(
             ArrayList<String> prefixes,
-            ArrayList<GraphClass> classes,
-            ArrayList<GraphProperty> properties) {
+            ArrayList<Node> classes,
+            ArrayList<Edge> properties) {
         Converter.prefixes     = prefixes;
         Converter.classes      = classes;
         Converter.properties   = properties;
         Converter.classStrings = new HashMap<>();
 
+        // sort such that classes are parsed before literals, as literals are often appended to the class in .ttl.
         Converter.classes.sort((o1, o2) -> {
-            boolean o1c = o1.getType() == GraphClass.GraphElemType.CLASS;
-            boolean o1l = o1.getType() == GraphClass.GraphElemType.LITERAL;
-            boolean o2c = o2.getType() == GraphClass.GraphElemType.CLASS;
-            boolean o2l = o2.getType() == GraphClass.GraphElemType.LITERAL;
+            boolean o1c = o1.getType() == Node.GraphElemType.CLASS;
+            boolean o1l = o1.getType() == Node.GraphElemType.LITERAL;
+            boolean o2c = o2.getType() == Node.GraphElemType.CLASS;
+            boolean o2l = o2.getType() == Node.GraphElemType.LITERAL;
 
             if      (o1c && o2l) return -1;
             else if (o1l && o2c) return 1;
@@ -38,6 +49,11 @@ class Converter {
         return stringPrefixes + stringClasses + stringProperties;
     }
 
+    /**
+     * Conversion of prefixes into .ttl prefixes.
+     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList)}.
+     * @return the converted prefixes.
+     */
     private static String convertPrefixes() {
         StringBuilder prefixStrs = new StringBuilder();
         prefixStrs.append("@prefix rdf : <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n");
@@ -54,6 +70,11 @@ class Converter {
         return prefixStrs.toString();
     }
 
+    /**
+     * Conversion of visual properties into .ttl representation.
+     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList)}.
+     * @return the properties as a valid .tll string.
+     */
     private static String convertGProperties() {
         StringBuilder propStrs = new StringBuilder(
                 "\n##################################################\n" +
@@ -61,7 +82,7 @@ class Converter {
                 "##################################################\n\n"
         );
 
-        for (GraphProperty property : properties){
+        for (Edge property : properties){
             String name = property.getName();
             String propStr;
 
@@ -80,6 +101,11 @@ class Converter {
         return propStrs.toString();
     }
 
+    /**
+     * Comversion of visual Classes and Literals into their .ttl string equivalent.
+     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList)}.
+     * @return the converted Classes and Literals into thier .ttl equivalent.
+     */
     private static String convertGClasses() {
         StringBuilder classStrs = new StringBuilder(
                 "##################################################\n" +
@@ -87,11 +113,9 @@ class Converter {
                 "##################################################\n\n"
         );
 
-        for (GraphClass graphClass : classes){
-            String name = graphClass.getName();
-
-            if      (graphClass.getType() == GraphClass.GraphElemType.CLASS)   convertClass(name);
-            else if (graphClass.getType() == GraphClass.GraphElemType.LITERAL) convertLiteral(graphClass);
+        for (Node graphClass : classes){
+            if      (graphClass.getType() == Node.GraphElemType.CLASS)   convertClass(graphClass);
+            else if (graphClass.getType() == Node.GraphElemType.LITERAL) convertLiteral(graphClass);
         }
 
         classStrings.values().forEach(classStrs::append);
@@ -99,33 +123,47 @@ class Converter {
         return classStrs.toString();
     }
 
-    private static void convertClass(String name) {
-        if (name.contains(":")) classStrings.put(name, name + " a owl:Class .\n\n");
-        else classStrings.put(name, "<" + name + "> a owl:Class .\n\n");
+    /**
+     * Converts a Class into it's .ttl representation, and adds it to an extendable HashMap in case Literals need to be
+     *    appended.
+     * @param klass the GraphClass (Class) that will be converted.
+     */
+    private static void convertClass(Node klass) {
+        String klassName = klass.getName();
+
+        if (klassName.contains(":")) classStrings.put(klassName, klassName + " a owl:Class .\n\n");
+        else classStrings.put(klassName, "<" + klassName + "> a owl:Class .\n\n");
     }
 
-    private static void convertLiteral(GraphClass graphClass) {
-        ArrayList<GraphProperty> markRemovable = new ArrayList<>();
-        for (GraphProperty property : properties){
-            String trimClassString;
-            String key;
+    /**
+     * Converts a Literal to it's .ttl representation and appends it to the Class it is connected to.
+     * @param klass the GraphClass (Literal) that will be converted and appended.
+     */
+    private static void convertLiteral(Node klass) {
+        ArrayList<Edge> markRemovable = new ArrayList<>();
+        String className = klass.getName();
 
-            if (property.getObject().getName().equals(graphClass.getName())){
-                key = property.getSubject().getName();
+        for (Edge property : properties){
+            String trimClassString, key;
+            String subjectName = property.getSubject().getName();
+            String objectName  = property.getObject().getName();
+
+            if (objectName.equals(className)){
+                key = subjectName;
                 String classString = classStrings.get(key);
                 trimClassString = classString.substring(0, classString.length() - 3);
                 markRemovable.add(property);
-            } else if (property.getSubject().getName().equals(graphClass.getName())){
-                key = property.getObject().getName();
+            } else if (subjectName.equals(className)){
+                key = objectName;
                 String classString = classStrings.get(key);
                 trimClassString = classString.substring(0, classString.length() - 3);
                 markRemovable.add(property);
             } else continue;
 
-            String pname = property.getName();
-            String gname = graphClass.getName();
-            trimClassString += ";\n\t" + (pname.contains(":") ? pname : "<" + pname + ">") + " " +
-                    (gname.contains(":") || gname.contains("\"") ? gname : "<" + gname + ">") + " .\n\n";
+            String propName = property.getName();
+            trimClassString += ";\n\t" + (propName.contains(":") ? propName : "<" + propName + ">") + " " +
+                    (className.contains(":") || className.contains("\"") ? className : "<" + className + ">") +
+                    " .\n\n";
 
             classStrings.put(key, trimClassString);
         }

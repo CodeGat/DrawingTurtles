@@ -5,8 +5,12 @@ import javafx.beans.property.DoubleProperty;
 import javafx.scene.Group;
 import javafx.scene.shape.Line;
 
+/**
+ * A directed arrow shape for the visual graph.
+ */
 public class Arrow extends Group {
 
+    // the main line of the arrow.
     private final Line line;
 
     public Arrow() {
@@ -63,51 +67,21 @@ public class Arrow extends Group {
         updater.invalidated(null);
     }
 
-    // start/end properties
+    /**
+     * Basic getter/setter/property methods.
+     */
+    public final void setStartX(double value) { line.setStartX(value); }
+    public final void setStartY(double value) { line.setStartY(value); }
+    public final void setEndX(double value)   { line.setEndX(value); }
+    public final void setEndY(double value)   { line.setEndY(value); }
 
-    public final void setStartX(double value) {
-        line.setStartX(value);
-    }
+    public double getStartX() { return line.getStartX(); }
+    public double getStartY() { return line.getStartY(); }
+    public double getEndX()   { return line.getEndX(); }
+    public double getEndY()   { return line.getEndY(); }
 
-    private double getStartX() {
-        return line.getStartX();
-    }
-
-    private DoubleProperty startXProperty() {
-        return line.startXProperty();
-    }
-
-    public final void setStartY(double value) {
-        line.setStartY(value);
-    }
-
-    private double getStartY() {
-        return line.getStartY();
-    }
-
-    private DoubleProperty startYProperty() {
-        return line.startYProperty();
-    }
-
-    public final void setEndX(double value) {
-        line.setEndX(value);
-    }
-
-    private double getEndX() {
-        return line.getEndX();
-    }
-
-    private DoubleProperty endXProperty() { return line.endXProperty(); }
-
-    public final void setEndY(double value) { line.setEndY(value); }
-
-    private double getEndY() {
-        return line.getEndY();
-    }
-
-    private DoubleProperty endYProperty() {
-        return line.endYProperty();
-    }
-
-    public Line getLine() { return line; }
+    private DoubleProperty startXProperty() { return line.startXProperty(); }
+    private DoubleProperty startYProperty() { return line.startYProperty(); }
+    private DoubleProperty endXProperty()   { return line.endXProperty(); }
+    private DoubleProperty endYProperty()   { return line.endYProperty(); }
 }

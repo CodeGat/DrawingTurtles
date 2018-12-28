@@ -1,5 +1,5 @@
-import ConceptualElement.GraphClass;
-import ConceptualElement.GraphProperty;
+import Conceptual.Edge;
+import Conceptual.Node;
 import Graph.Arrow;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
@@ -8,7 +8,6 @@ import javafx.fxml.FXML;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -19,7 +18,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
-import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
@@ -32,52 +30,62 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * The Controller for application.fxml: takes care of actions from the application.
+ */
 public class Controller {
-    enum Type { CLASS, PROPERTY, LITERAL }
+
+    /**
+     * An enumeration of the types of graph elements.
+     */
+    enum Type {
+        CLASS, PROPERTY, LITERAL
+    }
 
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
     public BorderPane root;
-    public Button classBtn;
-    public Button propBtn;
-    public Button literalBtn;
-    public Button addPrefixBtn;
-    public Button savePrefixBtn;
-    public Button loadPrefixBtn;
-    public Button showPrefixBtn;
-    public Button clearPrefixBtn;
-    public Button saveGraphBtn;
-    public Button loadGraphBtn;
-    public Button exportTllBtn;
-    public Button exportPngBtn;
-    public Button instrBtn;
-    public Label  statusLbl;
-    public Pane   drawPane;
-    public Label  drawStatusLbl;
+    public Pane drawPane;
+    public Button classBtn, propBtn, literalBtn, addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn,
+            clearPrefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn;
+    public Label  statusLbl, drawStatusLbl;
 
     private Type selectedType = Type.CLASS;
-    private final ArrayList<String>        prefixes   = new ArrayList<>();
-    private final ArrayList<GraphProperty> properties = new ArrayList<>();
-    private final ArrayList<GraphClass>    classes    = new ArrayList<>();
+    private final ArrayList<String> prefixes   = new ArrayList<>();
+    private final ArrayList<Edge>   properties = new ArrayList<>();
+    private final ArrayList<Node>   classes    = new ArrayList<>();
 
-    private GraphClass sub;
+    private Node sub;
     private boolean srcClick = true;
 
+    /**
+     * On clicking the Class button, the application knows that the next click will create a Class.
+     */
     @FXML protected void classSelectAction() {
         drawStatusLbl.setText("Class selected");
         selectedType = Type.CLASS;
     }
 
+    /**
+     * On clicking the Property button, the application knows that the next click will make the subject of the Property.
+     */
     @FXML protected void propSelectAction()  {
         drawStatusLbl.setText("Property selected");
+        srcClick = true;
         selectedType = Type.PROPERTY;
     }
 
+    /**
+     * On clicking the Literal button, the application knows that the next click will create a Literal.
+     */
     @FXML protected void literalSelectAction() {
         drawStatusLbl.setText("Literal selected");
         selectedType = Type.LITERAL;
     }
 
+    /**
+     * On clicking the 'Add Prefix' button, adds prefixes to the arraylist of existing prefixes unless malformed.
+     */
     @FXML protected void addPrefixAction() {
         String prefixResult = showAddPrefixesDialog();
 
@@ -90,6 +98,9 @@ public class Controller {
         }
     }
 
+    /**
+     * On clicking the 'Save Prefix' button, attempts to write existing prefixes to a user-specified .txt file.
+     */
     @FXML protected void savePrefixAction(){
         File saveFile = showSaveFileDialog(
                 "prefixes.txt",
@@ -114,6 +125,9 @@ public class Controller {
         } else statusLbl.setText("Prefixes save cancelled. ");
     }
 
+    /**
+     * On clicking the 'Load Prefix' button, attempts to load prefixes from a user-specified .txt file.
+     */
     @FXML protected void loadPrefixAction(){
         File loadFile = showLoadFileDialog("Load Prefixes");
 
@@ -134,15 +148,25 @@ public class Controller {
 
     }
 
+    /**
+     * on clicking 'Show Prefixes' button, show existing prefixes in an alert.
+     */
     @FXML protected void showPrefixAction() {
         showPrefixesAlert();
     }
 
+    /**
+     * on clicking 'Clear Prefixes' button, removes existing user prefixes, excepting the base ones (owl, rdf, rdfs).
+     */
     @FXML protected void clearPrefixAction() {
         prefixes.clear();
         statusLbl.setText("Prefixes cleared. ");
     }
 
+    /**
+     * on clicking 'Save Graph' button, attempt to traverse the graph and save a bespoke serialization of the graph to
+     *   a user-specified .gat file. That's a Graph Accessor Type format, not just my name...
+     */
     @FXML protected void saveGraphAction() {
         File saveFile = showSaveFileDialog("graph.gat", "Save Graph As", null);
         if (saveFile != null){
@@ -160,11 +184,16 @@ public class Controller {
         } else statusLbl.setText("File save cancelled.");
     }
 
+    /**
+     * Traverses the graph through the children of the canvas (the drawPane), in order of creation.
+     * There is no need for recursive definitions, as the tree is a shallow one with depth at most 3.
+     * @return a bespoke string serialization of the children of the canvas (the elements of the graph).
+     */
     private String traverseCanvas() {
         StringBuilder result = new StringBuilder();
 
-        for (Node compiledElement : drawPane.getChildren()){
-            ObservableList<Node> subelements = ((StackPane) compiledElement).getChildrenUnmodifiable();
+        for (javafx.scene.Node compiledElement : drawPane.getChildren()){
+            ObservableList<javafx.scene.Node> subelements = ((StackPane) compiledElement).getChildrenUnmodifiable();
             result.append("[");
             if (subelements.get(0) instanceof Ellipse){
                 Ellipse e = (Ellipse) subelements.get(0);
@@ -181,8 +210,7 @@ public class Controller {
                 result.append(shapeInfo).append(shapeName);
             } else if (subelements.get(0) instanceof Arrow){
                 Arrow a = (Arrow) subelements.get(0);
-                Line  l = a.getLine();
-                String shapeInfo = "A" + l.getStartX() + "|" + l.getStartY() + "|" + l.getEndX() + "|" + l.getEndY();
+                String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
                 String shapeName = "=" + ((Label) subelements.get(1)).getText();
                 result.append(shapeInfo).append(shapeName);
             } else statusLbl.setText("TRAVERSAL FAILED. Berate the programmer for not generifying the traversal algorithm.");
@@ -193,6 +221,10 @@ public class Controller {
         return result.toString();
     }
 
+    /**
+     * On clicking the 'Load Graph' button, clears the canvas and attempts to deserialize the user-specified .gat file
+     *   into elements of a graph. It then binds the visual elements into meaningful java-friendly elements.
+     */
     @FXML protected void loadGraphAction() {
         File loadFile = showLoadFileDialog("Load Graph File");
         if (loadFile != null){
@@ -214,6 +246,10 @@ public class Controller {
         } else statusLbl.setText("Graph load cancelled.");
     }
 
+    /**
+     * Splits the output of the .gat file into it's respective elements and attempts to bind them.
+     * @param graph the raw .gat file data.
+     */
     private void bindGraph(String graph) {
         String[] elements = Arrays.stream(graph.split("]\\[|\\[|]"))
                 .filter(s -> !s.equals(""))
@@ -226,6 +262,11 @@ public class Controller {
         }
     }
 
+    /**
+     * Binds a literal into both a human-friendly visual element of the graph, and a java-friendly Literal GraphClass.
+     * Helper method of {@link #bindGraph(String)}.
+     * @param lit the .gat String serialization of a Literal.
+     */
     private void bindLiteral(String lit) {
         String[] litElements = lit.split("=");
         String[] litInfo = litElements[0].substring(1).split("\\|");
@@ -245,9 +286,14 @@ public class Controller {
 
         compiledLit.getChildren().addAll(rect, name);
         drawPane.getChildren().add(compiledLit);
-        classes.add(new GraphClass(rect, name));
+        classes.add(new Node(rect, name));
     }
 
+    /**
+     * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Class GraphClass.
+     * Helper Method of {@link #bindGraph(String)}.
+     * @param cls the .gat String serialization of a Class.
+     */
     private void bindClass(String cls) {
         String[] clsElements = cls.split("=");
         String[] clsInfo     = clsElements[0].substring(1).split("\\|");
@@ -269,10 +315,15 @@ public class Controller {
 
         compiledCls.getChildren().addAll(ellipse, name);
         drawPane.getChildren().add(compiledCls);
-        classes.add(new GraphClass(ellipse, name));
+        classes.add(new Node(ellipse, name));
     }
 
-    private void bindProperty(String prop) { //maybe just get parent xy?
+    /**
+     * Creates a human-friendly graph property arrow, and binds a java-friendly GraphProperty.
+     * Helper Method of {@link #bindGraph(String)}.
+     * @param prop the .gat String serialization of a Property.
+     */
+    private void bindProperty(String prop) {
         String[] propElements = prop.split("=");
         String[] propInfo     = propElements[0].substring(1).split("\\|");
         String   propName     = propElements[1];
@@ -296,15 +347,23 @@ public class Controller {
 
         compiledProp.getChildren().addAll(arrow, name);
         drawPane.getChildren().add(compiledProp);
-        properties.add(new GraphProperty(
+        properties.add(new Edge(
                 name,
                 bindClassUnder(sx, sy),
                 bindClassUnder(ex, ey))
         );
     }
 
-    private GraphClass bindClassUnder(double x, double y) {
-        for (GraphClass klass : classes) {
+    /**
+     * Ties a coordinate to the class or literal below it, used in finding the subject and object of a property given
+     *    the general start and end coordinates of the arrow.
+     * Helper Method of {@link #bindProperty(String)} and in extension {@link #bindGraph(String)}.
+     * @param x a x coordinate, given some leeway in the Bounds.
+     * @param y a y coordinate, given some leeway in the Bounds.
+     * @return the class or literal under the (x, y) coordinate, or null otherwise.
+     */
+    private Node bindClassUnder(double x, double y) {
+        for (Node klass : classes) {
             Bounds classBounds = klass.getBounds();
             Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
 
@@ -314,6 +373,9 @@ public class Controller {
         return null;
     }
 
+    /**
+     * On clicking 'Export as .ttl' button, attempt to write a graph-to-.ttl string to a user-specified .ttl file.
+     */
     @FXML protected void exportTtlAction() {
         File saveFile = showSaveFileDialog(
                 "ontology.ttl",
@@ -334,10 +396,13 @@ public class Controller {
         } else statusLbl.setText("File save cancelled.");
     }
 
+    /**
+     * On clicking "Export as .png' button, attempt to save the canvas to a user-specified .png file.
+     */
     @FXML protected void exportPngAction() {
         File saveFile = showSaveFileDialog(
                 "ontology.png",
-                "Save ConceptualElement Image As",
+                "Save Conceptual Image As",
                 new FileChooser.ExtensionFilter("png files (*.png)", "*.png")
         );
         if (saveFile != null){
@@ -352,6 +417,10 @@ public class Controller {
         } else statusLbl.setText("Image save cancelled.");
     }
 
+    /**
+     * On clicking the canvas, begin to draw the specified element to the canvas.
+     * @param mouseEvent the event that triggered the method.
+     */
     @FXML protected void addElementAction(MouseEvent mouseEvent) {
         if (mouseEvent.isStillSincePress() && selectedType == Type.CLASS){
             addClassSubaction(mouseEvent);
@@ -362,10 +431,18 @@ public class Controller {
         }
     }
 
+    /**
+     * On clicking 'Instructions' button, show the instructions...
+     */
     @FXML protected void showInstructionsAction() {
         showInstructionsAlert();
     }
 
+    /**
+     * Draw a Literal and it's user-specified name to the canvas, also creating the GraphClass representation of it.
+     * Helper Method of addElementAction(...).
+     * @param mouseEvent the click to the canvas.
+     */
     private void addLiteralSubaction(MouseEvent mouseEvent){
         StackPane compiledElement = new StackPane();
         compiledElement.setLayoutX(mouseEvent.getX());
@@ -383,9 +460,14 @@ public class Controller {
 
         compiledElement.getChildren().addAll(elementType, elementName);
         drawPane.getChildren().add(compiledElement);
-        classes.add(new GraphClass(elementType, elementName));
+        classes.add(new Node(elementType, elementName));
     }
 
+    /**
+     * Draw a Class and it's name to the canvas, and create the GraphClass representation of the element.
+     * Helper method of {@link #addElementAction(MouseEvent) Add Element} method.
+     * @param mouseEvent the click to the canvas.
+     */
     private void addClassSubaction(MouseEvent mouseEvent){
         StackPane compiledElement = new StackPane();
         compiledElement.setLayoutX(mouseEvent.getX());
@@ -405,20 +487,25 @@ public class Controller {
 
         compiledElement.getChildren().addAll(elementType, elementName);
         drawPane.getChildren().add(compiledElement);
-        classes.add(new GraphClass(elementType, elementName));
+        classes.add(new Node(elementType, elementName));
     }
 
+    /**
+     * Draws the Property arrow and it's name to the canvas, and create the GraphProperty representation of it.
+     * Helper method of {@link #addElementAction(MouseEvent) Add Element} action.
+     * @param mouseEvent either the inital click (for the subject) or the second one (for the object).
+     */
     private void addPropertySubaction(MouseEvent mouseEvent){
-        EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
+        EventTarget parent = ((javafx.scene.Node) mouseEvent.getTarget()).getParent();
         boolean isInsideElement = !(parent instanceof BorderPane);
 
         if (srcClick && isInsideElement){
-            sub = new GraphClass(parent, mouseEvent.getX(), mouseEvent.getY());
+            sub = new Node(parent, mouseEvent.getX(), mouseEvent.getY());
             srcClick = false;
             statusLbl.setText("Subject selected. Click another element for the Object.");
 
         } else if (isInsideElement) {
-            GraphClass obj = new GraphClass(parent, mouseEvent.getX(), mouseEvent.getY());
+            Node obj = new Node(parent, mouseEvent.getX(), mouseEvent.getY());
 
             StackPane compiledProperty = new StackPane();
             compiledProperty.setLayoutX(sub.getX() < obj.getX() ? sub.getX() : obj.getX());
@@ -445,7 +532,7 @@ public class Controller {
 
             compiledProperty.getChildren().addAll(propertyArrow, propertyName);
             drawPane.getChildren().add(compiledProperty);
-            properties.add(new GraphProperty(propertyName, sub, obj));
+            properties.add(new Edge(propertyName, sub, obj));
             statusLbl.setText("Property " + propertyName.getText() + " created. ");
             srcClick = true;
         } else {
@@ -454,6 +541,10 @@ public class Controller {
         }
     }
 
+    /**
+     * Creates a dialog that allows input of prefixes.
+     * @return the prefixes inputted, or null otherwise.
+     */
     private String showAddPrefixesDialog() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Add Ontology Prefixes");
@@ -463,6 +554,10 @@ public class Controller {
         return optPrefixResult.map(String::new).orElse(null);
     }
 
+    /**
+     * Creates a dialog that accepts a name of an element.
+     * @return the name inputted or null otherwise.
+     */
     private Text showNameElementDialog() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setGraphic(null);
@@ -473,6 +568,13 @@ public class Controller {
         return optDialogResult.map(Text::new).orElse(null);
     }
 
+    /**
+     * Creates a save file dialog, prompting the user to select a file to create and/or save data to.
+     * @param fileName the default filename the dialog will save the file as.
+     * @param windowTitle the title of the dialog.
+     * @param extFilter the list of extension filters, for easy access to specific file types.
+     * @return the file the user has chosen to save to, or null otherwise.
+     */
     private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
@@ -483,6 +585,11 @@ public class Controller {
         return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
 
+    /**
+     * Creates a load file dialog, which prompts the user to load from a specific file.
+     * @param title the title of the dialog.
+     * @return the file that will be loaded from.
+     */
     private File showLoadFileDialog(String title){
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);
@@ -491,6 +598,10 @@ public class Controller {
         return fileChooser.showOpenDialog(root.getScene().getWindow());
     }
 
+    /**
+     * Creates an alert that notifies the user that the specified prefix is malformed.*
+     * @param badPrefix the prefix that doesn't meet the regex criteria.
+     */
     private void showPrefixMalformedAlert(String badPrefix) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setHeaderText(null);
@@ -501,6 +612,9 @@ public class Controller {
         alert.showAndWait();
     }
 
+    /**
+     * Creates an instructional alert.
+     */
     private void showInstructionsAlert() {
         Alert instrAlert = new Alert(Alert.AlertType.INFORMATION);
         instrAlert.setTitle("Instructions on using Drawing Turtles");
@@ -517,6 +631,9 @@ public class Controller {
         instrAlert.showAndWait();
     }
 
+    /**
+     * Creates an alert that displays the current prefixes.
+     */
     private void showPrefixesAlert() {
         StringBuilder prefixBuilder = new StringBuilder();
         prefixes.forEach(p -> prefixBuilder.append(p).append("\n"));
