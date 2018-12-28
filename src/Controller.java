@@ -55,8 +55,10 @@ public class Controller {
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Node>   classes    = new ArrayList<>();
 
+    private Arrow curr_arrow;
     private Node sub;
     private boolean srcClick = true;
+    private boolean drawing = false;
 
     /**
      * On clicking the Class button, the application knows that the next click will create a Class.
@@ -422,13 +424,46 @@ public class Controller {
      * @param mouseEvent the event that triggered the method.
      */
     @FXML protected void addElementAction(MouseEvent mouseEvent) {
-        if (mouseEvent.isStillSincePress() && selectedType == Type.CLASS){
+        if (selectedType == Type.CLASS){
             addClassSubaction(mouseEvent);
-        } else if (mouseEvent.isStillSincePress() && selectedType == Type.LITERAL){
+        } else if (selectedType == Type.LITERAL){
             addLiteralSubaction(mouseEvent);
         } else if (selectedType == Type.PROPERTY) {
             addPropertySubaction(mouseEvent);
         }
+    }
+
+    private void addPropertySubaction(MouseEvent mouseEvent) {
+        if (drawing) return;
+
+        curr_arrow = new Arrow();
+        curr_arrow.setStartX(mouseEvent.getX());
+        curr_arrow.setStartY(mouseEvent.getY());
+        curr_arrow.setEndX(mouseEvent.getX());
+        curr_arrow.setEndY(mouseEvent.getY());
+        drawPane.getChildren().add(curr_arrow);
+        drawing = true;
+    }
+
+    @FXML protected void updatePropertyAction(MouseEvent mouseEvent) {
+        if (!drawing) return;
+        double newX = mouseEvent.getX();
+        double newY = mouseEvent.getY();
+
+        if (newX < 0 || newY < 0) {
+            curr_arrow.setVisible(false);
+            curr_arrow = null;
+            drawing = false;
+        } else {
+            curr_arrow.setEndX(newX);
+            curr_arrow.setEndY(newY);
+        }
+    }
+
+    @FXML protected void endPropertyAction(MouseEvent mouseEvent) {
+        if (!drawing) return;
+        curr_arrow = null;
+        drawing = false;
     }
 
     /**
@@ -490,59 +525,59 @@ public class Controller {
         classes.add(new Node(elementType, elementName));
     }
 
-    /**
-     * Draws the Property arrow and it's name to the canvas, and create the GraphProperty representation of it.
-     * Helper method of {@link #addElementAction(MouseEvent) Add Element} action.
-     * @param mouseEvent either the inital click (for the subject) or the second one (for the object).
-     */
-    private void addPropertySubaction(MouseEvent mouseEvent){
-        EventTarget parent = ((javafx.scene.Node) mouseEvent.getTarget()).getParent();
-        boolean isInsideElement = !(parent instanceof BorderPane);
-
-        if (srcClick && isInsideElement){
-            sub = new Node(parent, mouseEvent.getX(), mouseEvent.getY());
-            sub.setColour(Color.RED);
-            srcClick = false;
-            statusLbl.setText("Subject selected. Click another element for the Object.");
-
-        } else if (isInsideElement) {
-            Node obj = new Node(parent, mouseEvent.getX(), mouseEvent.getY());
-
-            StackPane compiledProperty = new StackPane();
-            compiledProperty.setLayoutX(sub.getX() < obj.getX() ? sub.getX() : obj.getX());
-            compiledProperty.setLayoutY(sub.getY() < obj.getY() ? sub.getY() : obj.getY());
-
-            Arrow propertyArrow = new Arrow();
-            propertyArrow.setStartX(sub.getX());
-            propertyArrow.setStartY(sub.getY());
-            propertyArrow.setEndX(obj.getX());
-            propertyArrow.setEndY(obj.getY());
-
-            Text propertyName0 = showNameElementDialog();
-            if (propertyName0 == null){
-                srcClick = true;
-                return;
-            }
-
-            Label propertyName = new Label(propertyName0.getText());
-            propertyName.setBackground(new Background(new BackgroundFill(
-                    Color.web("F4F4F4"),
-                    CornerRadii.EMPTY,
-                    Insets.EMPTY
-            )));
-
-            compiledProperty.getChildren().addAll(propertyArrow, propertyName);
-            drawPane.getChildren().add(compiledProperty);
-            sub.setColour(Color.BLACK);
-            properties.add(new Edge(propertyName, sub, obj));
-            statusLbl.setText("Property " + propertyName.getText() + " created. ");
-            srcClick = true;
-        } else {
-            srcClick = true;
-            sub.setColour(Color.BLACK);
-            statusLbl.setText("Property: Did not select a Class or Literal. Try again.");
-        }
-    }
+//    /**
+//     * Draws the Property arrow and it's name to the canvas, and create the GraphProperty representation of it.
+//     * Helper method of {@link #addElementAction(MouseEvent) Add Element} action.
+//     * @param mouseEvent either the inital click (for the subject) or the second one (for the object).
+//     */
+//    private void addPropertySubaction(MouseEvent mouseEvent){
+//        EventTarget parent = ((javafx.scene.Node) mouseEvent.getTarget()).getParent();
+//        boolean isInsideElement = !(parent instanceof BorderPane);
+//
+//        if (srcClick && isInsideElement){
+//            sub = new Node(parent, mouseEvent.getX(), mouseEvent.getY());
+//            sub.setColour(Color.RED);
+//            srcClick = false;
+//            statusLbl.setText("Subject selected. Click another element for the Object.");
+//
+//        } else if (isInsideElement) {
+//            Node obj = new Node(parent, mouseEvent.getX(), mouseEvent.getY());
+//
+//            StackPane compiledProperty = new StackPane();
+//            compiledProperty.setLayoutX(sub.getX() < obj.getX() ? sub.getX() : obj.getX());
+//            compiledProperty.setLayoutY(sub.getY() < obj.getY() ? sub.getY() : obj.getY());
+//
+//            Arrow propertyArrow = new Arrow();
+//            propertyArrow.setStartX(sub.getX());
+//            propertyArrow.setStartY(sub.getY());
+//            propertyArrow.setEndX(obj.getX());
+//            propertyArrow.setEndY(obj.getY());
+//
+//            Text propertyName0 = showNameElementDialog();
+//            if (propertyName0 == null){
+//                srcClick = true;
+//                return;
+//            }
+//
+//            Label propertyName = new Label(propertyName0.getText());
+//            propertyName.setBackground(new Background(new BackgroundFill(
+//                    Color.web("F4F4F4"),
+//                    CornerRadii.EMPTY,
+//                    Insets.EMPTY
+//            )));
+//
+//            compiledProperty.getChildren().addAll(propertyArrow, propertyName);
+//            drawPane.getChildren().add(compiledProperty);
+//            sub.setColour(Color.BLACK);
+//            properties.add(new Edge(propertyName, sub, obj));
+//            statusLbl.setText("Property " + propertyName.getText() + " created. ");
+//            srcClick = true;
+//        } else {
+//            srcClick = true;
+//            sub.setColour(Color.BLACK);
+//            statusLbl.setText("Property: Did not select a Class or Literal. Try again.");
+//        }
+//    }
 
     /**
      * Creates a dialog that allows input of prefixes.

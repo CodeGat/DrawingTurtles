@@ -37,6 +37,12 @@
         </ToolBar>
     </top>
    <center>
-      <Pane fx:id="drawPane" prefHeight="200.0" prefWidth="200.0" onMouseClicked="#addElementAction"/>
+      <Pane fx:id="drawPane"
+            prefHeight="200.0"
+            prefWidth="200.0"
+            onMousePressed="#addElementAction"
+            onMouseDragged="#updatePropertyAction"
+            onMouseReleased="#endPropertyAction"
+      />
    </center>
 </BorderPane>
