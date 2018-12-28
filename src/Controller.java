@@ -501,6 +501,7 @@ public class Controller {
 
         if (srcClick && isInsideElement){
             sub = new Node(parent, mouseEvent.getX(), mouseEvent.getY());
+            sub.setColour(Color.RED);
             srcClick = false;
             statusLbl.setText("Subject selected. Click another element for the Object.");
 
@@ -532,11 +533,13 @@ public class Controller {
 
             compiledProperty.getChildren().addAll(propertyArrow, propertyName);
             drawPane.getChildren().add(compiledProperty);
+            sub.setColour(Color.BLACK);
             properties.add(new Edge(propertyName, sub, obj));
             statusLbl.setText("Property " + propertyName.getText() + " created. ");
             srcClick = true;
         } else {
             srcClick = true;
+            sub.setColour(Color.BLACK);
             statusLbl.setText("Property: Did not select a Class or Literal. Try again.");
         }
     }

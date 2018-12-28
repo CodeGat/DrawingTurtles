@@ -4,6 +4,7 @@ import javafx.event.EventTarget;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
@@ -21,7 +22,7 @@ public class Node {
 
     private GraphElemType type;
     private String name;
-    private StackPane parent;
+    private StackPane container;
     private double x, y;
 
     /**
@@ -32,7 +33,7 @@ public class Node {
     public Node(Shape type, Text name){
         this.name = name.getText();
         this.type = (type instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
-        this.parent = (StackPane) type.getParent();
+        this.container = (StackPane) type.getParent();
     }
 
     /**
@@ -43,12 +44,12 @@ public class Node {
      * @param y the y coordinate the mouse was at when clicked.
      */
     public Node(EventTarget element, double x, double y){
-        parent = (StackPane) element;
+        container = (StackPane) element;
 
-        this.name = ((Text) parent.getChildren().get(1)).getText();
-        this.type = (parent.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
+        this.name = ((Text) container.getChildren().get(1)).getText();
+        this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
 
-        Bounds bounds = parent.getBoundsInParent();
+        Bounds bounds = container.getBoundsInParent();
         double distMinX = Math.abs(bounds.getMinX() - x);
         double distMaxX = Math.abs(bounds.getMaxX() - x);
         double distMinY = Math.abs(bounds.getMinY() - y);
@@ -79,9 +80,9 @@ public class Node {
      */
     public Bounds getBounds(){
         if (type == GraphElemType.LITERAL){
-            return parent.getBoundsInParent();
+            return container.getBoundsInParent();
         } else {
-            Ellipse e = (Ellipse) parent.getChildrenUnmodifiable().get(0);
+            Ellipse e = (Ellipse) container.getChildrenUnmodifiable().get(0);
             Bounds ebounds = e.getBoundsInParent();
 
             return new BoundingBox(
@@ -100,4 +101,8 @@ public class Node {
     public double getX() { return x; }
 
     public double getY() { return y; }
+
+    public void setColour(Color color){
+        ((Shape) container.getChildren().get(0)).setStroke(color);
+    }
 }
