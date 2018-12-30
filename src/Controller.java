@@ -14,6 +14,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -59,6 +61,39 @@ public class Controller {
     private boolean srcClick = true;
 
     /**
+     * Method invoked on any key press in the main application.
+     * @param keyEvent the key that invoked the method.
+     */
+    @FXML protected void keyPressedAction(KeyEvent keyEvent){
+        KeyCode key = keyEvent.getCode();
+
+        if (key == KeyCode.Q) {
+            classSelectAction();
+        } else if (key == KeyCode.W) {
+            literalSelectAction();
+        } else if (key == KeyCode.E) {
+            propSelectAction();
+        } else if (key == KeyCode.S && keyEvent.isControlDown()){
+            savePrefixAction();
+            saveGraphAction();
+        } else if (key == KeyCode.S) {
+            saveGraphAction();
+        } else if (key == KeyCode.L && keyEvent.isControlDown()){
+            loadPrefixAction();
+            loadGraphAction();
+        } else if (key == KeyCode.L) {
+            loadGraphAction();
+        } else if (key == KeyCode.P) {
+            addPrefixAction();
+        } else if (key == KeyCode.X && keyEvent.isControlDown()){
+            exportTtlAction();
+            exportPngAction();
+        } else if (key == KeyCode.X){
+            exportTtlAction();
+        }
+    }
+
+    /**
      * On clicking the Class button, the application knows that the next click will create a Class.
      */
     @FXML protected void classSelectAction() {
@@ -101,13 +136,13 @@ public class Controller {
     /**
      * On clicking the 'Save Prefix' button, attempts to write existing prefixes to a user-specified .txt file.
      */
-    @FXML protected void savePrefixAction(){
+    @FXML protected void savePrefixAction() {
         File saveFile = showSaveFileDialog(
                 "prefixes.txt",
                 "Save Prefixes",
                 new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt")
         );
-        if (saveFile != null){
+        if (saveFile != null && prefixes.size() != 0) {
             StringBuilder prefixesToSave = new StringBuilder();
             for (String prefix : prefixes)
                 prefixesToSave.append(prefix).append("\n");
