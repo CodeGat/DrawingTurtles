@@ -1,5 +1,5 @@
 import Conceptual.Edge;
-import Conceptual.Node;
+import Conceptual.Vertex;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,7 +9,7 @@ import java.util.HashMap;
  */
 class Converter {
     private static ArrayList<String> prefixes;
-    private static ArrayList<Node>   classes;
+    private static ArrayList<Vertex>   classes;
     private static ArrayList<Edge>   properties;
     private static HashMap<String, String> classStrings;
 
@@ -22,7 +22,7 @@ class Converter {
      */
     static String convertGraphToTtlString(
             ArrayList<String> prefixes,
-            ArrayList<Node> classes,
+            ArrayList<Vertex> classes,
             ArrayList<Edge> properties) {
         Converter.prefixes     = prefixes;
         Converter.classes      = classes;
@@ -31,10 +31,10 @@ class Converter {
 
         // sort such that classes are parsed before literals, as literals are often appended to the class in .ttl.
         Converter.classes.sort((o1, o2) -> {
-            boolean o1c = o1.getType() == Node.GraphElemType.CLASS;
-            boolean o1l = o1.getType() == Node.GraphElemType.LITERAL;
-            boolean o2c = o2.getType() == Node.GraphElemType.CLASS;
-            boolean o2l = o2.getType() == Node.GraphElemType.LITERAL;
+            boolean o1c = o1.getType() == Vertex.GraphElemType.CLASS;
+            boolean o1l = o1.getType() == Vertex.GraphElemType.LITERAL;
+            boolean o2c = o2.getType() == Vertex.GraphElemType.CLASS;
+            boolean o2l = o2.getType() == Vertex.GraphElemType.LITERAL;
 
             if      (o1c && o2l) return -1;
             else if (o1l && o2c) return 1;
@@ -113,9 +113,9 @@ class Converter {
                 "##################################################\n\n"
         );
 
-        for (Node graphClass : classes){
-            if      (graphClass.getType() == Node.GraphElemType.CLASS)   convertClass(graphClass);
-            else if (graphClass.getType() == Node.GraphElemType.LITERAL) convertLiteral(graphClass);
+        for (Vertex graphClass : classes){
+            if      (graphClass.getType() == Vertex.GraphElemType.CLASS)   convertClass(graphClass);
+            else if (graphClass.getType() == Vertex.GraphElemType.LITERAL) convertLiteral(graphClass);
         }
 
         classStrings.values().forEach(classStrs::append);
@@ -128,7 +128,7 @@ class Converter {
      *    appended.
      * @param klass the GraphClass (Class) that will be converted.
      */
-    private static void convertClass(Node klass) {
+    private static void convertClass(Vertex klass) {
         String klassName = klass.getName();
 
         if (klassName.contains(":")) classStrings.put(klassName, klassName + " a owl:Class .\n\n");
@@ -139,7 +139,7 @@ class Converter {
      * Converts a Literal to it's .ttl representation and appends it to the Class it is connected to.
      * @param klass the GraphClass (Literal) that will be converted and appended.
      */
-    private static void convertLiteral(Node klass) {
+    private static void convertLiteral(Vertex klass) {
         ArrayList<Edge> markRemovable = new ArrayList<>();
         String className = klass.getName();
 
