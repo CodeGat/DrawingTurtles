@@ -302,13 +302,13 @@ public class Controller {
             else if (element.charAt(0) == 'G') bindCanvas(element);
         }
     }
-    
+
     private void bindCanvas(String size) {
         String[] canvasSize = size.split("[Gx]");
         double width = Double.valueOf(canvasSize[1]);
         double height = Double.valueOf(canvasSize[2]);
 
-        drawPane.setMinSize(width, height);
+        drawPane.setPrefSize(width, height);
     }
 
     /**
