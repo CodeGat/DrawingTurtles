@@ -58,7 +58,7 @@ public class Controller {
     private final ArrayList<Vertex>   classes    = new ArrayList<>();
 
     private Arrow arrow;
-    private Vertex sub, obj;
+    private Vertex sub;
     private boolean srcClick = true;
 
     /**
@@ -430,19 +430,27 @@ public class Controller {
         } else if (selectedType == Type.LITERAL){
             addLiteralSubaction(mouseEvent);
         } else if (selectedType == Type.PROPERTY && srcClick) {
-            addSourcePropertyAction(mouseEvent);
+            addSubjectOfProperty(mouseEvent);
         } else if (selectedType == Type.PROPERTY){
-            addTargetPropertyAction(mouseEvent);
+            addObjectOfProperty(mouseEvent);
         }
     }
 
+    /**
+     * Keeps the arrow in line with the mouse as the user clicks on the target.
+     * @param mouseEvent the event that triggered the method.
+     */
     @FXML protected void moveArrowAction(MouseEvent mouseEvent) {
         if (arrow == null) return;
-        arrow.setEndX(mouseEvent.getX() - 1);
-        arrow.setEndY(mouseEvent.getY() - 1);
+        arrow.setEndX(mouseEvent.getX());
+        arrow.setEndY(mouseEvent.getY());
     }
 
-    private void addTargetPropertyAction(MouseEvent mouseEvent) {
+    /**
+     * Defines the Object, or range, of the property, and creates the association between the Subject and Object.
+     * @param mouseEvent the second click on the canvas when 'Property' is selected.
+     */
+    private void addObjectOfProperty(MouseEvent mouseEvent) {
         EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
         boolean isInsideElement = !(parent.getClass().equals(BorderPane.class));
 
@@ -452,20 +460,19 @@ public class Controller {
             return;
         }
 
+        Vertex obj;
         try {
             obj = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
         } catch (OutsideElementException e){
             LOGGER.warning("Outside Element: " + mouseEvent.toString());
             sub = null;
-            obj = null;
             arrow = null;
             srcClick = true;
             return;
         }
 
-        arrow.setVisible(true);
-        arrow.setEndX(mouseEvent.getX());
-        arrow.setEndY(mouseEvent.getY());
+        arrow.setEndX(obj.getX());
+        arrow.setEndY(obj.getY());
 
         StackPane compiledProperty = new StackPane();
         compiledProperty.setLayoutX(sub.getX() < obj.getX() ? sub.getX() : obj.getX());
@@ -489,12 +496,15 @@ public class Controller {
         properties.add(new Edge(propertyName, sub, obj));
         statusLbl.setText("Property " + propertyName.getText() + " created. ");
         sub = null;
-        obj = null;
         arrow = null;
         srcClick = true;
     }
 
-    private void addSourcePropertyAction(MouseEvent mouseEvent) {
+    /**
+     * Defines the Subject, or domain, of the property.
+     * @param mouseEvent the first click on the canvas when .
+     */
+    private void addSubjectOfProperty(MouseEvent mouseEvent) {
         EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
         boolean isInsideElement = !(parent.getClass().equals(BorderPane.class));
 
@@ -509,6 +519,7 @@ public class Controller {
         }
 
         arrow = new Arrow();
+        arrow.setMouseTransparent(true);
         arrow.setStartX(sub.getX());
         arrow.setStartY(sub.getY());
         arrow.setEndX(sub.getX());
@@ -576,71 +587,6 @@ public class Controller {
         compiledElement.getChildren().addAll(elementType, elementName);
         drawPane.getChildren().add(compiledElement);
         classes.add(new Vertex(elementType, elementName));
-    }
-
-    /**
-     * Draws the Property arrow and it's name to the canvas, and create the GraphProperty representation of it.
-     * Helper method of {@link #addElementAction(MouseEvent) Add Element} action.
-     * @param mouseEvent either the inital click (for the subject) or the second one (for the object).
-     */
-    private void addPropertySubaction(MouseEvent mouseEvent){
-        EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
-        boolean isInsideElement = !(parent instanceof BorderPane);
-
-        if (srcClick && isInsideElement){
-            try {
-                sub = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
-            } catch (OutsideElementException e) {
-                return;
-            }
-            sub.setColour(Color.RED);
-            srcClick = false;
-            statusLbl.setText("Subject selected. Click another element for the Object.");
-
-        } else if (isInsideElement) {
-            try {
-                obj = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
-            } catch (OutsideElementException e) {
-                srcClick = true;
-                sub = null;
-
-                return;
-            }
-
-            StackPane compiledProperty = new StackPane();
-            compiledProperty.setLayoutX(sub.getX() < obj.getX() ? sub.getX() : obj.getX());
-            compiledProperty.setLayoutY(sub.getY() < obj.getY() ? sub.getY() : obj.getY());
-
-            Arrow propertyArrow = new Arrow();
-            propertyArrow.setStartX(sub.getX());
-            propertyArrow.setStartY(sub.getY());
-            propertyArrow.setEndX(obj.getX());
-            propertyArrow.setEndY(obj.getY());
-
-            Text propertyName0 = showNameElementDialog();
-            if (propertyName0 == null){
-                srcClick = true;
-                return;
-            }
-
-            Label propertyName = new Label(propertyName0.getText());
-            propertyName.setBackground(new Background(new BackgroundFill(
-                    Color.web("F4F4F4"),
-                    CornerRadii.EMPTY,
-                    Insets.EMPTY
-            )));
-
-            compiledProperty.getChildren().addAll(propertyArrow, propertyName);
-            drawPane.getChildren().add(compiledProperty);
-            sub.setColour(Color.BLACK);
-            properties.add(new Edge(propertyName, sub, obj));
-            statusLbl.setText("Property " + propertyName.getText() + " created. ");
-            srcClick = true;
-        } else {
-            srcClick = true;
-            sub.setColour(Color.BLACK);
-            statusLbl.setText("Property: Did not select a Class or Literal. Try again.");
-        }
     }
 
     /**
