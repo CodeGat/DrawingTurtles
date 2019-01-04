@@ -452,22 +452,13 @@ public class Controller {
      */
     private void addObjectOfProperty(MouseEvent mouseEvent) {
         EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
-        boolean isInsideElement = !(parent.getClass().equals(BorderPane.class));
-
-        if (!isInsideElement){
-            drawPane.getChildren().remove(arrow);
-            sub = null;
-            arrow = null;
-            srcClick = true;
-            statusLbl.setText("Outside any class or literal, property creation cancelled. ");
-            return;
-        }
-
         Vertex obj;
+
         try {
             obj = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
         } catch (OutsideElementException e){
-            LOGGER.warning("Outside Element: " + mouseEvent.toString());
+            LOGGER.info("Outside Element: " + mouseEvent.toString());
+            statusLbl.setText("Outside any class or literal, property creation cancelled. ");
             drawPane.getChildren().remove(arrow);
             sub = null;
             arrow = null;
@@ -514,9 +505,6 @@ public class Controller {
      */
     private void addSubjectOfProperty(MouseEvent mouseEvent) {
         EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
-        boolean isInsideElement = !(parent.getClass().equals(BorderPane.class));
-
-        if (!isInsideElement) return;
 
         try {
             sub = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
