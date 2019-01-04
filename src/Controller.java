@@ -455,8 +455,11 @@ public class Controller {
         boolean isInsideElement = !(parent.getClass().equals(BorderPane.class));
 
         if (!isInsideElement){
+            drawPane.getChildren().remove(arrow);
             sub = null;
             arrow = null;
+            srcClick = true;
+            statusLbl.setText("Outside any class or literal, property creation cancelled. ");
             return;
         }
 
@@ -465,6 +468,7 @@ public class Controller {
             obj = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
         } catch (OutsideElementException e){
             LOGGER.warning("Outside Element: " + mouseEvent.toString());
+            drawPane.getChildren().remove(arrow);
             sub = null;
             arrow = null;
             srcClick = true;
@@ -480,6 +484,10 @@ public class Controller {
 
         Text propertyName0 = showNameElementDialog();
         if (propertyName0 == null){
+            drawPane.getChildren().remove(arrow);
+            statusLbl.setText("Property creation cancelled. ");
+            sub = null;
+            arrow = null;
             srcClick = true;
             return;
         }
@@ -524,10 +532,10 @@ public class Controller {
         arrow.setStartY(sub.getY());
         arrow.setEndX(sub.getX());
         arrow.setEndY(sub.getY());
+
         drawPane.getChildren().add(arrow);
         srcClick = false;
         statusLbl.setText("Subject selected. Click another element for the Object.");
-
     }
 
     /**
