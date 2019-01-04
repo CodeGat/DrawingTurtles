@@ -221,12 +221,16 @@ public class Controller {
     }
 
     /**
-     * Traverses the graph through the children of the canvas (the drawPane), in order of creation.
+     * Traverses the graph through the children of the canvas (the drawPane), in order of creation, and gives the
+     *    canvas size.
      * There is no need for recursive definitions, as the tree is a shallow one with depth at most 3.
      * @return a bespoke string serialization of the children of the canvas (the elements of the graph).
      */
     private String traverseCanvas() {
         StringBuilder result = new StringBuilder();
+
+        String canvasSize = "G" + drawPane.getWidth() + "x" + drawPane.getHeight();
+        result.append(canvasSize);
 
         for (Node compiledElement : drawPane.getChildren()){
             ObservableList<Node> subelements = ((StackPane) compiledElement).getChildrenUnmodifiable();
@@ -249,7 +253,7 @@ public class Controller {
                 String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
                 String shapeName = "=" + ((Label) subelements.get(1)).getText();
                 result.append(shapeInfo).append(shapeName);
-            } else statusLbl.setText("TRAVERSAL FAILED. Berate the programmer for not generifying the traversal algorithm.");
+            } else statusLbl.setText("TRAVERSAL FAILED. Berate the programmer for not generifying the algorithm.");
 
             result.append("]");
         }
@@ -295,7 +299,16 @@ public class Controller {
             if      (element.charAt(0) == 'R') bindLiteral(element);
             else if (element.charAt(0) == 'E') bindClass(element);
             else if (element.charAt(0) == 'A') bindProperty(element);
+            else if (element.charAt(0) == 'G') bindCanvas(element);
         }
+    }
+    
+    private void bindCanvas(String size) {
+        String[] canvasSize = size.split("[Gx]");
+        double width = Double.valueOf(canvasSize[1]);
+        double height = Double.valueOf(canvasSize[2]);
+
+        drawPane.setMinSize(width, height);
     }
 
     /**
@@ -613,13 +626,15 @@ public class Controller {
      * @param y y coordinate to check if we need to extend the height of the canvas.
      */
     private void resizeEdgeOfCanvas(double x, double y) {
-        if (x > drawPane.getMinWidth() - 100 && y > drawPane.getMinHeight() - 100) {
-            drawPane.setPrefWidth(drawPane.getWidth() + 300);
-            drawPane.setPrefHeight(drawPane.getHeight() + 300);
-        } else if (x > drawPane.getMinWidth() - 100) {
-            drawPane.setPrefWidth(drawPane.getWidth() + 300);
-        } else if (x > drawPane.getMinHeight() - 100) {
-            drawPane.setPrefHeight(drawPane.getHeight() + 300);
+        double height = drawPane.getHeight();
+        double width = drawPane.getWidth();
+
+        if (x > width - 150 && y > height - 150) {
+            drawPane.setPrefSize(width + 300, height + 300);
+        } else if (x > width - 150) {
+            drawPane.setPrefWidth(width + 300);
+        } else if (y > height - 150) {
+            drawPane.setPrefHeight(height + 300);
         }
     }
 

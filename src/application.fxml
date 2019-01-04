@@ -40,7 +40,7 @@
     </top>
     <center>
         <ScrollPane fx:id="scrollPane" vbarPolicy="ALWAYS" hbarPolicy="ALWAYS">
-            <Pane fx:id="drawPane" prefHeight="1500" prefWidth="1500"
+            <Pane fx:id="drawPane" prefHeight="1000" prefWidth="1000"
                   onMousePressed="#addElementAction"
                   onMouseMoved="#moveArrowAction"
             />
