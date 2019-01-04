@@ -3,9 +3,11 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.text.Text?>
 <BorderPane fx:id="root"
             xmlns="http://javafx.com/javafx/8.0.172-ea"
             xmlns:fx="http://javafx.com/fxml/1"
+            onKeyPressed="#keyPressedAction"
             fx:controller="Controller">
     <left>
         <ToolBar orientation="VERTICAL">
@@ -13,10 +15,10 @@
             <Button fx:id="propBtn"    maxWidth="Infinity" onMouseClicked="#propSelectAction"    text="Property" />
             <Button fx:id="literalBtn" maxWidth="Infinity" onMouseClicked="#literalSelectAction" text="Literal"/>
             <Separator/>
-            <Button fx:id="addPrefixBtn" maxWidth="Infinity" onMouseClicked="#addPrefixAction" text="Add New Prefix" />
-            <Button fx:id="savePrefixBtn" maxWidth="Infinity" onMouseClicked="#savePrefixAction" text="Save Prefixes"/>
-            <Button fx:id="loadPrefixBtn" maxWidth="Infinity" onMouseClicked="#loadPrefixAction" text="Load Prefixes"/>
-            <Button fx:id="showPrefixBtn" maxWidth="Infinity" onMouseClicked="#showPrefixAction" text="Show Prefixes"/>
+            <Button fx:id="addPrefixBtn"   maxWidth="Infinity" onMouseClicked="#addPrefixAction"   text="Add New Prefix" />
+            <Button fx:id="savePrefixBtn"  maxWidth="Infinity" onMouseClicked="#savePrefixAction"  text="Save Prefixes"/>
+            <Button fx:id="loadPrefixBtn"  maxWidth="Infinity" onMouseClicked="#loadPrefixAction"  text="Load Prefixes"/>
+            <Button fx:id="showPrefixBtn"  maxWidth="Infinity" onMouseClicked="#showPrefixAction"  text="Show Prefixes"/>
             <Button fx:id="clearPrefixBtn" maxWidth="Infinity" onMouseClicked="#clearPrefixAction" text="Clear Prefixes"/>
             <Separator/>
             <Button fx:id="saveGraphBtn" maxWidth="Infinity" onMouseClicked="#saveGraphAction" text="Save Graph" />
@@ -36,11 +38,15 @@
             <Label fx:id="statusLbl" />
         </ToolBar>
     </top>
-   <center>
-      <Pane fx:id="drawPane" prefHeight="200.0"
-            prefWidth="200.0"
-            onMousePressed="#addElementAction"
-            onMouseMoved="#moveArrowAction"
-      />
-   </center>
+    <center>
+        <Pane fx:id="drawPane" prefHeight="200.0" prefWidth="200.0"
+              onMousePressed="#addElementAction"
+              onMouseMoved="#moveArrowAction"
+        />
+    </center>
+    <bottom>
+        <ToolBar>
+            <Text text="[Q]-Select Class [W]-Select Literal [E]-Select Property [P]-Add Prefix [S/Ctrl+S]-Save Graph/All [L/Ctrl+L]-Load Graph/All [X/Ctrl+X] Export .tll/All" />
+        </ToolBar>
+    </bottom>
 </BorderPane>
