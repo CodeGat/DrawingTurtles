@@ -58,9 +58,8 @@ public class Controller {
     private final ArrayList<Vertex>   classes    = new ArrayList<>();
 
     private Arrow arrow;
-    private Vertex sub;
+    private Vertex sub, obj;
     private boolean srcClick = true;
-    private boolean drawing = false;
 
     /**
      * On clicking the Class button, the application knows that the next click will create a Class.
@@ -430,67 +429,41 @@ public class Controller {
             addClassSubaction(mouseEvent);
         } else if (selectedType == Type.LITERAL){
             addLiteralSubaction(mouseEvent);
-        } else if (selectedType == Type.PROPERTY) {
-            startPropertyAction(mouseEvent);
-//            addPropertySubaction(mouseEvent);
+        } else if (selectedType == Type.PROPERTY && srcClick) {
+            addSourcePropertyAction(mouseEvent);
+        } else if (selectedType == Type.PROPERTY){
+            addTargetPropertyAction(mouseEvent);
         }
     }
 
-    // TODO: 30/12/2018 update to edge from beginning, otherwise will be off when arrow completed.
-    private void startPropertyAction(MouseEvent mouseEvent) {
-        System.out.println("STR In " + mouseEvent.getTarget() + " at " + mouseEvent.getX() + ", " + mouseEvent.getY());
+    @FXML protected void moveArrowAction(MouseEvent mouseEvent) {
+        if (arrow == null) return;
+        arrow.setEndX(mouseEvent.getX() - 1);
+        arrow.setEndY(mouseEvent.getY() - 1);
+    }
+
+    private void addTargetPropertyAction(MouseEvent mouseEvent) {
         EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
         boolean isInsideElement = !(parent.getClass().equals(BorderPane.class));
 
-        if (drawing || !isInsideElement) return;
-
-        try {
-            sub = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
-        } catch (OutsideElementException e) {
-            return;
-        }
-
-        arrow = new Arrow();
-        arrow.setStartX(sub.getX());
-        arrow.setStartY(sub.getY());
-        arrow.setEndX(sub.getX());
-        arrow.setEndY(sub.getY());
-        drawPane.getChildren().add(arrow);
-        drawing = true;
-    }
-
-    @FXML protected void updatePropertyAction(MouseEvent mouseEvent) {
-        if (!drawing) {
+        if (!isInsideElement){
             sub = null;
             arrow = null;
             return;
         }
 
-        arrow.setEndX(mouseEvent.getX());
-        arrow.setEndY(mouseEvent.getY());
-    }
-
-    // TODO: 30/12/2018 fix controller methods for drag and drop
-    @FXML protected void endPropertyAction(MouseEvent mouseEvent) {
-        System.out.println("END In " + mouseEvent.getTarget() + " at " + mouseEvent.getX() + ", " + mouseEvent.getY());
-        EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
-        boolean isInsideElement = !(parent.getClass().equals(BorderPane.class));
-
-        if (!drawing || !isInsideElement) {
-            arrow = null;
-            sub = null;
-            return;
-        }
-
-        Vertex obj;
         try {
             obj = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
-        } catch (OutsideElementException e) {
-            drawing = false;
+        } catch (OutsideElementException e){
+            LOGGER.warning("Outside Element: " + mouseEvent.toString());
             sub = null;
+            obj = null;
+            arrow = null;
+            srcClick = true;
             return;
         }
 
+        arrow.setVisible(true);
         arrow.setEndX(mouseEvent.getX());
         arrow.setEndY(mouseEvent.getY());
 
@@ -513,11 +486,37 @@ public class Controller {
 
         compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
-        sub.setColour(Color.BLACK);
         properties.add(new Edge(propertyName, sub, obj));
         statusLbl.setText("Property " + propertyName.getText() + " created. ");
+        sub = null;
+        obj = null;
+        arrow = null;
+        srcClick = true;
+    }
 
-        drawing = false;
+    private void addSourcePropertyAction(MouseEvent mouseEvent) {
+        EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
+        boolean isInsideElement = !(parent.getClass().equals(BorderPane.class));
+
+        if (!isInsideElement) return;
+
+        try {
+            sub = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
+        } catch (OutsideElementException e){
+            LOGGER.warning("Outside Element: " + mouseEvent.toString());
+            sub = null;
+            return;
+        }
+
+        arrow = new Arrow();
+        arrow.setStartX(sub.getX());
+        arrow.setStartY(sub.getY());
+        arrow.setEndX(sub.getX());
+        arrow.setEndY(sub.getY());
+        drawPane.getChildren().add(arrow);
+        srcClick = false;
+        statusLbl.setText("Subject selected. Click another element for the Object.");
+
     }
 
     /**
@@ -599,7 +598,6 @@ public class Controller {
             statusLbl.setText("Subject selected. Click another element for the Object.");
 
         } else if (isInsideElement) {
-            Vertex obj;
             try {
                 obj = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
             } catch (OutsideElementException e) {
