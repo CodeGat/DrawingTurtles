@@ -7,8 +7,8 @@ import javafx.scene.control.Label;
  */
 public class Edge {
     private final String name;
-    private final Node subject;
-    private final Node object;
+    private final Vertex subject;
+    private final Vertex object;
 
     /**
      * A simple constructor for the conceptual property.
@@ -16,7 +16,7 @@ public class Edge {
      * @param subject the tail of the property arrow.
      * @param object the head of the property arrow.
      */
-    public Edge(Label name, Node subject, Node object){
+    public Edge(Label name, Vertex subject, Vertex object){
         this.name = name.getText();
         this.subject = subject;
         this.object = object;
@@ -24,8 +24,8 @@ public class Edge {
 
     public String getName() { return name; }
 
-    public Node getObject() { return object; }
+    public Vertex getObject() { return object; }
 
-    public Node getSubject() { return subject; }
+    public Vertex getSubject() { return subject; }
 }
 

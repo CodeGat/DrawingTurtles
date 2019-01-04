@@ -14,7 +14,7 @@ import java.util.Arrays;
 /**
  * A java-friendly conceptual representation of the graphs Literals and Classes.
  */
-public class Node {
+public class Vertex {
 
     public enum GraphElemType {
         CLASS, LITERAL
@@ -30,7 +30,7 @@ public class Node {
      * @param type the shape that corresponds to the type of element - either a Ellipse (Class) or Rectangle (Literal).
      * @param name the associated Class or Literal name.
      */
-    public Node(Shape type, Text name){
+    public Vertex(Shape type, Text name){
         this.name = name.getText();
         this.type = (type instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
         this.container = (StackPane) type.getParent();
@@ -43,8 +43,13 @@ public class Node {
      * @param x the x coordinate the mouse was at when clicked.
      * @param y the y coordinate the mouse was at when clicked.
      */
-    public Node(EventTarget element, double x, double y){
-        container = (StackPane) element;
+    public Vertex(EventTarget element, double x, double y) throws OutsideElementException {
+
+        try {
+            container = (StackPane) element;
+        } catch (ClassCastException e) {
+            throw new OutsideElementException();
+        }
 
         this.name = ((Text) container.getChildren().get(1)).getText();
         this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
