@@ -11,10 +11,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -50,6 +47,7 @@ public class Controller {
 
     public BorderPane root;
     public Pane drawPane;
+    public ScrollPane scrollPane;
     public Button classBtn, propBtn, literalBtn, addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn,
             clearPrefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn;
     public Label  statusLbl, drawStatusLbl;
@@ -57,7 +55,7 @@ public class Controller {
     private Type selectedType = Type.CLASS;
     private final ArrayList<String> prefixes   = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
-    private final ArrayList<Vertex>   classes    = new ArrayList<>();
+    private final ArrayList<Vertex> classes    = new ArrayList<>();
 
     private Arrow arrow;
     private Vertex sub;
@@ -309,15 +307,22 @@ public class Controller {
         String[] litElements = lit.split("=");
         String[] litInfo = litElements[0].substring(1).split("\\|");
         String   litName = litElements[1];
+        double   x = Double.valueOf(litInfo[0]);
+        double   y = Double.valueOf(litInfo[1]);
+        double   w = Double.valueOf(litInfo[2]);
+        double   h = Double.valueOf(litInfo[3]);
+        Color    col = Color.web(litInfo[4]);
+
+        resizeEdgeOfCanvas(x, y);
 
         StackPane compiledLit = new StackPane();
-        compiledLit.setLayoutX(Double.valueOf(litInfo[0]));
-        compiledLit.setLayoutY(Double.valueOf(litInfo[1]));
+        compiledLit.setLayoutX(x);
+        compiledLit.setLayoutY(y);
 
         Rectangle rect = new Rectangle();
-        rect.setWidth(Double.valueOf(litInfo[2]));
-        rect.setHeight(Double.valueOf(litInfo[3]));
-        rect.setFill(Color.web(litInfo[4]));
+        rect.setWidth(w);
+        rect.setHeight(h);
+        rect.setFill(col);
         rect.setStroke(Color.BLACK);
 
         Text name = new Text(litName);
@@ -336,17 +341,24 @@ public class Controller {
         String[] clsElements = cls.split("=");
         String[] clsInfo     = clsElements[0].substring(1).split("\\|");
         String   clsName     = clsElements[1];
+        double   x = Double.valueOf(clsInfo[0]);
+        double   y = Double.valueOf(clsInfo[1]);
+        double   rx = Double.valueOf(clsInfo[2]);
+        double   ry = Double.valueOf(clsInfo[3]);
+        Color    col = Color.web(clsInfo[4]);
+
+        resizeEdgeOfCanvas(x, y);
 
         StackPane compiledCls = new StackPane();
-        compiledCls.setLayoutX(Double.valueOf(clsInfo[0]));
-        compiledCls.setLayoutY(Double.valueOf(clsInfo[1]));
+        compiledCls.setLayoutX(x);
+        compiledCls.setLayoutY(y);
 
         Ellipse ellipse = new Ellipse();
-        ellipse.setCenterX(Double.valueOf(clsInfo[0]));
-        ellipse.setCenterY(Double.valueOf(clsInfo[1]));
-        ellipse.setRadiusX(Double.valueOf(clsInfo[2]));
-        ellipse.setRadiusY(Double.valueOf(clsInfo[3]));
-        ellipse.setFill(Color.web(clsInfo[4]));
+        ellipse.setCenterX(x);
+        ellipse.setCenterY(y);
+        ellipse.setRadiusX(rx);
+        ellipse.setRadiusY(ry);
+        ellipse.setFill(col);
         ellipse.setStroke(Color.BLACK);
 
         Text name = new Text(clsName);
@@ -574,6 +586,8 @@ public class Controller {
      * @param mouseEvent the click to the canvas.
      */
     private void addLiteralSubaction(MouseEvent mouseEvent){
+        resizeEdgeOfCanvas(mouseEvent.getX(), mouseEvent.getY());
+
         StackPane compiledElement = new StackPane();
         compiledElement.setLayoutX(mouseEvent.getX());
         compiledElement.setLayoutY(mouseEvent.getY());
@@ -594,11 +608,29 @@ public class Controller {
     }
 
     /**
+     * Extend the canvas width and height if any new element gets to close to the bounds of the drawPane canvas.
+     * @param x x coordinate to check if we need to extend the width of the canvas.
+     * @param y y coordinate to check if we need to extend the height of the canvas.
+     */
+    private void resizeEdgeOfCanvas(double x, double y) {
+        if (x > drawPane.getMinWidth() - 100 && y > drawPane.getMinHeight() - 100) {
+            drawPane.setPrefWidth(drawPane.getWidth() + 300);
+            drawPane.setPrefHeight(drawPane.getHeight() + 300);
+        } else if (x > drawPane.getMinWidth() - 100) {
+            drawPane.setPrefWidth(drawPane.getWidth() + 300);
+        } else if (x > drawPane.getMinHeight() - 100) {
+            drawPane.setPrefHeight(drawPane.getHeight() + 300);
+        }
+    }
+
+    /**
      * Draw a Class and it's name to the canvas, and create the GraphClass representation of the element.
      * Helper method of {@link #addElementAction(MouseEvent) Add Element} method.
      * @param mouseEvent the click to the canvas.
      */
     private void addClassSubaction(MouseEvent mouseEvent){
+        resizeEdgeOfCanvas(mouseEvent.getX(), mouseEvent.getY());
+
         StackPane compiledElement = new StackPane();
         compiledElement.setLayoutX(mouseEvent.getX());
         compiledElement.setLayoutY(mouseEvent.getY());
