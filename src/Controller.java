@@ -308,6 +308,7 @@ public class Controller {
         double width = Double.valueOf(canvasSize[1]);
         double height = Double.valueOf(canvasSize[2]);
 
+        drawPane.setMinSize(width, height);
         drawPane.setPrefSize(width, height);
     }
 
@@ -630,11 +631,11 @@ public class Controller {
         double width = drawPane.getWidth();
 
         if (x > width - 150 && y > height - 150) {
-            drawPane.setPrefSize(width + 300, height + 300);
+            drawPane.setPrefSize(x + 300, y + 300);
         } else if (x > width - 150) {
-            drawPane.setPrefWidth(width + 300);
+            drawPane.setPrefWidth(x + 300);
         } else if (y > height - 150) {
-            drawPane.setPrefHeight(height + 300);
+            drawPane.setPrefHeight(y + 300);
         }
     }
 
