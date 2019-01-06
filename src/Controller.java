@@ -628,7 +628,7 @@ public class Controller {
      */
     private void resizeEdgeOfCanvas(double x, double y) {
         double height = drawPane.getHeight();
-        double width = drawPane.getWidth();
+        double width  = drawPane.getWidth();
 
         if (x > width - 150 && y > height - 150) {
             drawPane.setPrefSize(x + 300, y + 300);
@@ -748,11 +748,12 @@ public class Controller {
         instrAlert.setHeaderText(null);
         instrAlert.setContentText(
                 "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
-                        " add to the canvas, then click somewhere valid on the canvas. Add a name (even in .ttl synta" +
+                        " add to the canvas, then click somewhere on the canvas. Add a name (even in .ttl synta" +
                         "x!) and the item will be created in that position. \nIn regards to the Property button, you " +
                         "must click on a valid (already existing) element in the graph as the subject, and then anoth" +
                         "er as the object. If you click on something that is not a Class or Literal, you will need to" +
-                        " click the subject-object pair again. \n"
+                        " click the subject-object pair again.\nFeel free to add elements near the edge of the graph," +
+                        " it automatically resizes! "
         );
 
         instrAlert.showAndWait();
