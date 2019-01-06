@@ -44,7 +44,6 @@ public class Vertex {
      * @param y the y coordinate the mouse was at when clicked.
      */
     public Vertex(EventTarget element, double x, double y) throws OutsideElementException {
-
         try {
             container = (StackPane) element;
         } catch (ClassCastException e) {
@@ -88,11 +87,11 @@ public class Vertex {
             return container.getBoundsInParent();
         } else {
             Ellipse e = (Ellipse) container.getChildrenUnmodifiable().get(0);
-            Bounds ebounds = e.getBoundsInParent();
+            Bounds eBounds = e.getBoundsInParent();
 
             return new BoundingBox(
-                    ebounds.getMinX() + e.getRadiusX(),
-                    ebounds.getMinY() + e.getRadiusY(),
+                    eBounds.getMinX() + e.getRadiusX(),
+                    eBounds.getMinY() + e.getRadiusY(),
                     e.getRadiusX() * 2 + 2,
                     e.getRadiusY() * 2 + 2
             );

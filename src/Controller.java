@@ -413,8 +413,8 @@ public class Controller {
         drawPane.getChildren().add(compiledProp);
         properties.add(new Edge(
                 name,
-                bindClassUnder(sx, sy),
-                bindClassUnder(ex, ey))
+                findClassUnder(sx, sy),
+                findClassUnder(ex, ey))
         );
     }
 
@@ -426,7 +426,7 @@ public class Controller {
      * @param y a y coordinate, given some leeway in the Bounds.
      * @return the class or literal under the (x, y) coordinate, or null otherwise.
      */
-    private Vertex bindClassUnder(double x, double y) {
+    private Vertex findClassUnder(double x, double y) {
         for (Vertex klass : classes) {
             Bounds classBounds = klass.getBounds();
             Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
@@ -434,6 +434,16 @@ public class Controller {
             if (classBounds.intersects(pointBounds)) return klass;
         }
         LOGGER.log(Level.SEVERE, "no class was found within ("+x+", "+y+"), left unbound. ");
+        return null;
+    }
+
+    private Edge findPropertyUnder(double x, double y) {
+        for (Edge property : properties) {
+            Bounds propBounds = property.getBounds();
+            Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
+
+            if (propBounds.intersects(pointBounds)) return property;
+        }
         return null;
     }
 
@@ -485,8 +495,10 @@ public class Controller {
      * On clicking the canvas, begin to draw the specified element to the canvas.
      * @param mouseEvent the event that triggered the method.
      */
-    @FXML protected void addElementAction(MouseEvent mouseEvent) {
-        if (selectedType == Type.CLASS){
+    @FXML protected void canvasAction(MouseEvent mouseEvent) {
+        if (mouseEvent.isSecondaryButtonDown()) {
+            deleteGraphElement(mouseEvent);
+        } else if (selectedType == Type.CLASS){
             addClassSubaction(mouseEvent);
         } else if (selectedType == Type.LITERAL){
             addLiteralSubaction(mouseEvent);
@@ -494,6 +506,28 @@ public class Controller {
             addSubjectOfProperty(mouseEvent);
         } else if (selectedType == Type.PROPERTY){
             addObjectOfProperty(mouseEvent);
+        }
+    }
+
+    private void deleteGraphElement(MouseEvent mouseEvent) {
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+        Vertex klass;
+        Edge   property;
+
+        System.out.print("Deleting at ("+x+", "+y+")...");
+
+        if ((klass = findClassUnder(x, y)) != null) {
+            //del from drawpane
+            classes.remove(klass);
+            System.out.println("Deleted Class. ");
+        } else if ((property = findPropertyUnder(x, y)) != null) {
+            //del from drawpane
+            properties.remove(property);
+            System.out.println("Deleted Property. ");
+        } else {
+            statusLbl.setText("No graph element is under your cursor to delete. ");
+            LOGGER.info("Nothing under (" + x + ", " + y + ") for deletion.");
         }
     }
 
@@ -641,7 +675,7 @@ public class Controller {
 
     /**
      * Draw a Class and it's name to the canvas, and create the GraphClass representation of the element.
-     * Helper method of {@link #addElementAction(MouseEvent) Add Element} method.
+     * Helper method of {@link #canvasAction(MouseEvent) Add Element} method.
      * @param mouseEvent the click to the canvas.
      */
     private void addClassSubaction(MouseEvent mouseEvent){

@@ -11,37 +11,37 @@
             fx:controller="Controller">
     <left>
         <ToolBar orientation="VERTICAL">
-            <Button fx:id="classBtn"   maxWidth="Infinity" onMouseClicked="#classSelectAction"   text="Class" />
-            <Button fx:id="propBtn"    maxWidth="Infinity" onMouseClicked="#propSelectAction"    text="Property" />
+            <Button fx:id="classBtn"   maxWidth="Infinity" onMouseClicked="#classSelectAction"   text="Class"/>
+            <Button fx:id="propBtn"    maxWidth="Infinity" onMouseClicked="#propSelectAction"    text="Property"/>
             <Button fx:id="literalBtn" maxWidth="Infinity" onMouseClicked="#literalSelectAction" text="Literal"/>
             <Separator/>
-            <Button fx:id="addPrefixBtn"   maxWidth="Infinity" onMouseClicked="#addPrefixAction"   text="Add New Prefix" />
+            <Button fx:id="addPrefixBtn"   maxWidth="Infinity" onMouseClicked="#addPrefixAction"   text="Add New Prefix"/>
             <Button fx:id="savePrefixBtn"  maxWidth="Infinity" onMouseClicked="#savePrefixAction"  text="Save Prefixes"/>
             <Button fx:id="loadPrefixBtn"  maxWidth="Infinity" onMouseClicked="#loadPrefixAction"  text="Load Prefixes"/>
             <Button fx:id="showPrefixBtn"  maxWidth="Infinity" onMouseClicked="#showPrefixAction"  text="Show Prefixes"/>
             <Button fx:id="clearPrefixBtn" maxWidth="Infinity" onMouseClicked="#clearPrefixAction" text="Clear Prefixes"/>
             <Separator/>
-            <Button fx:id="saveGraphBtn" maxWidth="Infinity" onMouseClicked="#saveGraphAction" text="Save Graph" />
-            <Button fx:id="loadGraphBtn" maxWidth="Infinity" onMouseClicked="#loadGraphAction" text="Load Graph" />
-            <Button fx:id="exportTllBtn" maxWidth="Infinity" onMouseClicked="#exportTtlAction" text="Export as .ttl" />
-            <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png" />
+            <Button fx:id="saveGraphBtn" maxWidth="Infinity" onMouseClicked="#saveGraphAction" text="Save Graph"/>
+            <Button fx:id="loadGraphBtn" maxWidth="Infinity" onMouseClicked="#loadGraphAction" text="Load Graph"/>
+            <Button fx:id="exportTllBtn" maxWidth="Infinity" onMouseClicked="#exportTtlAction" text="Export as .ttl"/>
+            <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png"/>
             <Separator />
             <Button fx:id="instrBtn" maxWidth="Infinity" onMouseClicked="#showInstructionsAction" text="Instructions"/>
         </ToolBar>
     </left>
     <top>
         <ToolBar>
-            <Label text="Drawing Turtles " />
+            <Label text="Drawing Turtles "/>
             <Separator />
-            <Label fx:id="drawStatusLbl" />
+            <Label fx:id="drawStatusLbl"/>
             <Separator />
-            <Label fx:id="statusLbl" />
+            <Label fx:id="statusLbl"/>
         </ToolBar>
     </top>
     <center>
         <ScrollPane fx:id="scrollPane" vbarPolicy="ALWAYS" hbarPolicy="ALWAYS">
             <Pane fx:id="drawPane" prefHeight="1000" prefWidth="1000"
-                  onMousePressed="#addElementAction"
+                  onMousePressed="#canvasAction"
                   onMouseMoved="#moveArrowAction"
             />
         </ScrollPane>

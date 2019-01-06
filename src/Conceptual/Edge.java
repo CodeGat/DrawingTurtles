@@ -1,11 +1,13 @@
 package Conceptual;
 
+import javafx.geometry.Bounds;
 import javafx.scene.control.Label;
 
 /**
  * A java-friendly representation of the Graphs properties as an Edge.
  */
 public class Edge {
+    private final Bounds nameBounds;
     private final String name;
     private final Vertex subject;
     private final Vertex object;
@@ -18,6 +20,7 @@ public class Edge {
      */
     public Edge(Label name, Vertex subject, Vertex object){
         this.name = name.getText();
+        this.nameBounds = name.getLayoutBounds();
         this.subject = subject;
         this.object = object;
     }
@@ -27,5 +30,7 @@ public class Edge {
     public Vertex getObject() { return object; }
 
     public Vertex getSubject() { return subject; }
+
+    public Bounds getBounds() { return nameBounds; }
 }
 
