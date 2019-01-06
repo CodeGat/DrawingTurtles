@@ -39,10 +39,12 @@
         </ToolBar>
     </top>
     <center>
-        <Pane fx:id="drawPane" prefHeight="200.0" prefWidth="200.0"
-              onMousePressed="#addElementAction"
-              onMouseMoved="#moveArrowAction"
-        />
+        <ScrollPane fx:id="scrollPane" vbarPolicy="ALWAYS" hbarPolicy="ALWAYS">
+            <Pane fx:id="drawPane" prefHeight="1000" prefWidth="1000"
+                  onMousePressed="#addElementAction"
+                  onMouseMoved="#moveArrowAction"
+            />
+        </ScrollPane>
     </center>
     <bottom>
         <ToolBar>

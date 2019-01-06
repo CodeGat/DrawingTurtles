@@ -11,10 +11,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -50,6 +47,7 @@ public class Controller {
 
     public BorderPane root;
     public Pane drawPane;
+    public ScrollPane scrollPane;
     public Button classBtn, propBtn, literalBtn, addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn,
             clearPrefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn;
     public Label  statusLbl, drawStatusLbl;
@@ -57,7 +55,7 @@ public class Controller {
     private Type selectedType = Type.CLASS;
     private final ArrayList<String> prefixes   = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
-    private final ArrayList<Vertex>   classes    = new ArrayList<>();
+    private final ArrayList<Vertex> classes    = new ArrayList<>();
 
     private Arrow arrow;
     private Vertex sub;
@@ -223,12 +221,16 @@ public class Controller {
     }
 
     /**
-     * Traverses the graph through the children of the canvas (the drawPane), in order of creation.
+     * Traverses the graph through the children of the canvas (the drawPane), in order of creation, and gives the
+     *    canvas size.
      * There is no need for recursive definitions, as the tree is a shallow one with depth at most 3.
      * @return a bespoke string serialization of the children of the canvas (the elements of the graph).
      */
     private String traverseCanvas() {
         StringBuilder result = new StringBuilder();
+
+        String canvasSize = "G" + drawPane.getWidth() + "x" + drawPane.getHeight();
+        result.append(canvasSize);
 
         for (Node compiledElement : drawPane.getChildren()){
             ObservableList<Node> subelements = ((StackPane) compiledElement).getChildrenUnmodifiable();
@@ -251,7 +253,7 @@ public class Controller {
                 String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
                 String shapeName = "=" + ((Label) subelements.get(1)).getText();
                 result.append(shapeInfo).append(shapeName);
-            } else statusLbl.setText("TRAVERSAL FAILED. Berate the programmer for not generifying the traversal algorithm.");
+            } else statusLbl.setText("TRAVERSAL FAILED. Berate the programmer for not generifying the algorithm.");
 
             result.append("]");
         }
@@ -297,7 +299,17 @@ public class Controller {
             if      (element.charAt(0) == 'R') bindLiteral(element);
             else if (element.charAt(0) == 'E') bindClass(element);
             else if (element.charAt(0) == 'A') bindProperty(element);
+            else if (element.charAt(0) == 'G') bindCanvas(element);
         }
+    }
+
+    private void bindCanvas(String size) {
+        String[] canvasSize = size.split("[Gx]");
+        double width = Double.valueOf(canvasSize[1]);
+        double height = Double.valueOf(canvasSize[2]);
+
+        drawPane.setMinSize(width, height);
+        drawPane.setPrefSize(width, height);
     }
 
     /**
@@ -309,15 +321,22 @@ public class Controller {
         String[] litElements = lit.split("=");
         String[] litInfo = litElements[0].substring(1).split("\\|");
         String   litName = litElements[1];
+        double   x = Double.valueOf(litInfo[0]);
+        double   y = Double.valueOf(litInfo[1]);
+        double   w = Double.valueOf(litInfo[2]);
+        double   h = Double.valueOf(litInfo[3]);
+        Color    col = Color.web(litInfo[4]);
+
+        resizeEdgeOfCanvas(x, y);
 
         StackPane compiledLit = new StackPane();
-        compiledLit.setLayoutX(Double.valueOf(litInfo[0]));
-        compiledLit.setLayoutY(Double.valueOf(litInfo[1]));
+        compiledLit.setLayoutX(x);
+        compiledLit.setLayoutY(y);
 
         Rectangle rect = new Rectangle();
-        rect.setWidth(Double.valueOf(litInfo[2]));
-        rect.setHeight(Double.valueOf(litInfo[3]));
-        rect.setFill(Color.web(litInfo[4]));
+        rect.setWidth(w);
+        rect.setHeight(h);
+        rect.setFill(col);
         rect.setStroke(Color.BLACK);
 
         Text name = new Text(litName);
@@ -336,17 +355,24 @@ public class Controller {
         String[] clsElements = cls.split("=");
         String[] clsInfo     = clsElements[0].substring(1).split("\\|");
         String   clsName     = clsElements[1];
+        double   x = Double.valueOf(clsInfo[0]);
+        double   y = Double.valueOf(clsInfo[1]);
+        double   rx = Double.valueOf(clsInfo[2]);
+        double   ry = Double.valueOf(clsInfo[3]);
+        Color    col = Color.web(clsInfo[4]);
+
+        resizeEdgeOfCanvas(x, y);
 
         StackPane compiledCls = new StackPane();
-        compiledCls.setLayoutX(Double.valueOf(clsInfo[0]));
-        compiledCls.setLayoutY(Double.valueOf(clsInfo[1]));
+        compiledCls.setLayoutX(x);
+        compiledCls.setLayoutY(y);
 
         Ellipse ellipse = new Ellipse();
-        ellipse.setCenterX(Double.valueOf(clsInfo[0]));
-        ellipse.setCenterY(Double.valueOf(clsInfo[1]));
-        ellipse.setRadiusX(Double.valueOf(clsInfo[2]));
-        ellipse.setRadiusY(Double.valueOf(clsInfo[3]));
-        ellipse.setFill(Color.web(clsInfo[4]));
+        ellipse.setCenterX(x);
+        ellipse.setCenterY(y);
+        ellipse.setRadiusX(rx);
+        ellipse.setRadiusY(ry);
+        ellipse.setFill(col);
         ellipse.setStroke(Color.BLACK);
 
         Text name = new Text(clsName);
@@ -574,6 +600,8 @@ public class Controller {
      * @param mouseEvent the click to the canvas.
      */
     private void addLiteralSubaction(MouseEvent mouseEvent){
+        resizeEdgeOfCanvas(mouseEvent.getX(), mouseEvent.getY());
+
         StackPane compiledElement = new StackPane();
         compiledElement.setLayoutX(mouseEvent.getX());
         compiledElement.setLayoutY(mouseEvent.getY());
@@ -594,11 +622,31 @@ public class Controller {
     }
 
     /**
+     * Extend the canvas width and height if any new element gets to close to the bounds of the drawPane canvas.
+     * @param x x coordinate to check if we need to extend the width of the canvas.
+     * @param y y coordinate to check if we need to extend the height of the canvas.
+     */
+    private void resizeEdgeOfCanvas(double x, double y) {
+        double height = drawPane.getHeight();
+        double width  = drawPane.getWidth();
+
+        if (x > width - 150 && y > height - 150) {
+            drawPane.setPrefSize(x + 300, y + 300);
+        } else if (x > width - 150) {
+            drawPane.setPrefWidth(x + 300);
+        } else if (y > height - 150) {
+            drawPane.setPrefHeight(y + 300);
+        }
+    }
+
+    /**
      * Draw a Class and it's name to the canvas, and create the GraphClass representation of the element.
      * Helper method of {@link #addElementAction(MouseEvent) Add Element} method.
      * @param mouseEvent the click to the canvas.
      */
     private void addClassSubaction(MouseEvent mouseEvent){
+        resizeEdgeOfCanvas(mouseEvent.getX(), mouseEvent.getY());
+
         StackPane compiledElement = new StackPane();
         compiledElement.setLayoutX(mouseEvent.getX());
         compiledElement.setLayoutY(mouseEvent.getY());
@@ -700,11 +748,12 @@ public class Controller {
         instrAlert.setHeaderText(null);
         instrAlert.setContentText(
                 "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
-                        " add to the canvas, then click somewhere valid on the canvas. Add a name (even in .ttl synta" +
+                        " add to the canvas, then click somewhere on the canvas. Add a name (even in .ttl synta" +
                         "x!) and the item will be created in that position. \nIn regards to the Property button, you " +
                         "must click on a valid (already existing) element in the graph as the subject, and then anoth" +
                         "er as the object. If you click on something that is not a Class or Literal, you will need to" +
-                        " click the subject-object pair again. \n"
+                        " click the subject-object pair again.\nFeel free to add elements near the edge of the graph," +
+                        " it automatically resizes! "
         );
 
         instrAlert.showAndWait();
