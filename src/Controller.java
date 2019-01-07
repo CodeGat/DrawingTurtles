@@ -411,11 +411,7 @@ public class Controller {
 
         compiledProp.getChildren().addAll(arrow, name);
         drawPane.getChildren().add(compiledProp);
-        properties.add(new Edge(
-                name,
-                findClassUnder(sx, sy),
-                findClassUnder(ex, ey))
-        );
+        properties.add(new Edge(compiledProp, name, findClassUnder(sx, sy), findClassUnder(ex, ey)));
     }
 
     /**
@@ -509,6 +505,10 @@ public class Controller {
         }
     }
 
+    /**
+     * Remove the specified graph element from both the canvas and the internal representation.
+     * @param mouseEvent the click that specfies which graph element to remove.
+     */
     private void deleteGraphElement(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
@@ -518,11 +518,11 @@ public class Controller {
         System.out.print("Deleting at ("+x+", "+y+")...");
 
         if ((klass = findClassUnder(x, y)) != null) {
-            //del from drawpane
+            drawPane.getChildren().remove(klass.getContainer());
             classes.remove(klass);
             System.out.println("Deleted Class. ");
         } else if ((property = findPropertyUnder(x, y)) != null) {
-            //del from drawpane
+            drawPane.getChildren().remove(property.getContainer());
             properties.remove(property);
             System.out.println("Deleted Property. ");
         } else {
@@ -587,7 +587,7 @@ public class Controller {
 
         compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
-        properties.add(new Edge(propertyName, sub, obj));
+        properties.add(new Edge(compiledProperty, propertyName, sub, obj));
         statusLbl.setText("Property " + propertyName.getText() + " created. ");
         sub = null;
         arrow = null;

@@ -2,6 +2,7 @@ package Conceptual;
 
 import javafx.geometry.Bounds;
 import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
 
 /**
  * A java-friendly representation of the Graphs properties as an Edge.
@@ -9,6 +10,7 @@ import javafx.scene.control.Label;
 public class Edge {
     private final Bounds nameBounds;
     private final String name;
+    private final StackPane container;
     private final Vertex subject;
     private final Vertex object;
 
@@ -18,7 +20,8 @@ public class Edge {
      * @param subject the tail of the property arrow.
      * @param object the head of the property arrow.
      */
-    public Edge(Label name, Vertex subject, Vertex object){
+    public Edge(StackPane container, Label name, Vertex subject, Vertex object){
+        this.container = container;
         this.name = name.getText();
         this.nameBounds = name.getLayoutBounds();
         this.subject = subject;
@@ -32,5 +35,7 @@ public class Edge {
     public Vertex getSubject() { return subject; }
 
     public Bounds getBounds() { return nameBounds; }
+
+    public StackPane getContainer() { return container; }
 }
 

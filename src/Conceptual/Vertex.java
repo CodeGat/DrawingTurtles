@@ -53,6 +53,8 @@ public class Vertex {
         this.name = ((Text) container.getChildren().get(1)).getText();
         this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
 
+        // we get the shortest distance between the mouse click and the edge of the vertex, giving us a neat
+        //    snap-to feature.
         Bounds bounds = container.getBoundsInParent();
         double distMinX = Math.abs(bounds.getMinX() - x);
         double distMaxX = Math.abs(bounds.getMaxX() - x);
@@ -101,6 +103,8 @@ public class Vertex {
     public String getName() { return name; }
 
     public GraphElemType getType() { return type; }
+
+    public StackPane getContainer() { return container; }
 
     public double getX() { return x; }
 
