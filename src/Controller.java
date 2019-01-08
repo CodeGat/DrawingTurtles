@@ -12,6 +12,9 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -23,6 +26,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.RenderedImage;
 import java.io.*;
 import java.util.ArrayList;
@@ -453,6 +457,7 @@ public class Controller {
                 writer.write(ttl);
                 writer.close();
                 statusLbl.setText("File saved.");
+                Desktop.getDesktop().open(saveFile);
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "failed to export to .tll: ", e);
             }
