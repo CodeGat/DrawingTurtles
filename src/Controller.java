@@ -440,7 +440,7 @@ public class Controller {
 
     /**
      * Ties a coordinate to the class or literal below it, used in finding the subject and object of a property given
-     *    the general start and end coordinates of the arrow.
+     *    the general start and end coordinates of the arrow. Also finds the class below a users click.
      * Helper Method of {@link #bindProperty(String)} and in extension {@link #bindGraph(String)}.
      * @param x a x coordinate, given some leeway in the Bounds.
      * @param y a y coordinate, given some leeway in the Bounds.
@@ -455,10 +455,16 @@ public class Controller {
 
             if (classBounds.intersects(pointBounds)) return klass;
         }
-        LOGGER.log(Level.SEVERE, "no class was found within ("+x+", "+y+"), left unbound. ");
+        LOGGER.info("no class was found within ("+x+", "+y+"), left unbound. ");
         return null;
     }
 
+    /**
+     * Finds the property under the users click.
+     * @param x a x coordinate, plus some leeway for the bounds.
+     * @param y a y coordinate, plus some leeway for the bounds.
+     * @return the Edge under the click, or null otherwise.
+     */
     private Edge findPropertyUnder(double x, double y) {
         for (Edge property : properties) {
             Bounds propBounds = property.getBounds();
@@ -466,6 +472,7 @@ public class Controller {
 
             if (propBounds.intersects(pointBounds)) return property;
         }
+        LOGGER.info("no property was found within ("+x+", "+y+"), left unbound. ");
         return null;
     }
 
