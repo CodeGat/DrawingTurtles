@@ -4,9 +4,7 @@ import javafx.event.EventTarget;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
-import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
 
 import java.util.Arrays;
@@ -25,16 +23,6 @@ public class Vertex {
     private StackPane container;
     private double x, y;
 
-    /**
-     * Constructor for the reconstitution of classes after a load.
-     * @param type the shape that corresponds to the type of element - either a Ellipse (Class) or Rectangle (Literal).
-     * @param name the associated Class or Literal name.
-     */
-    public Vertex(Shape type, Text name){
-        this.name = name.getText();
-        this.type = (type instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
-        this.container = (StackPane) type.getParent();
-    }
 
     /**
      * Constructor for the creation of a new GraphClass that doesn't yet exist.
@@ -89,11 +77,10 @@ public class Vertex {
             return container.getBoundsInParent();
         } else {
             Ellipse e = (Ellipse) container.getChildrenUnmodifiable().get(0);
-            Bounds eBounds = e.getBoundsInParent();
 
             return new BoundingBox(
-                    eBounds.getMinX() + e.getRadiusX(),
-                    eBounds.getMinY() + e.getRadiusY(),
+                    e.getCenterX(),
+                    e.getCenterY(),
                     e.getRadiusX() * 2 + 2,
                     e.getRadiusY() * 2 + 2
             );
@@ -109,8 +96,4 @@ public class Vertex {
     public double getX() { return x; }
 
     public double getY() { return y; }
-
-    public void setColour(Color color){
-        ((Shape) container.getChildren().get(0)).setStroke(color);
-    }
 }

@@ -89,9 +89,25 @@ public class Controller {
         } else if (key == KeyCode.X && keyEvent.isControlDown()){
             exportTtlAction();
             exportPngAction();
-        } else if (key == KeyCode.X){
+        } else if (key == KeyCode.X) {
             exportTtlAction();
+        } else if (key == KeyCode.SLASH && keyEvent.isShiftDown()){
+            undebugAction();
+        } else if (key == KeyCode.SLASH) {
+            debugAction();
         }
+    }
+
+    private void undebugAction() {
+
+    }
+
+    private void debugAction() {
+        for (Vertex vertex : classes){
+            DebugUtils.makeBounds(vertex);
+        }
+
+        drawPane.getChildren().addAll(DebugUtils.rectangles);
     }
 
     /**
@@ -343,7 +359,11 @@ public class Controller {
 
         compiledLit.getChildren().addAll(rect, name);
         drawPane.getChildren().add(compiledLit);
-        classes.add(new Vertex(rect, name));
+        try {
+            classes.add(new Vertex(compiledLit, x, y));
+        } catch (OutsideElementException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -379,7 +399,11 @@ public class Controller {
 
         compiledCls.getChildren().addAll(ellipse, name);
         drawPane.getChildren().add(compiledCls);
-        classes.add(new Vertex(ellipse, name));
+        try {
+            classes.add(new Vertex(compiledCls, x, y));
+        } catch (OutsideElementException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -425,6 +449,8 @@ public class Controller {
     private Vertex findClassUnder(double x, double y) {
         for (Vertex klass : classes) {
             Bounds classBounds = klass.getBounds();
+            DebugUtils.makeBounds(classBounds);
+
             Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
 
             if (classBounds.intersects(pointBounds)) return klass;
@@ -634,11 +660,14 @@ public class Controller {
      * @param mouseEvent the click to the canvas.
      */
     private void addLiteralSubaction(MouseEvent mouseEvent){
-        resizeEdgeOfCanvas(mouseEvent.getX(), mouseEvent.getY());
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+
+        resizeEdgeOfCanvas(x, y);
 
         StackPane compiledElement = new StackPane();
-        compiledElement.setLayoutX(mouseEvent.getX());
-        compiledElement.setLayoutY(mouseEvent.getY());
+        compiledElement.setLayoutX(x);
+        compiledElement.setLayoutY(y);
 
         Text elementName = showNameElementDialog();
         if (elementName == null || elementName.getText().equals("")) return;
@@ -652,7 +681,11 @@ public class Controller {
 
         compiledElement.getChildren().addAll(elementType, elementName);
         drawPane.getChildren().add(compiledElement);
-        classes.add(new Vertex(elementType, elementName));
+        try {
+            classes.add(new Vertex(compiledElement, x, y));
+        } catch (OutsideElementException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -679,19 +712,22 @@ public class Controller {
      * @param mouseEvent the click to the canvas.
      */
     private void addClassSubaction(MouseEvent mouseEvent){
-        resizeEdgeOfCanvas(mouseEvent.getX(), mouseEvent.getY());
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+
+        resizeEdgeOfCanvas(x, y);
 
         StackPane compiledElement = new StackPane();
-        compiledElement.setLayoutX(mouseEvent.getX());
-        compiledElement.setLayoutY(mouseEvent.getY());
+        compiledElement.setLayoutX(x);
+        compiledElement.setLayoutY(y);
 
         Text elementName = showNameElementDialog();
         if (elementName == null || elementName.getText().equals("")) return;
         double textWidth = elementName.getBoundsInLocal().getWidth();
 
         Ellipse elementType = new Ellipse();
-        elementType.setCenterX(mouseEvent.getX());
-        elementType.setCenterY(mouseEvent.getY());
+        elementType.setCenterX(x);
+        elementType.setCenterY(y);
         elementType.setRadiusX(textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5);
         elementType.setRadiusY(37.5);
         elementType.setFill(Color.web("f4f4f4"));
@@ -699,7 +735,11 @@ public class Controller {
 
         compiledElement.getChildren().addAll(elementType, elementName);
         drawPane.getChildren().add(compiledElement);
-        classes.add(new Vertex(elementType, elementName));
+        try {
+            classes.add(new Vertex(compiledElement, x, y));
+        } catch (OutsideElementException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
