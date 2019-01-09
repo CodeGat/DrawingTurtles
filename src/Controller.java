@@ -1,10 +1,9 @@
 import Conceptual.Edge;
-import Conceptual.OutsideElementException;
 import Conceptual.Vertex;
+import Conceptual.Vertex.OutsideElementException;
 import Graph.Arrow;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
@@ -43,8 +42,12 @@ public class Controller {
     /**
      * An enumeration of the types of graph elements.
      */
-    enum Type {
+    private enum Type {
         CLASS, PROPERTY, LITERAL
+    }
+
+    private class PropertyElemMissingException extends Exception {
+        PropertyElemMissingException(String msg) { super(msg); }
     }
 
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
@@ -93,9 +96,23 @@ public class Controller {
         } else if (key == KeyCode.X && keyEvent.isControlDown()){
             exportTtlAction();
             exportPngAction();
-        } else if (key == KeyCode.X){
+        } else if (key == KeyCode.X) {
             exportTtlAction();
+        } else if (key == KeyCode.SLASH && keyEvent.isShiftDown()){
+            undebugAction();
+        } else if (key == KeyCode.SLASH) {
+            debugAction();
         }
+    }
+
+    private void undebugAction() {}
+
+    private void debugAction() {
+        for (Vertex vertex : classes){
+            DebugUtils.makeBounds(vertex);
+        }
+
+        drawPane.getChildren().addAll(DebugUtils.rectangles);
     }
 
     /**
@@ -286,6 +303,8 @@ public class Controller {
                 bindGraph(new String(rawGraph));
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
+            } catch (PropertyElemMissingException e) {
+                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
         } else statusLbl.setText("Graph load cancelled.");
     }
@@ -294,7 +313,7 @@ public class Controller {
      * Splits the output of the .gat file into it's respective elements and attempts to bind them.
      * @param graph the raw .gat file data.
      */
-    private void bindGraph(String graph) {
+    private void bindGraph(String graph) throws PropertyElemMissingException {
         String[] elements = Arrays.stream(graph.split("]\\[|\\[|]"))
                 .filter(s -> !s.equals(""))
                 .toArray(String[]::new);
@@ -347,7 +366,11 @@ public class Controller {
 
         compiledLit.getChildren().addAll(rect, name);
         drawPane.getChildren().add(compiledLit);
-        classes.add(new Vertex(rect, name));
+        try {
+            classes.add(new Vertex(compiledLit));
+        } catch (OutsideElementException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -383,7 +406,11 @@ public class Controller {
 
         compiledCls.getChildren().addAll(ellipse, name);
         drawPane.getChildren().add(compiledCls);
-        classes.add(new Vertex(ellipse, name));
+        try {
+            classes.add(new Vertex(compiledCls));
+        } catch (OutsideElementException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -391,7 +418,7 @@ public class Controller {
      * Helper Method of {@link #bindGraph(String)}.
      * @param prop the .gat String serialization of a Property.
      */
-    private void bindProperty(String prop) {
+    private void bindProperty(String prop) throws PropertyElemMissingException {
         String[] propElements = prop.split("=");
         String[] propInfo     = propElements[0].substring(1).split("\\|");
         String   propName     = propElements[1];
@@ -415,29 +442,52 @@ public class Controller {
 
         compiledProp.getChildren().addAll(arrow, name);
         drawPane.getChildren().add(compiledProp);
-        properties.add(new Edge(
-                name,
-                bindClassUnder(sx, sy),
-                bindClassUnder(ex, ey))
-        );
+
+        Vertex sub = findClassUnder(sx, sy);
+        Vertex obj = findClassUnder(ex, ey);
+        if (sub != null && obj != null) {
+            Edge edge = new Edge(compiledProp, name, sub, obj);
+            sub.addOutgoingEdge(edge);
+            obj.addIncomingEdge(edge);
+            properties.add(edge);
+        } else throw new PropertyElemMissingException("sub");
     }
 
     /**
      * Ties a coordinate to the class or literal below it, used in finding the subject and object of a property given
-     *    the general start and end coordinates of the arrow.
+     *    the general start and end coordinates of the arrow. Also finds the class below a users click.
      * Helper Method of {@link #bindProperty(String)} and in extension {@link #bindGraph(String)}.
      * @param x a x coordinate, given some leeway in the Bounds.
      * @param y a y coordinate, given some leeway in the Bounds.
      * @return the class or literal under the (x, y) coordinate, or null otherwise.
      */
-    private Vertex bindClassUnder(double x, double y) {
+    private Vertex findClassUnder(double x, double y) {
         for (Vertex klass : classes) {
             Bounds classBounds = klass.getBounds();
+            DebugUtils.makeBounds(classBounds);
+
             Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
 
             if (classBounds.intersects(pointBounds)) return klass;
         }
-        LOGGER.log(Level.SEVERE, "no class was found within ("+x+", "+y+"), left unbound. ");
+        LOGGER.info("no class was found within ("+x+", "+y+"), left unbound. ");
+        return null;
+    }
+
+    /**
+     * Finds the property under the users click.
+     * @param x a x coordinate, plus some leeway for the bounds.
+     * @param y a y coordinate, plus some leeway for the bounds.
+     * @return the Edge under the click, or null otherwise.
+     */
+    private Edge findPropertyUnder(double x, double y) {
+        for (Edge property : properties) {
+            Bounds propBounds = property.getBounds();
+            Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
+
+            if (propBounds.intersects(pointBounds)) return property;
+        }
+        LOGGER.info("no property was found within ("+x+", "+y+"), left unbound. ");
         return null;
     }
 
@@ -490,8 +540,10 @@ public class Controller {
      * On clicking the canvas, begin to draw the specified element to the canvas.
      * @param mouseEvent the event that triggered the method.
      */
-    @FXML protected void addElementAction(MouseEvent mouseEvent) {
-        if (selectedType == Type.CLASS){
+    @FXML protected void canvasAction(MouseEvent mouseEvent) {
+        if (mouseEvent.isSecondaryButtonDown()) {
+            deleteGraphElement(mouseEvent);
+        } else if (selectedType == Type.CLASS){
             addClassSubaction(mouseEvent);
         } else if (selectedType == Type.LITERAL){
             addLiteralSubaction(mouseEvent);
@@ -499,6 +551,37 @@ public class Controller {
             addSubjectOfProperty(mouseEvent);
         } else if (selectedType == Type.PROPERTY){
             addObjectOfProperty(mouseEvent);
+        }
+    }
+
+    /**
+     * Remove the specified graph element from both the canvas and the internal representation.
+     * @param mouseEvent the click that specfies which graph element to remove.
+     */
+    private void deleteGraphElement(MouseEvent mouseEvent) {
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+        Vertex klass;
+        Edge   property;
+
+        if ((klass = findClassUnder(x, y)) != null) {
+            drawPane.getChildren().remove(klass.getContainer());
+
+            for (Edge incEdge : klass.getIncomingEdges()){
+                drawPane.getChildren().remove(incEdge.getContainer());
+                properties.remove(incEdge);
+            }
+            for (Edge outEdge : klass.getOutgoingEdges()){
+                drawPane.getChildren().remove(outEdge.getContainer());
+                properties.remove(outEdge);
+            }
+            classes.remove(klass);
+        } else if ((property = findPropertyUnder(x, y)) != null) {
+            drawPane.getChildren().remove(property.getContainer());
+            properties.remove(property);
+        } else {
+            statusLbl.setText("No graph element is under your cursor to delete. ");
+            LOGGER.info("Nothing under (" + x + ", " + y + ") for deletion.");
         }
     }
 
@@ -517,12 +600,8 @@ public class Controller {
      * @param mouseEvent the second click on the canvas when 'Property' is selected.
      */
     private void addObjectOfProperty(MouseEvent mouseEvent) {
-        EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
-        Vertex obj;
-
-        try {
-            obj = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
-        } catch (OutsideElementException e){
+        Vertex obj = findClassUnder(mouseEvent.getX(), mouseEvent.getY());
+        if (obj == null){
             LOGGER.info("Outside Element: " + mouseEvent.toString());
             statusLbl.setText("Outside any class or literal, property creation cancelled. ");
             drawPane.getChildren().remove(arrow);
@@ -531,6 +610,7 @@ public class Controller {
             srcClick = true;
             return;
         }
+        obj.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
 
         arrow.setEndX(obj.getX());
         arrow.setEndY(obj.getY());
@@ -558,7 +638,12 @@ public class Controller {
 
         compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
-        properties.add(new Edge(propertyName, sub, obj));
+
+        Edge edge = new Edge(compiledProperty, propertyName, sub, obj);
+        properties.add(edge);
+        sub.addOutgoingEdge(edge);
+        obj.addIncomingEdge(edge);
+
         statusLbl.setText("Property " + propertyName.getText() + " created. ");
         sub = null;
         arrow = null;
@@ -570,15 +655,12 @@ public class Controller {
      * @param mouseEvent the first click on the canvas when .
      */
     private void addSubjectOfProperty(MouseEvent mouseEvent) {
-        EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
-
-        try {
-            sub = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
-        } catch (OutsideElementException e){
+        sub = findClassUnder(mouseEvent.getX(), mouseEvent.getY());
+        if (sub == null){
             LOGGER.warning("Outside Element: " + mouseEvent.toString());
-            sub = null;
             return;
         }
+        sub.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
 
         arrow = new Arrow();
         arrow.setMouseTransparent(true);
@@ -605,11 +687,14 @@ public class Controller {
      * @param mouseEvent the click to the canvas.
      */
     private void addLiteralSubaction(MouseEvent mouseEvent){
-        resizeEdgeOfCanvas(mouseEvent.getX(), mouseEvent.getY());
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+
+        resizeEdgeOfCanvas(x, y);
 
         StackPane compiledElement = new StackPane();
-        compiledElement.setLayoutX(mouseEvent.getX());
-        compiledElement.setLayoutY(mouseEvent.getY());
+        compiledElement.setLayoutX(x);
+        compiledElement.setLayoutY(y);
 
         Text elementName = showNameElementDialog();
         if (elementName == null || elementName.getText().equals("")) return;
@@ -623,7 +708,11 @@ public class Controller {
 
         compiledElement.getChildren().addAll(elementType, elementName);
         drawPane.getChildren().add(compiledElement);
-        classes.add(new Vertex(elementType, elementName));
+        try {
+            classes.add(new Vertex(compiledElement));
+        } catch (OutsideElementException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -646,23 +735,26 @@ public class Controller {
 
     /**
      * Draw a Class and it's name to the canvas, and create the GraphClass representation of the element.
-     * Helper method of {@link #addElementAction(MouseEvent) Add Element} method.
+     * Helper method of {@link #canvasAction(MouseEvent) Add Element} method.
      * @param mouseEvent the click to the canvas.
      */
     private void addClassSubaction(MouseEvent mouseEvent){
-        resizeEdgeOfCanvas(mouseEvent.getX(), mouseEvent.getY());
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+
+        resizeEdgeOfCanvas(x, y);
 
         StackPane compiledElement = new StackPane();
-        compiledElement.setLayoutX(mouseEvent.getX());
-        compiledElement.setLayoutY(mouseEvent.getY());
+        compiledElement.setLayoutX(x);
+        compiledElement.setLayoutY(y);
 
         Text elementName = showNameElementDialog();
         if (elementName == null || elementName.getText().equals("")) return;
         double textWidth = elementName.getBoundsInLocal().getWidth();
 
         Ellipse elementType = new Ellipse();
-        elementType.setCenterX(mouseEvent.getX());
-        elementType.setCenterY(mouseEvent.getY());
+        elementType.setCenterX(x);
+        elementType.setCenterY(y);
         elementType.setRadiusX(textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5);
         elementType.setRadiusY(37.5);
         elementType.setFill(Color.web("f4f4f4"));
@@ -670,7 +762,11 @@ public class Controller {
 
         compiledElement.getChildren().addAll(elementType, elementName);
         drawPane.getChildren().add(compiledElement);
-        classes.add(new Vertex(elementType, elementName));
+        try {
+            classes.add(new Vertex(compiledElement));
+        } catch (OutsideElementException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

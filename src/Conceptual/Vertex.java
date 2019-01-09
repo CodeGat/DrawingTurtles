@@ -4,11 +4,10 @@ import javafx.event.EventTarget;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
-import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -20,31 +19,26 @@ public class Vertex {
         CLASS, LITERAL
     }
 
+    public class OutsideElementException extends Exception {
+        OutsideElementException(){
+            super();
+        }
+    }
+
+
     private GraphElemType type;
     private String name;
     private StackPane container;
     private double x, y;
+    private ArrayList<Edge> incomingEdges, outgoingEdges;
 
-    /**
-     * Constructor for the reconstitution of classes after a load.
-     * @param type the shape that corresponds to the type of element - either a Ellipse (Class) or Rectangle (Literal).
-     * @param name the associated Class or Literal name.
-     */
-    public Vertex(Shape type, Text name){
-        this.name = name.getText();
-        this.type = (type instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
-        this.container = (StackPane) type.getParent();
-    }
 
     /**
      * Constructor for the creation of a new GraphClass that doesn't yet exist.
      * Allows the property arrow to start or end at the closest edge, making it look more natural.
      * @param element the enclosing container for the shape and text
-     * @param x the x coordinate the mouse was at when clicked.
-     * @param y the y coordinate the mouse was at when clicked.
      */
-    public Vertex(EventTarget element, double x, double y) throws OutsideElementException {
-
+    public Vertex(EventTarget element) throws OutsideElementException {
         try {
             container = (StackPane) element;
         } catch (ClassCastException e) {
@@ -53,7 +47,17 @@ public class Vertex {
 
         this.name = ((Text) container.getChildren().get(1)).getText();
         this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
+        incomingEdges = new ArrayList<>();
+        outgoingEdges = new ArrayList<>();
+    }
 
+    /**
+     * We get the shortest distance between the mouse click and the edge of the Vertex and set the corresponding coord
+     *   to it, giving us a nice little snap-to feature.
+     * @param x the x coordinate the mouse was at when clicked.
+     * @param y the y coordinate the mouse was at when clicked.
+     */
+    public void setSnapTo(double x, double y){
         Bounds bounds = container.getBoundsInParent();
         double distMinX = Math.abs(bounds.getMinX() - x);
         double distMaxX = Math.abs(bounds.getMaxX() - x);
@@ -88,26 +92,35 @@ public class Vertex {
             return container.getBoundsInParent();
         } else {
             Ellipse e = (Ellipse) container.getChildrenUnmodifiable().get(0);
-            Bounds ebounds = e.getBoundsInParent();
 
             return new BoundingBox(
-                    ebounds.getMinX() + e.getRadiusX(),
-                    ebounds.getMinY() + e.getRadiusY(),
+                    e.getCenterX(),
+                    e.getCenterY(),
                     e.getRadiusX() * 2 + 2,
                     e.getRadiusY() * 2 + 2
             );
         }
     }
 
+    public void addIncomingEdge(Edge e){
+        incomingEdges.add(e);
+    }
+
+    public void addOutgoingEdge(Edge e){
+        outgoingEdges.add(e);
+    }
+
+    public ArrayList<Edge> getIncomingEdges() { return incomingEdges; }
+
+    public ArrayList<Edge> getOutgoingEdges() { return outgoingEdges; }
+
     public String getName() { return name; }
 
     public GraphElemType getType() { return type; }
 
+    public StackPane getContainer() { return container; }
+
     public double getX() { return x; }
 
     public double getY() { return y; }
-
-    public void setColour(Color color){
-        ((Shape) container.getChildren().get(0)).setStroke(color);
-    }
 }
