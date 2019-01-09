@@ -37,10 +37,8 @@ public class Vertex {
      * Constructor for the creation of a new GraphClass that doesn't yet exist.
      * Allows the property arrow to start or end at the closest edge, making it look more natural.
      * @param element the enclosing container for the shape and text
-     * @param x the x coordinate the mouse was at when clicked.
-     * @param y the y coordinate the mouse was at when clicked.
      */
-    public Vertex(EventTarget element, double x, double y) throws OutsideElementException {
+    public Vertex(EventTarget element) throws OutsideElementException {
         try {
             container = (StackPane) element;
         } catch (ClassCastException e) {
@@ -51,9 +49,15 @@ public class Vertex {
         this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
         incomingEdges = new ArrayList<>();
         outgoingEdges = new ArrayList<>();
+    }
 
-        // we get the shortest distance between the mouse click and the edge of the vertex, giving us a neat
-        //    snap-to feature.
+    /**
+     * We get the shortest distance between the mouse click and the edge of the Vertex and set the corresponding coord
+     *   to it, giving us a nice little snap-to feature.
+     * @param x the x coordinate the mouse was at when clicked.
+     * @param y the y coordinate the mouse was at when clicked.
+     */
+    public void setSnapTo(double x, double y){
         Bounds bounds = container.getBoundsInParent();
         double distMinX = Math.abs(bounds.getMinX() - x);
         double distMaxX = Math.abs(bounds.getMaxX() - x);

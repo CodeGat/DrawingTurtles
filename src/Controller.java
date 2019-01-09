@@ -4,7 +4,6 @@ import Conceptual.Vertex.OutsideElementException;
 import Graph.Arrow;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
@@ -102,9 +101,7 @@ public class Controller {
         }
     }
 
-    private void undebugAction() {
-
-    }
+    private void undebugAction() {}
 
     private void debugAction() {
         for (Vertex vertex : classes){
@@ -366,7 +363,7 @@ public class Controller {
         compiledLit.getChildren().addAll(rect, name);
         drawPane.getChildren().add(compiledLit);
         try {
-            classes.add(new Vertex(compiledLit, x, y));
+            classes.add(new Vertex(compiledLit));
         } catch (OutsideElementException e) {
             e.printStackTrace();
         }
@@ -406,7 +403,7 @@ public class Controller {
         compiledCls.getChildren().addAll(ellipse, name);
         drawPane.getChildren().add(compiledCls);
         try {
-            classes.add(new Vertex(compiledCls, x, y));
+            classes.add(new Vertex(compiledCls));
         } catch (OutsideElementException e) {
             e.printStackTrace();
         }
@@ -598,12 +595,8 @@ public class Controller {
      * @param mouseEvent the second click on the canvas when 'Property' is selected.
      */
     private void addObjectOfProperty(MouseEvent mouseEvent) {
-        EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
-        Vertex obj;
-
-        try {
-            obj = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
-        } catch (OutsideElementException e){
+        Vertex obj = findClassUnder(mouseEvent.getX(), mouseEvent.getY());
+        if (obj == null){
             LOGGER.info("Outside Element: " + mouseEvent.toString());
             statusLbl.setText("Outside any class or literal, property creation cancelled. ");
             drawPane.getChildren().remove(arrow);
@@ -612,6 +605,7 @@ public class Controller {
             srcClick = true;
             return;
         }
+        obj.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
 
         arrow.setEndX(obj.getX());
         arrow.setEndY(obj.getY());
@@ -640,7 +634,6 @@ public class Controller {
         compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
 
-        // TODO: 9/01/2019 This sub, obj doesn't refer to the classes one.
         Edge edge = new Edge(compiledProperty, propertyName, sub, obj);
         properties.add(edge);
         sub.addOutgoingEdge(edge);
@@ -657,15 +650,12 @@ public class Controller {
      * @param mouseEvent the first click on the canvas when .
      */
     private void addSubjectOfProperty(MouseEvent mouseEvent) {
-        EventTarget parent = ((Node) mouseEvent.getTarget()).getParent();
-
-        try {
-            sub = new Vertex(parent, mouseEvent.getX(), mouseEvent.getY());
-        } catch (OutsideElementException e){
+        sub = findClassUnder(mouseEvent.getX(), mouseEvent.getY());
+        if (sub == null){
             LOGGER.warning("Outside Element: " + mouseEvent.toString());
-            sub = null;
             return;
         }
+        sub.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
 
         arrow = new Arrow();
         arrow.setMouseTransparent(true);
@@ -714,7 +704,7 @@ public class Controller {
         compiledElement.getChildren().addAll(elementType, elementName);
         drawPane.getChildren().add(compiledElement);
         try {
-            classes.add(new Vertex(compiledElement, x, y));
+            classes.add(new Vertex(compiledElement));
         } catch (OutsideElementException e) {
             e.printStackTrace();
         }
@@ -768,7 +758,7 @@ public class Controller {
         compiledElement.getChildren().addAll(elementType, elementName);
         drawPane.getChildren().add(compiledElement);
         try {
-            classes.add(new Vertex(compiledElement, x, y));
+            classes.add(new Vertex(compiledElement));
         } catch (OutsideElementException e) {
             e.printStackTrace();
         }
