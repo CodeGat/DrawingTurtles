@@ -1,6 +1,6 @@
 import Conceptual.Edge;
-import Conceptual.OutsideElementException;
 import Conceptual.Vertex;
+import Conceptual.Vertex.OutsideElementException;
 import Graph.Arrow;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
@@ -39,8 +39,12 @@ public class Controller {
     /**
      * An enumeration of the types of graph elements.
      */
-    enum Type {
+    private enum Type {
         CLASS, PROPERTY, LITERAL
+    }
+
+    private class PropertyElemMissingException extends Exception {
+        PropertyElemMissingException(String msg) { super(msg); }
     }
 
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
@@ -298,6 +302,8 @@ public class Controller {
                 bindGraph(new String(rawGraph));
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
+            } catch (PropertyElemMissingException e) {
+                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
         } else statusLbl.setText("Graph load cancelled.");
     }
@@ -306,7 +312,7 @@ public class Controller {
      * Splits the output of the .gat file into it's respective elements and attempts to bind them.
      * @param graph the raw .gat file data.
      */
-    private void bindGraph(String graph) {
+    private void bindGraph(String graph) throws PropertyElemMissingException {
         String[] elements = Arrays.stream(graph.split("]\\[|\\[|]"))
                 .filter(s -> !s.equals(""))
                 .toArray(String[]::new);
@@ -411,7 +417,7 @@ public class Controller {
      * Helper Method of {@link #bindGraph(String)}.
      * @param prop the .gat String serialization of a Property.
      */
-    private void bindProperty(String prop) {
+    private void bindProperty(String prop) throws PropertyElemMissingException {
         String[] propElements = prop.split("=");
         String[] propInfo     = propElements[0].substring(1).split("\\|");
         String   propName     = propElements[1];
@@ -435,7 +441,15 @@ public class Controller {
 
         compiledProp.getChildren().addAll(arrow, name);
         drawPane.getChildren().add(compiledProp);
-        properties.add(new Edge(compiledProp, name, findClassUnder(sx, sy), findClassUnder(ex, ey)));
+
+        Vertex sub = findClassUnder(sx, sy);
+        Vertex obj = findClassUnder(ex, ey);
+        if (sub != null && obj != null) {
+            Edge edge = new Edge(compiledProp, name, sub, obj);
+            sub.addOutgoingEdge(edge);
+            obj.addIncomingEdge(edge);
+            properties.add(edge);
+        } else throw new PropertyElemMissingException("sub");
     }
 
     /**
@@ -548,16 +562,21 @@ public class Controller {
         Vertex klass;
         Edge   property;
 
-        System.out.print("Deleting at ("+x+", "+y+")...");
-
         if ((klass = findClassUnder(x, y)) != null) {
             drawPane.getChildren().remove(klass.getContainer());
+
+            for (Edge incEdge : klass.getIncomingEdges()){
+                drawPane.getChildren().remove(incEdge.getContainer());
+                properties.remove(incEdge);
+            }
+            for (Edge outEdge : klass.getOutgoingEdges()){
+                drawPane.getChildren().remove(outEdge.getContainer());
+                properties.remove(outEdge);
+            }
             classes.remove(klass);
-            System.out.println("Deleted Class. ");
         } else if ((property = findPropertyUnder(x, y)) != null) {
             drawPane.getChildren().remove(property.getContainer());
             properties.remove(property);
-            System.out.println("Deleted Property. ");
         } else {
             statusLbl.setText("No graph element is under your cursor to delete. ");
             LOGGER.info("Nothing under (" + x + ", " + y + ") for deletion.");
@@ -620,7 +639,13 @@ public class Controller {
 
         compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
-        properties.add(new Edge(compiledProperty, propertyName, sub, obj));
+
+        // TODO: 9/01/2019 This sub, obj doesn't refer to the classes one.
+        Edge edge = new Edge(compiledProperty, propertyName, sub, obj);
+        properties.add(edge);
+        sub.addOutgoingEdge(edge);
+        obj.addIncomingEdge(edge);
+
         statusLbl.setText("Property " + propertyName.getText() + " created. ");
         sub = null;
         arrow = null;

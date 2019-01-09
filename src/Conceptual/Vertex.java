@@ -7,6 +7,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.text.Text;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -18,10 +19,18 @@ public class Vertex {
         CLASS, LITERAL
     }
 
+    public class OutsideElementException extends Exception {
+        OutsideElementException(){
+            super();
+        }
+    }
+
+
     private GraphElemType type;
     private String name;
     private StackPane container;
     private double x, y;
+    private ArrayList<Edge> incomingEdges, outgoingEdges;
 
 
     /**
@@ -40,6 +49,8 @@ public class Vertex {
 
         this.name = ((Text) container.getChildren().get(1)).getText();
         this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
+        incomingEdges = new ArrayList<>();
+        outgoingEdges = new ArrayList<>();
 
         // we get the shortest distance between the mouse click and the edge of the vertex, giving us a neat
         //    snap-to feature.
@@ -86,6 +97,18 @@ public class Vertex {
             );
         }
     }
+
+    public void addIncomingEdge(Edge e){
+        incomingEdges.add(e);
+    }
+
+    public void addOutgoingEdge(Edge e){
+        outgoingEdges.add(e);
+    }
+
+    public ArrayList<Edge> getIncomingEdges() { return incomingEdges; }
+
+    public ArrayList<Edge> getOutgoingEdges() { return outgoingEdges; }
 
     public String getName() { return name; }
 
