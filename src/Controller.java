@@ -65,8 +65,9 @@ public class Controller {
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
     private Arrow arrow;
-    private Vertex sub;
-    private boolean srcClick = true;
+    private Vertex sub, move;
+    private boolean srcPropClick = true;
+    private boolean srcDragClick = true;
 
     /**
      * Method invoked on any key press in the main application.
@@ -128,7 +129,7 @@ public class Controller {
      */
     @FXML protected void propSelectAction()  {
         drawStatusLbl.setText("Property selected");
-        srcClick = true;
+        srcPropClick = true;
         selectedType = Type.PROPERTY;
     }
 
@@ -537,21 +538,39 @@ public class Controller {
     }
 
     /**
-     * On clicking the canvas, begin to draw the specified element to the canvas.
+     * Catch-all method for canvas actions.
      * @param mouseEvent the event that triggered the method.
      */
     @FXML protected void canvasAction(MouseEvent mouseEvent) {
         if (mouseEvent.isSecondaryButtonDown()) {
             deleteGraphElement(mouseEvent);
+        } else if (mouseEvent.isShiftDown() && srcDragClick) {
+            startClassMove(mouseEvent);
+        } else if (mouseEvent.isShiftDown()){
+            commitClassMove(mouseEvent);
         } else if (selectedType == Type.CLASS){
             addClassSubaction(mouseEvent);
         } else if (selectedType == Type.LITERAL){
             addLiteralSubaction(mouseEvent);
-        } else if (selectedType == Type.PROPERTY && srcClick) {
+        } else if (selectedType == Type.PROPERTY && srcPropClick) {
             addSubjectOfProperty(mouseEvent);
         } else if (selectedType == Type.PROPERTY){
             addObjectOfProperty(mouseEvent);
         }
+    }
+
+    private void startClassMove(MouseEvent mouseEvent) {
+        move = findClassUnder(mouseEvent.getX(), mouseEvent.getY());
+        srcDragClick = false;
+    }
+
+    private void commitClassMove(MouseEvent mouseEvent) {
+        if (move != null){
+            move.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
+
+            move = null;
+        }
+        srcDragClick = true;
     }
 
     /**
@@ -589,10 +608,14 @@ public class Controller {
      * Keeps the arrow in line with the mouse as the user clicks on the target.
      * @param mouseEvent the event that triggered the method.
      */
-    @FXML protected void moveArrowAction(MouseEvent mouseEvent) {
-        if (arrow == null) return;
-        arrow.setEndX(mouseEvent.getX());
-        arrow.setEndY(mouseEvent.getY());
+    @FXML protected void moveObjectAction(MouseEvent mouseEvent) {
+        if (arrow != null) {
+            arrow.setEndX(mouseEvent.getX());
+            arrow.setEndY(mouseEvent.getY());
+        } else if (move != null) {
+            move.getContainer().setLayoutX(mouseEvent.getX());
+            move.getContainer().setLayoutY(mouseEvent.getY());
+        }
     }
 
     /**
@@ -607,7 +630,7 @@ public class Controller {
             drawPane.getChildren().remove(arrow);
             sub = null;
             arrow = null;
-            srcClick = true;
+            srcPropClick = true;
             return;
         }
         obj.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
@@ -625,7 +648,7 @@ public class Controller {
             statusLbl.setText("Property creation cancelled. ");
             sub = null;
             arrow = null;
-            srcClick = true;
+            srcPropClick = true;
             return;
         }
 
@@ -647,7 +670,7 @@ public class Controller {
         statusLbl.setText("Property " + propertyName.getText() + " created. ");
         sub = null;
         arrow = null;
-        srcClick = true;
+        srcPropClick = true;
     }
 
     /**
@@ -670,7 +693,7 @@ public class Controller {
         arrow.setEndY(sub.getY());
 
         drawPane.getChildren().add(arrow);
-        srcClick = false;
+        srcPropClick = false;
         statusLbl.setText("Subject selected. Click another element for the Object.");
     }
 

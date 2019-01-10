@@ -42,13 +42,13 @@
         <ScrollPane fx:id="scrollPane" vbarPolicy="ALWAYS" hbarPolicy="ALWAYS">
             <Pane fx:id="drawPane" prefHeight="1000" prefWidth="1000"
                   onMousePressed="#canvasAction"
-                  onMouseMoved="#moveArrowAction"
+                  onMouseMoved="#moveObjectAction"
             />
         </ScrollPane>
     </center>
     <bottom>
         <ToolBar>
-            <Text text="[Q]-Select Class [W]-Select Literal [E]-Select Property [P]-Add Prefix [S/Ctrl+S]-Save Graph/All [L/Ctrl+L]-Load Graph/All [X/Ctrl+X] Export .tll/All" />
+            <Text text="[Q]-Select Class [W]-Select Literal [E]-Select Property [Shift+Drag]-Move [P]-Add Prefix [S/Ctrl+S]-Save Graph/All [L/Ctrl+L]-Load Graph/All [X/Ctrl+X] Export .tll/All" />
         </ToolBar>
     </bottom>
 </BorderPane>
