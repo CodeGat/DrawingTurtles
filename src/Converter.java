@@ -83,20 +83,19 @@ class Converter {
         );
 
         for (Edge property : properties){
-            String name = property.getName();
             String propStr;
+            String propname = property.getName();
+            String objname = property.getObject().getName();
+            String subname = property.getSubject().getName();
 
-            if (name.contains(":")) {
-                propStr = name + " rdf:type owl:ObjectProperty ;\n" +
-                        "\trdfs:domain " + property.getSubject().getName() + " ;\n" +
-                        "\trdfs:range " + property.getObject().getName() + " .\n";
-                propStrs.append(propStr);
-            } else {
-                propStr = "<" + name + "> rdf:type owl:ObjectProperty ;\n" +
-                        "\trdfs:domain " + property.getSubject().getName() + " ;\n" +
-                        "\trdfs:range " + property.getObject().getName() + " .\n";
-                propStrs.append(propStr);
-            }
+            propname = propname.contains(":") ? propname : "<"+propname+">";
+            objname = objname.matches("http:.*|mailto:.*") ? "<"+objname+">" : objname;
+            subname = subname.matches("http:.*|mailto:.*") ? "<"+subname+">" : subname;
+
+            propStr = propname + " rdf:type owl:ObjectProperty ;\n\trdfs:domain "
+                    + subname + " ;\n\trdfs:range "
+                    + objname + " .\n";
+            propStrs.append(propStr);
         }
         return propStrs.toString();
     }
@@ -113,10 +112,9 @@ class Converter {
                 "##################################################\n\n"
         );
 
-        for (Vertex graphClass : classes){
-            if      (graphClass.getType() == Vertex.GraphElemType.CLASS)   convertClass(graphClass);
-            else if (graphClass.getType() == Vertex.GraphElemType.LITERAL) convertLiteral(graphClass);
-        }
+        for (Vertex graphClass : classes)
+            if (graphClass.getType() == Vertex.GraphElemType.CLASS)
+                convertClass(graphClass);
 
         classStrings.values().forEach(classStrs::append);
 
@@ -129,45 +127,28 @@ class Converter {
      * @param klass the GraphClass (Class) that will be converted.
      */
     private static void convertClass(Vertex klass) {
-        String klassName = klass.getName();
-
-        if (klassName.contains(":")) classStrings.put(klassName, klassName + " a owl:Class .\n\n");
-        else classStrings.put(klassName, "<" + klassName + "> a owl:Class .\n\n");
-    }
-
-    /**
-     * Converts a Literal to it's .ttl representation and appends it to the Class it is connected to.
-     * @param klass the GraphClass (Literal) that will be converted and appended.
-     */
-    private static void convertLiteral(Vertex klass) {
-        ArrayList<Edge> markRemovable = new ArrayList<>();
         String className = klass.getName();
+        String classString;
 
-        for (Edge property : properties){
-            String trimClassString, key;
-            String subjectName = property.getSubject().getName();
-            String objectName  = property.getObject().getName();
+        className = className.matches("http:.*") ? "<"+className+">" : className;
+        classString = className + " a owl:Class .\n\n";
 
-            if (objectName.equals(className)){
-                key = subjectName;
-                String classString = classStrings.get(key);
-                trimClassString = classString.substring(0, classString.length() - 3);
-                markRemovable.add(property);
-            } else if (subjectName.equals(className)){
-                key = objectName;
-                String classString = classStrings.get(key);
-                trimClassString = classString.substring(0, classString.length() - 3);
-                markRemovable.add(property);
-            } else continue;
+        for (Edge edge : klass.getOutgoingEdges()){
+            Vertex obj = edge.getObject();
+            String objname = obj.getName();
+            String propname = edge.getName();
 
-            String propName = property.getName();
-            trimClassString += ";\n\t" + (propName.contains(":") ? propName : "<" + propName + ">") + " " +
-                    (className.contains(":") || className.contains("\"") ? className : "<" + className + ">") +
-                    " .\n\n";
+            if (propname.matches("a|https://www.w3.org/1999/02/22-rdf-syntax-ns#type|rdf:type")){
+                classString = classString.replaceFirst("owl:Class", objname);
+            } else {
+                propname = propname.matches("http:.*|mailto:.*") ? "<"+propname+">" : propname;
+                objname  = objname.matches("http:.*|mailto:.*") ? "<"+objname+">" : objname;
 
-            classStrings.put(key, trimClassString);
+                classString = classString.substring(0, classString.length() - 3);
+                classString += ";\n\t" + propname  + " " + objname + " .\n\n";
+            }
+
+            classStrings.put(className, classString);
         }
-
-        properties.removeAll(markRemovable);
     }
 }
