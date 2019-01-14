@@ -88,7 +88,7 @@ class Converter {
             String objname = property.getObject().getName();
             String subname = property.getSubject().getName();
 
-            propname = propname.contains(":") ? propname : "<"+propname+">";
+            propname = propname.contains("http:") ? "<"+propname+">" : propname;
             objname = objname.matches("http:.*|mailto:.*") ? "<"+objname+">" : objname;
             subname = subname.matches("http:.*|mailto:.*") ? "<"+subname+">" : subname;
 

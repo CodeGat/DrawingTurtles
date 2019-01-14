@@ -2,13 +2,11 @@ import Conceptual.Edge;
 import Conceptual.Vertex;
 import Conceptual.Vertex.OutsideElementException;
 import Graph.Arrow;
-import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -253,29 +251,30 @@ public class Controller {
         String canvasSize = "G" + drawPane.getWidth() + "x" + drawPane.getHeight();
         result.append(canvasSize);
 
-        for (Node compiledElement : drawPane.getChildren()){
-            ObservableList<Node> subelements = ((StackPane) compiledElement).getChildrenUnmodifiable();
+        for (Vertex v : classes) {
             result.append("[");
-            if (subelements.get(0) instanceof Ellipse){
-                Ellipse e = (Ellipse) subelements.get(0);
+            if (v.getType() == Vertex.GraphElemType.CLASS){
+                Ellipse e = (Ellipse) v.getContainer().getChildren().get(0);
                 String shapeInfo = "E"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
                         e.getRadiusY() + "|" + e.getFill().toString();
-                String shapeName = "=" + ((Text) subelements.get(1)).getText();
+                String shapeName = "=" + v.getName();
                 result.append(shapeInfo).append(shapeName);
-            } else if (subelements.get(0) instanceof Rectangle){
-                Rectangle r = (Rectangle) subelements.get(0);
-
+            } else if (v.getType() == Vertex.GraphElemType.LITERAL){
+                Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
                 String shapeInfo = "R" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
                         r.getWidth() + "|" + r.getHeight() + "|" + r.getFill().toString();
-                String shapeName = "=" + ((Text) subelements.get(1)).getText();
+                String shapeName = "=" + v.getName();
                 result.append(shapeInfo).append(shapeName);
-            } else if (subelements.get(0) instanceof Arrow){
-                Arrow a = (Arrow) subelements.get(0);
-                String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
-                String shapeName = "=" + ((Label) subelements.get(1)).getText();
-                result.append(shapeInfo).append(shapeName);
-            } else statusLbl.setText("TRAVERSAL FAILED. Berate the programmer for not generifying the algorithm.");
+            }
+            result.append("]");
+        }
 
+        for (Edge e : properties) {
+            result.append("[");
+            Arrow a = (Arrow) e.getContainer().getChildren().get(0);
+            String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
+            String shapeName = "=" + e.getName();
+            result.append(shapeInfo).append(shapeName);
             result.append("]");
         }
 
@@ -749,7 +748,9 @@ public class Controller {
         compiledElement.setLayoutY(y);
 
         Text elementName = showNameElementDialog();
-        if (elementName == null || elementName.getText().equals("")) return;
+        if (elementName == null) return;
+        if (elementName.getText().equals("")) elementName = new Text("_:" + Vertex.getNextBlankNodeName());
+
         double textWidth = elementName.getBoundsInLocal().getWidth();
 
         Ellipse elementType = new Ellipse();
