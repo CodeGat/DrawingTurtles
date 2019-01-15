@@ -25,6 +25,8 @@ public class Vertex {
         }
     }
 
+    private static char nextBlankNodeName = (char) 96;
+    private static ArrayList<Character> blankNodeNames = new ArrayList<>();
 
     private GraphElemType type;
     private String name;
@@ -46,6 +48,9 @@ public class Vertex {
         }
 
         this.name = ((Text) container.getChildren().get(1)).getText();
+
+        if (this.name.charAt(0) == '_') ((Text) container.getChildren().get(1)).setText("");
+
         this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
         incomingEdges = new ArrayList<>();
         outgoingEdges = new ArrayList<>();
@@ -123,4 +128,12 @@ public class Vertex {
     public double getX() { return x; }
 
     public double getY() { return y; }
+
+    public static char getNextBlankNodeName() {
+        nextBlankNodeName += 1;
+        blankNodeNames.add(nextBlankNodeName);
+        return nextBlankNodeName;
+    }
+
+    public static ArrayList<Character> getBlankNodeNames(){ return blankNodeNames; }
 }
