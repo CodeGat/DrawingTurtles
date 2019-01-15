@@ -564,6 +564,7 @@ public class Controller {
         srcDragClick = false;
     }
 
+    // TODO: 15/01/2019 doesn't work for Classes yet.
     private void commitClassMove(MouseEvent mouseEvent) {
         if (move != null){
             move.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
@@ -615,6 +616,33 @@ public class Controller {
         } else if (move != null) {
             move.getContainer().setLayoutX(mouseEvent.getX());
             move.getContainer().setLayoutY(mouseEvent.getY());
+            for (Edge outEdge : move.getOutgoingEdges()){
+                StackPane container = outEdge.getContainer();
+                Arrow a = (Arrow) container.getChildren().get(0);
+                double sx = a.getStartX();
+                double sy = a.getStartY();
+                double ex = a.getEndX();
+                double ey = a.getEndY();
+
+                a.setStartX(mouseEvent.getX());
+                a.setStartY(mouseEvent.getY());
+                container.setLayoutX(sx < ex ? sx : ex);
+                container.setLayoutY(sy < ey ? sy : ey);
+            }
+
+            for (Edge incEdge : move.getIncomingEdges()){
+                StackPane container = incEdge.getContainer();
+                Arrow a = (Arrow) incEdge.getContainer().getChildren().get(0);
+                double sx = a.getStartX();
+                double sy = a.getStartY();
+                double ex = a.getEndX();
+                double ey = a.getEndY();
+
+                a.setEndX(mouseEvent.getX());
+                a.setEndY(mouseEvent.getY());
+                container.setLayoutX(sx < ex ? sx : ex);
+                container.setLayoutY(sy < ey ? sy : ey);
+            }
         }
     }
 
