@@ -62,7 +62,7 @@ class Converter {
             fixString.append("# Don't forget to rename generic blank node names, namely: ");
             Vertex.getBlankNodeNames().forEach(n -> fixString.append(n).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
-            fixString.append('.');
+            fixString.append(".\n\n");
         }
 
         return fixString.length() > fixStringInitLength ? fixString.toString() : "";
