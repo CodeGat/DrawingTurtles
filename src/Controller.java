@@ -81,21 +81,7 @@ public class Controller {
             exportPngAction();
         } else if (key == KeyCode.X) {
             exportTtlAction();
-        } else if (key == KeyCode.SLASH && keyEvent.isShiftDown()){
-            undebugAction();
-        } else if (key == KeyCode.SLASH) {
-            debugAction();
         }
-    }
-
-    private void undebugAction() {}
-
-    private void debugAction() {
-        for (Vertex vertex : classes){
-            DebugUtils.makeBounds(vertex);
-        }
-
-        drawPane.getChildren().addAll(DebugUtils.rectangles);
     }
 
     /**
@@ -423,8 +409,6 @@ public class Controller {
     private Vertex findClassUnder(double x, double y) {
         for (Vertex klass : classes) {
             Bounds classBounds = klass.getBounds();
-            DebugUtils.makeBounds(classBounds);
-
             Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
 
             if (classBounds.intersects(pointBounds)) return klass;
