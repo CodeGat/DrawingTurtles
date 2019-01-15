@@ -41,12 +41,31 @@ class Converter {
             else return 0;
         });
 
+        String fixesNeeded = getFixes();
         String stringPrefixes = convertPrefixes();
         String stringProperties = convertGProperties();
         String stringClasses  = convertGClasses();
 
 
-        return stringPrefixes + stringClasses + stringProperties;
+        return fixesNeeded + stringPrefixes + stringClasses + stringProperties;
+    }
+
+    /**
+     * Get potential problems that the user may want to rectify, for example blank node names.
+     * @return the list of fixes.
+     */
+    private static String getFixes() {
+        StringBuilder fixString = new StringBuilder("# Potential issues found: \n");
+        final int fixStringInitLength = fixString.length();
+
+        if (Vertex.getBlankNodeNames().size() > 0){
+            fixString.append("# Don't forget to rename generic blank node names, namely: ");
+            Vertex.getBlankNodeNames().forEach(n -> fixString.append(n).append(", "));
+            fixString.delete(fixString.length() - 2, fixString.length());
+            fixString.append('.');
+        }
+
+        return fixString.length() > fixStringInitLength ? fixString.toString() : "";
     }
 
     /**
