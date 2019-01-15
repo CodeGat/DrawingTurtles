@@ -36,14 +36,6 @@ import java.util.logging.Logger;
  * The Controller for application.fxml: takes care of actions from the application.
  */
 public class Controller {
-
-    /**
-     * An enumeration of the types of graph elements.
-     */
-    private enum Type {
-        CLASS, LITERAL
-    }
-
     private class PropertyElemMissingException extends Exception {
         PropertyElemMissingException(String msg) { super(msg); }
     }
@@ -53,11 +45,10 @@ public class Controller {
     public BorderPane root;
     public Pane drawPane;
     public ScrollPane scrollPane;
-    public Button classBtn, literalBtn, addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn,
-            clearPrefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn;
+    public Button addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn, clearPrefixBtn, saveGraphBtn, loadGraphBtn,
+            exportTllBtn, exportPngBtn, instrBtn;
     public Label  statusLbl, drawStatusLbl;
 
-    private Type selectedType = Type.CLASS;
     private final ArrayList<String> prefixes   = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Vertex> classes    = new ArrayList<>();
@@ -73,11 +64,7 @@ public class Controller {
     @FXML protected void keyPressedAction(KeyEvent keyEvent){
         KeyCode key = keyEvent.getCode();
 
-        if (key == KeyCode.Q) {
-            classSelectAction();
-        } else if (key == KeyCode.W) {
-            literalSelectAction();
-        } else if (key == KeyCode.S && keyEvent.isControlDown()){
+        if (key == KeyCode.S && keyEvent.isControlDown()){
             savePrefixAction();
             saveGraphAction();
         } else if (key == KeyCode.S) {
@@ -109,22 +96,6 @@ public class Controller {
         }
 
         drawPane.getChildren().addAll(DebugUtils.rectangles);
-    }
-
-    /**
-     * On clicking the Class button, the application knows that the next click will create a Class.
-     */
-    @FXML protected void classSelectAction() {
-        drawStatusLbl.setText("Class selected");
-        selectedType = Type.CLASS;
-    }
-
-    /**
-     * On clicking the Literal button, the application knows that the next click will create a Literal.
-     */
-    @FXML protected void literalSelectAction() {
-        drawStatusLbl.setText("Literal selected");
-        selectedType = Type.LITERAL;
     }
 
     /**
@@ -538,10 +509,8 @@ public class Controller {
             addSubjectOfProperty(mouseEvent, vertex);
         } else if ((vertex = findClassUnder(x, y)) != null){
             addObjectOfProperty(mouseEvent, vertex);
-        } else if (selectedType == Type.CLASS && srcClick){
-            addClassSubaction(mouseEvent);
-        } else if (selectedType == Type.LITERAL && srcClick) {
-            addLiteralSubaction(mouseEvent);
+        } else if (srcClick){
+            addElementSubaction(mouseEvent);
         } else {
             drawPane.getChildren().remove(arrow);
             statusLbl.setText("Outside any class or literal, property creation cancelled. ");
@@ -658,20 +627,19 @@ public class Controller {
     }
 
     /**
-     * On clicking 'Instructions' button, show the instructions...
-     */
-    @FXML protected void showInstructionsAction() {
-        showInstructionsAlert();
-    }
-
-    /**
-     * Draw a Literal and it's user-specified name to the canvas, also creating the GraphClass representation of it.
-     * Helper Method of addElementAction(...).
+     * Draw a Class or Literal and it's name to the canvas, and create the GraphClass representation of the element.
+     * Helper method of {@link #canvasAction(MouseEvent) Add Element} method.
      * @param mouseEvent the click to the canvas.
      */
-    private void addLiteralSubaction(MouseEvent mouseEvent){
+    private void addElementSubaction(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
+        boolean isClass;
+
+        // from https://www.w3.org/TR/turtle/ definition of a literal.
+        String regex = "\".*\".*" +
+                "|[+\\-]?[0-9]+(\\.[0-9]+)?" +
+                "|([+\\-]?[0-9]+\\.[0-9]+|[+\\-]?\\.[0-9]+|[+\\-]?[0-9])E[+\\-]?[0-9]+";
 
         resizeEdgeOfCanvas(x, y);
 
@@ -680,22 +648,46 @@ public class Controller {
         compiledElement.setLayoutY(y);
 
         Text elementName = showNameElementDialog();
-        if (elementName == null || elementName.getText().equals("")) return;
+        if (elementName == null) return;
+        else if (elementName.getText().equals("")){
+            isClass = true;
+            elementName = new Text("_:" + Vertex.getNextBlankNodeName());
+        } else isClass = !elementName.getText().matches(regex);
+
         double textWidth = elementName.getBoundsInLocal().getWidth();
 
-        Rectangle elementType = new Rectangle();
-        elementType.setHeight(75);
-        elementType.setWidth(textWidth > 125 ? textWidth + 15 : 125);
-        elementType.setFill(Color.web("f4f4f4"));
-        elementType.setStroke(Color.BLACK);
+        if (isClass){
+            Ellipse elementType = new Ellipse();
+            elementType.setCenterX(x);
+            elementType.setCenterY(y);
+            elementType.setRadiusX(textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5);
+            elementType.setRadiusY(37.5);
+            elementType.setFill(Color.web("f4f4f4"));
+            elementType.setStroke(Color.BLACK);
+            compiledElement.getChildren().addAll(elementType, elementName);
 
-        compiledElement.getChildren().addAll(elementType, elementName);
+        } else {
+            Rectangle elementType = new Rectangle();
+            elementType.setHeight(75);
+            elementType.setWidth(textWidth > 125 ? textWidth + 15 : 125);
+            elementType.setFill(Color.web("f4f4f4"));
+            elementType.setStroke(Color.BLACK);
+            compiledElement.getChildren().addAll(elementType, elementName);
+        }
+
         drawPane.getChildren().add(compiledElement);
         try {
             classes.add(new Vertex(compiledElement));
         } catch (OutsideElementException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * On clicking 'Instructions' button, show the instructions...
+     */
+    @FXML protected void showInstructionsAction() {
+        showInstructionsAlert();
     }
 
     /**
@@ -713,44 +705,6 @@ public class Controller {
             drawPane.setPrefWidth(x + 300);
         } else if (y > height - 150) {
             drawPane.setPrefHeight(y + 300);
-        }
-    }
-
-    /**
-     * Draw a Class and it's name to the canvas, and create the GraphClass representation of the element.
-     * Helper method of {@link #canvasAction(MouseEvent) Add Element} method.
-     * @param mouseEvent the click to the canvas.
-     */
-    private void addClassSubaction(MouseEvent mouseEvent){
-        double x = mouseEvent.getX();
-        double y = mouseEvent.getY();
-
-        resizeEdgeOfCanvas(x, y);
-
-        StackPane compiledElement = new StackPane();
-        compiledElement.setLayoutX(x);
-        compiledElement.setLayoutY(y);
-
-        Text elementName = showNameElementDialog();
-        if (elementName == null) return;
-        if (elementName.getText().equals("")) elementName = new Text("_:" + Vertex.getNextBlankNodeName());
-
-        double textWidth = elementName.getBoundsInLocal().getWidth();
-
-        Ellipse elementType = new Ellipse();
-        elementType.setCenterX(x);
-        elementType.setCenterY(y);
-        elementType.setRadiusX(textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5);
-        elementType.setRadiusY(37.5);
-        elementType.setFill(Color.web("f4f4f4"));
-        elementType.setStroke(Color.BLACK);
-
-        compiledElement.getChildren().addAll(elementType, elementName);
-        drawPane.getChildren().add(compiledElement);
-        try {
-            classes.add(new Vertex(compiledElement));
-        } catch (OutsideElementException e) {
-            e.printStackTrace();
         }
     }
 
