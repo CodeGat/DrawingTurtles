@@ -41,7 +41,7 @@ public class Controller {
      * An enumeration of the types of graph elements.
      */
     private enum Type {
-        CLASS, PROPERTY, LITERAL
+        CLASS, LITERAL
     }
 
     private class PropertyElemMissingException extends Exception {
@@ -53,7 +53,7 @@ public class Controller {
     public BorderPane root;
     public Pane drawPane;
     public ScrollPane scrollPane;
-    public Button classBtn, propBtn, literalBtn, addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn,
+    public Button classBtn, literalBtn, addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn,
             clearPrefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn;
     public Label  statusLbl, drawStatusLbl;
 
@@ -63,7 +63,7 @@ public class Controller {
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
     private Arrow arrow;
-    private Vertex sub;
+    private Vertex subject;
     private boolean srcClick = true;
 
     /**
@@ -77,8 +77,6 @@ public class Controller {
             classSelectAction();
         } else if (key == KeyCode.W) {
             literalSelectAction();
-        } else if (key == KeyCode.E) {
-            propSelectAction();
         } else if (key == KeyCode.S && keyEvent.isControlDown()){
             savePrefixAction();
             saveGraphAction();
@@ -119,15 +117,6 @@ public class Controller {
     @FXML protected void classSelectAction() {
         drawStatusLbl.setText("Class selected");
         selectedType = Type.CLASS;
-    }
-
-    /**
-     * On clicking the Property button, the application knows that the next click will make the subject of the Property.
-     */
-    @FXML protected void propSelectAction()  {
-        drawStatusLbl.setText("Property selected");
-        srcClick = true;
-        selectedType = Type.PROPERTY;
     }
 
     /**
@@ -469,7 +458,6 @@ public class Controller {
 
             if (classBounds.intersects(pointBounds)) return klass;
         }
-        LOGGER.info("no class was found within ("+x+", "+y+"), left unbound. ");
         return null;
     }
 
@@ -540,16 +528,26 @@ public class Controller {
      * @param mouseEvent the event that triggered the method.
      */
     @FXML protected void canvasAction(MouseEvent mouseEvent) {
-        if (mouseEvent.isSecondaryButtonDown()) {
+        Vertex vertex;
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+
+        if (mouseEvent.isSecondaryButtonDown()){
             deleteGraphElement(mouseEvent);
-        } else if (selectedType == Type.CLASS){
+        } else if ((vertex = findClassUnder(x, y)) != null && srcClick){
+            addSubjectOfProperty(mouseEvent, vertex);
+        } else if ((vertex = findClassUnder(x, y)) != null){
+            addObjectOfProperty(mouseEvent, vertex);
+        } else if (selectedType == Type.CLASS && srcClick){
             addClassSubaction(mouseEvent);
-        } else if (selectedType == Type.LITERAL){
+        } else if (selectedType == Type.LITERAL && srcClick) {
             addLiteralSubaction(mouseEvent);
-        } else if (selectedType == Type.PROPERTY && srcClick) {
-            addSubjectOfProperty(mouseEvent);
-        } else if (selectedType == Type.PROPERTY){
-            addObjectOfProperty(mouseEvent);
+        } else {
+            drawPane.getChildren().remove(arrow);
+            statusLbl.setText("Outside any class or literal, property creation cancelled. ");
+            subject = null;
+            arrow = null;
+            srcClick = true;
         }
     }
 
@@ -598,31 +596,21 @@ public class Controller {
      * Defines the Object, or range, of the property, and creates the association between the Subject and Object.
      * @param mouseEvent the second click on the canvas when 'Property' is selected.
      */
-    private void addObjectOfProperty(MouseEvent mouseEvent) {
-        Vertex obj = findClassUnder(mouseEvent.getX(), mouseEvent.getY());
-        if (obj == null){
-            LOGGER.info("Outside Element: " + mouseEvent.toString());
-            statusLbl.setText("Outside any class or literal, property creation cancelled. ");
-            drawPane.getChildren().remove(arrow);
-            sub = null;
-            arrow = null;
-            srcClick = true;
-            return;
-        }
+    private void addObjectOfProperty(MouseEvent mouseEvent, Vertex obj) {
         obj.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
 
         arrow.setEndX(obj.getX());
         arrow.setEndY(obj.getY());
 
         StackPane compiledProperty = new StackPane();
-        compiledProperty.setLayoutX(sub.getX() < obj.getX() ? sub.getX() : obj.getX());
-        compiledProperty.setLayoutY(sub.getY() < obj.getY() ? sub.getY() : obj.getY());
+        compiledProperty.setLayoutX(subject.getX() < obj.getX() ? subject.getX() : obj.getX());
+        compiledProperty.setLayoutY(subject.getY() < obj.getY() ? subject.getY() : obj.getY());
 
         Text propertyName0 = showNameElementDialog();
         if (propertyName0 == null){
             drawPane.getChildren().remove(arrow);
             statusLbl.setText("Property creation cancelled. ");
-            sub = null;
+            subject = null;
             arrow = null;
             srcClick = true;
             return;
@@ -638,13 +626,13 @@ public class Controller {
         compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
 
-        Edge edge = new Edge(compiledProperty, propertyName, sub, obj);
+        Edge edge = new Edge(compiledProperty, propertyName, subject, obj);
         properties.add(edge);
-        sub.addOutgoingEdge(edge);
+        subject.addOutgoingEdge(edge);
         obj.addIncomingEdge(edge);
 
         statusLbl.setText("Property " + propertyName.getText() + " created. ");
-        sub = null;
+        subject = null;
         arrow = null;
         srcClick = true;
     }
@@ -653,20 +641,16 @@ public class Controller {
      * Defines the Subject, or domain, of the property.
      * @param mouseEvent the first click on the canvas when .
      */
-    private void addSubjectOfProperty(MouseEvent mouseEvent) {
-        sub = findClassUnder(mouseEvent.getX(), mouseEvent.getY());
-        if (sub == null){
-            LOGGER.warning("Outside Element: " + mouseEvent.toString());
-            return;
-        }
-        sub.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
+    private void addSubjectOfProperty(MouseEvent mouseEvent, Vertex sub) {
+        subject = sub;
+        subject.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
 
         arrow = new Arrow();
         arrow.setMouseTransparent(true);
-        arrow.setStartX(sub.getX());
-        arrow.setStartY(sub.getY());
-        arrow.setEndX(sub.getX());
-        arrow.setEndY(sub.getY());
+        arrow.setStartX(subject.getX());
+        arrow.setStartY(subject.getY());
+        arrow.setEndX(subject.getX());
+        arrow.setEndY(subject.getY());
 
         drawPane.getChildren().add(arrow);
         srcClick = false;
