@@ -544,6 +544,8 @@ public class Controller {
             classes.remove(klass);
         } else if ((property = findPropertyUnder(x, y)) != null) {
             drawPane.getChildren().remove(property.getContainer());
+            property.getSubject().getOutgoingEdges().remove(property);
+            property.getObject().getIncomingEdges().remove(property);
             properties.remove(property);
         } else {
             statusLbl.setText("No graph element is under your cursor to delete. ");
