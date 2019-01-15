@@ -41,12 +41,31 @@ class Converter {
             else return 0;
         });
 
+        String fixesNeeded = getFixes();
         String stringPrefixes = convertPrefixes();
         String stringProperties = convertGProperties();
         String stringClasses  = convertGClasses();
 
 
-        return stringPrefixes + stringClasses + stringProperties;
+        return fixesNeeded + stringPrefixes + stringClasses + stringProperties;
+    }
+
+    /**
+     * Get potential problems that the user may want to rectify, for example blank node names.
+     * @return the list of fixes.
+     */
+    private static String getFixes() {
+        StringBuilder fixString = new StringBuilder("# Potential issues found: \n");
+        final int fixStringInitLength = fixString.length();
+
+        if (Vertex.getBlankNodeNames().size() > 0){
+            fixString.append("# Don't forget to rename generic blank node names, namely: ");
+            Vertex.getBlankNodeNames().forEach(n -> fixString.append(n).append(", "));
+            fixString.delete(fixString.length() - 2, fixString.length());
+            fixString.append(".\n\n");
+        }
+
+        return fixString.length() > fixStringInitLength ? fixString.toString() : "";
     }
 
     /**
@@ -92,9 +111,29 @@ class Converter {
             objname = objname.matches("http:.*|mailto:.*") ? "<"+objname+">" : objname;
             subname = subname.matches("http:.*|mailto:.*") ? "<"+subname+">" : subname;
 
-            propStr = propname + " rdf:type owl:ObjectProperty ;\n\trdfs:domain "
-                    + subname + " ;\n\trdfs:range "
-                    + objname + " .\n";
+            String subType = null;
+            String objType = null;
+            String ints = "[+\\-]?\\d";
+
+            if      (objname.matches("\".*\"")) objType = "xsd:string";
+            else if (objname.matches("true|false")) objType = "xsd:boolean";
+            else if (objname.matches(ints+"+")) objType = "xsd:integer";
+            else if (objname.matches(ints+"*\\.\\d+")) objType = "xsd:decimal";
+            else if (objname.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+"))
+                objType = "xsd:double";
+            else if (objname.matches(".*\\^\\^.*")) objType = objname.split("\\^\\^")[1];
+
+            if      (subname.matches("\".*\"")) subType = "xsd:string";
+            else if (subname.matches("true|false")) subType = "xsd:boolean";
+            else if (subname.matches(ints+"+")) subType = "xsd:integer";
+            else if (subname.matches(ints+"*\\.\\d+")) subType = "xsd:decimal";
+            else if (subname.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+"))
+                subType = "xsd:double";
+            else if (subname.matches(".*\\^\\^.*")) subType = subname.split("\\^\\^")[1];
+
+            propStr = propname + " rdf:type owl:ObjectProperty ;\n\t" +
+                    "rdfs:domain " + (subType == null ? subname : subType) + " ;\n\t" +
+                    "rdfs:range " + (objType == null ? objname : objType) + " .\n";
             propStrs.append(propStr);
         }
         return propStrs.toString();

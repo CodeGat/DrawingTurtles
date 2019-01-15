@@ -26,6 +26,7 @@ public class Vertex {
     }
 
     private static char nextBlankNodeName = (char) 96;
+    private static ArrayList<Character> blankNodeNames = new ArrayList<>();
 
     private GraphElemType type;
     private String name;
@@ -130,6 +131,9 @@ public class Vertex {
 
     public static char getNextBlankNodeName() {
         nextBlankNodeName += 1;
+        blankNodeNames.add(nextBlankNodeName);
         return nextBlankNodeName;
     }
+
+    public static ArrayList<Character> getBlankNodeNames(){ return blankNodeNames; }
 }
