@@ -116,6 +116,7 @@ class Converter {
             String ints = "[+\\-]?\\d";
 
             if      (objname.matches("\".*\"")) objType = "xsd:string";
+            else if (objname.matches("true|false")) objType = "xsd:boolean";
             else if (objname.matches(ints+"+")) objType = "xsd:integer";
             else if (objname.matches(ints+"*\\.\\d+")) objType = "xsd:decimal";
             else if (objname.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+"))
@@ -123,6 +124,7 @@ class Converter {
             else if (objname.matches(".*\\^\\^.*")) objType = objname.split("\\^\\^")[1];
 
             if      (subname.matches("\".*\"")) subType = "xsd:string";
+            else if (subname.matches("true|false")) subType = "xsd:boolean";
             else if (subname.matches(ints+"+")) subType = "xsd:integer";
             else if (subname.matches(ints+"*\\.\\d+")) subType = "xsd:decimal";
             else if (subname.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+"))
