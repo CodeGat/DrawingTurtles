@@ -2,7 +2,9 @@ import Conceptual.Edge;
 import Conceptual.Vertex;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Class that is responsible for the conversion of a visual graph into a .ttl string.
@@ -166,28 +168,52 @@ class Converter {
      * @param klass the GraphClass (Class) that will be converted.
      */
     private static void convertClass(Vertex klass) {
-        String className = klass.getName();
+        //first create the base subject text.
+        String subname = klass.getName();
         String classString;
 
-        className = className.matches("http:.*") ? "<"+className+">" : className;
-        classString = className + " a owl:Class .\n\n";
+        subname = subname.matches("http:.*") ? "<"+subname+">" : subname;
+        classString = subname + " a owl:Class .\n\n";
 
+        //then concatenate any properties with multiple objects
+        HashMap<String, ArrayList<String>> commonObjects = new HashMap<>();
         for (Edge edge : klass.getOutgoingEdges()){
-            Vertex obj = edge.getObject();
-            String objname = obj.getName();
-            String propname = edge.getName();
+            String edgeName = edge.getName();
+            String objName = edge.getObject().getName();
 
-            if (propname.matches("a|https://www.w3.org/1999/02/22-rdf-syntax-ns#type|rdf:type")){
-                classString = classString.replaceFirst("owl:Class", objname);
+            if (commonObjects.containsKey(edgeName)) commonObjects.get(edgeName).add(objName);
+            else commonObjects.put(edgeName, new ArrayList<>(Collections.singletonList(objName)));
+        }
+
+        //finally output these pairs
+        for (Map.Entry<String, ArrayList<String>> e : commonObjects.entrySet()){
+            String propName = e.getKey();
+            ArrayList<String> objectNames = e.getValue();
+
+            if (propName.matches("a|https://www.w3.org/1999/02/22-rdf-syntax-ns#type|rdf:type")){
+                classString = classString.replaceFirst("owl:Class", objectNames.get(0));
+                continue;
             } else {
-                propname = propname.matches("http:.*|mailto:.*") ? "<"+propname+">" : propname;
-                objname  = objname.matches("http:.*|mailto:.*") ? "<"+objname+">" : objname;
-
+                propName = propName.matches("http:.*|mailto:.*") ? "<"+propName+">" : propName;
                 classString = classString.substring(0, classString.length() - 3);
-                classString += ";\n\t" + propname  + " " + objname + " .\n\n";
             }
 
-            classStrings.put(className, classString);
+            if (objectNames.size() == 1){
+                classString += ";\n\t" + propName  + " " + objectNames.get(0) + " .\n\n";
+            } else {
+                classString += ";\n\t" + propName  + "\n\t\t";
+
+                StringBuilder multiObjString = new StringBuilder();
+                for (String objName : objectNames){
+                    objName  = objName.matches("http:.*|mailto:.*") ? "<"+objName+">" : objName;
+                    multiObjString.append(objName).append(" ,\n\t\t");
+                }
+                classString += multiObjString.toString();
+                classString = classString.substring(0, classString.length() - 4);
+                classString += ".\n\n";
+            }
+
+            classStrings.put(subname, classString);
         }
     }
 }
