@@ -52,7 +52,7 @@ public class Controller {
     public Button addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn, clearPrefixBtn, saveGraphBtn, loadGraphBtn,
             exportTllBtn, exportPngBtn, instrBtn , optionsBtn;
     public Label  statusLbl, drawStatusLbl;
-    private ArrayList<Boolean> config = new ArrayList<>();
+    private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false));
 
     private final ArrayList<String> prefixes   = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
@@ -448,7 +448,7 @@ public class Controller {
                 null
         );
         if (saveFile != null){
-            String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties);
+            String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties, config);
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(ttl);
@@ -838,8 +838,6 @@ public class Controller {
         Optional<ArrayList<Boolean>> optDialogResult = dialog.showAndWait();
         optDialogResult.ifPresent(res -> config = res);
     }
-
-    public ArrayList<Boolean> getConfig() { return config; }
 
     /**
      * Creates an alert that displays the current prefixes.

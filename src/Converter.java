@@ -10,9 +10,10 @@ import java.util.Map;
  * Class that is responsible for the conversion of a visual graph into a .ttl string.
  */
 class Converter {
-    private static ArrayList<String> prefixes;
-    private static ArrayList<Vertex> classes;
-    private static ArrayList<Edge>   properties;
+    private static ArrayList<String>  prefixes;
+    private static ArrayList<Vertex>  classes;
+    private static ArrayList<Edge>    properties;
+    private static ArrayList<Boolean> config;
 
     /**
      * The overarching method for conversion of a graph into a string.
@@ -24,10 +25,12 @@ class Converter {
     static String convertGraphToTtlString(
             ArrayList<String> prefixes,
             ArrayList<Vertex> classes,
-            ArrayList<Edge> properties) {
+            ArrayList<Edge> properties,
+            ArrayList<Boolean> config) {
         Converter.prefixes   = prefixes;
         Converter.classes    = classes;
         Converter.properties = properties;
+        Converter.config     = config;
 
         String fixesNeeded = getFixes();
         String stringPrefixes = convertPrefixes();
@@ -58,7 +61,7 @@ class Converter {
 
     /**
      * Conversion of prefixes into .ttl prefixes.
-     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList)}.
+     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList, ArrayList)}.
      * @return the converted prefixes.
      */
     private static String convertPrefixes() {
@@ -79,7 +82,7 @@ class Converter {
 
     /**
      * Conversion of visual properties into .ttl representation.
-     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList)}.
+     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList, ArrayList)}.
      * @return the properties as a valid .tll string.
      */
     private static String convertGProperties() {
@@ -127,7 +130,7 @@ class Converter {
 
     /**
      * Comversion of visual Classes and Literals into their .ttl string equivalent.
-     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList)}.
+     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList, ArrayList)}.
      * @return the converted Classes and Literals into thier .ttl equivalent.
      */
     private static String convertGClasses() {
@@ -180,23 +183,24 @@ class Converter {
                 classString = classString.substring(0, classString.length() - 3);
             }
 
-            //check if the property has only one object, which has a simpler representation than the multi-object one.
-            if (objectNames.size() == 1){
-                classString += ";\n\t" + propName  + " " + objectNames.get(0) + " .\n\n";
-            } else {
-                classString += ";\n\t" + propName  + "\n\t\t";
-
-                StringBuilder multiObjString = new StringBuilder();
-                for (String objName : objectNames){
-                    objName  = objName.matches("http:.*|mailto:.*") ? "<"+objName+">" : objName;
-                    multiObjString.append(objName).append(" ,\n\t\t");
-                }
-                classString += multiObjString.toString();
-                classString = classString.substring(0, classString.length() - 4);
-                classString += ".\n\n";
-            }
+            classString += ";\n\t" + propName + " " + convertObjectList(objectNames, config.get(0)) + " .\n\n";
         }
 
         return classString;
+    }
+
+    private static String convertObjectList(ArrayList<String> objectNames, boolean asContainer){
+        StringBuilder list = new StringBuilder();
+
+        if (objectNames.size() == 1) return objectNames.get(0);
+
+        list.append(asContainer ? "(" : "\n\t\t");
+        for (String objName : objectNames){
+            objName  = objName.matches("http:.*|mailto:.*") ? "<"+objName+">" : objName;
+            list.append(objName);
+            list.append(asContainer ? " " : " ,\n\t\t");
+        }
+
+        return asContainer ? list.substring(0, list.length() - 1) + ")" : list.substring(0, list.length() - 5);
     }
 }
