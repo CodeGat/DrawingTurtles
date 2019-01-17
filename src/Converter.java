@@ -11,9 +11,8 @@ import java.util.Map;
  */
 class Converter {
     private static ArrayList<String> prefixes;
-    private static ArrayList<Vertex>   classes;
+    private static ArrayList<Vertex> classes;
     private static ArrayList<Edge>   properties;
-    private static HashMap<String, String> classStrings;
 
     /**
      * The overarching method for conversion of a graph into a string.
@@ -26,10 +25,9 @@ class Converter {
             ArrayList<String> prefixes,
             ArrayList<Vertex> classes,
             ArrayList<Edge> properties) {
-        Converter.prefixes     = prefixes;
-        Converter.classes      = classes;
-        Converter.properties   = properties;
-        Converter.classStrings = new HashMap<>();
+        Converter.prefixes   = prefixes;
+        Converter.classes    = classes;
+        Converter.properties = properties;
 
         // sort such that classes are parsed before literals, as literals are often appended to the class in .ttl.
         Converter.classes.sort((o1, o2) -> {
@@ -105,37 +103,35 @@ class Converter {
 
         for (Edge property : properties){
             String propStr;
-            String propname = property.getName();
-            String objname = property.getObject().getName();
-            String subname = property.getSubject().getName();
+            String prop = property.getName();
+            String obj = property.getObject().getName();
+            String sub = property.getSubject().getName();
 
-            propname = propname.contains("http:") ? "<"+propname+">" : propname;
-            objname = objname.matches("http:.*|mailto:.*") ? "<"+objname+">" : objname;
-            subname = subname.matches("http:.*|mailto:.*") ? "<"+subname+">" : subname;
+            prop = prop.contains("http:") ? "<"+prop+">" : prop;
+            obj = obj.matches("http:.*|mailto:.*") ? "<"+obj+">" : obj;
+            sub = sub.matches("http:.*|mailto:.*") ? "<"+sub+">" : sub;
 
             String subType = null;
             String objType = null;
             String ints = "[+\\-]?\\d";
 
-            if      (objname.matches("\".*\"")) objType = "xsd:string";
-            else if (objname.matches("true|false")) objType = "xsd:boolean";
-            else if (objname.matches(ints+"+")) objType = "xsd:integer";
-            else if (objname.matches(ints+"*\\.\\d+")) objType = "xsd:decimal";
-            else if (objname.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+"))
-                objType = "xsd:double";
-            else if (objname.matches(".*\\^\\^.*")) objType = objname.split("\\^\\^")[1];
+            if      (obj.matches("\".*\"")) objType = "xsd:string";
+            else if (obj.matches("true|false")) objType = "xsd:boolean";
+            else if (obj.matches(ints+"+")) objType = "xsd:integer";
+            else if (obj.matches(ints+"*\\.\\d+")) objType = "xsd:decimal";
+            else if (obj.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+")) objType = "xsd:double";
+            else if (obj.matches(".*\\^\\^.*")) objType = obj.split("\\^\\^")[1];
 
-            if      (subname.matches("\".*\"")) subType = "xsd:string";
-            else if (subname.matches("true|false")) subType = "xsd:boolean";
-            else if (subname.matches(ints+"+")) subType = "xsd:integer";
-            else if (subname.matches(ints+"*\\.\\d+")) subType = "xsd:decimal";
-            else if (subname.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+"))
-                subType = "xsd:double";
-            else if (subname.matches(".*\\^\\^.*")) subType = subname.split("\\^\\^")[1];
+            if      (sub.matches("\".*\"")) subType = "xsd:string";
+            else if (sub.matches("true|false")) subType = "xsd:boolean";
+            else if (sub.matches(ints+"+")) subType = "xsd:integer";
+            else if (sub.matches(ints+"*\\.\\d+")) subType = "xsd:decimal";
+            else if (sub.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+")) subType = "xsd:double";
+            else if (sub.matches(".*\\^\\^.*")) subType = sub.split("\\^\\^")[1];
 
-            propStr = propname + " rdf:type owl:ObjectProperty ;\n\t" +
-                    "rdfs:domain " + (subType == null ? subname : subType) + " ;\n\t" +
-                    "rdfs:range " + (objType == null ? objname : objType) + " .\n";
+            propStr = prop + " rdf:type owl:ObjectProperty ;\n\t" +
+                    "rdfs:domain " + (subType == null ? sub : subType) + " ;\n\t" +
+                    "rdfs:range " + (objType == null ? obj : objType) + " .\n";
             propStrs.append(propStr);
         }
         return propStrs.toString();
@@ -155,19 +151,16 @@ class Converter {
 
         for (Vertex graphClass : classes)
             if (graphClass.getType() == Vertex.GraphElemType.CLASS)
-                convertClass(graphClass);
-
-        classStrings.values().forEach(classStrs::append);
+                classStrs.append(convertClass(graphClass));
 
         return classStrs.toString();
     }
 
     /**
-     * Converts a Class into it's .ttl representation, and adds it to an extendable HashMap in case Literals need to be
-     *    appended.
+     * Converts a Class into it's .ttl representation, with append
      * @param klass the GraphClass (Class) that will be converted.
      */
-    private static void convertClass(Vertex klass) {
+    private static String convertClass(Vertex klass) {
         //first create the base subject text.
         String subname = klass.getName();
         String classString;
@@ -175,7 +168,7 @@ class Converter {
         subname = subname.matches("http:.*") ? "<"+subname+">" : subname;
         classString = subname + " a owl:Class .\n\n";
 
-        //then concatenate any properties with multiple objects
+        //then group properties with their potentially multiple objects
         HashMap<String, ArrayList<String>> commonObjects = new HashMap<>();
         for (Edge edge : klass.getOutgoingEdges()){
             String edgeName = edge.getName();
@@ -185,11 +178,12 @@ class Converter {
             else commonObjects.put(edgeName, new ArrayList<>(Collections.singletonList(objName)));
         }
 
-        //finally output these pairs
+        //finally add properties and objects to the overall classString.
         for (Map.Entry<String, ArrayList<String>> e : commonObjects.entrySet()){
             String propName = e.getKey();
             ArrayList<String> objectNames = e.getValue();
 
+            //check if the property assigns a rdf:type to the subject.
             if (propName.matches("a|https://www.w3.org/1999/02/22-rdf-syntax-ns#type|rdf:type")){
                 classString = classString.replaceFirst("owl:Class", objectNames.get(0));
                 continue;
@@ -198,6 +192,7 @@ class Converter {
                 classString = classString.substring(0, classString.length() - 3);
             }
 
+            //check if the property has only one object, which has a simpler representation than the multi-object one.
             if (objectNames.size() == 1){
                 classString += ";\n\t" + propName  + " " + objectNames.get(0) + " .\n\n";
             } else {
@@ -212,8 +207,8 @@ class Converter {
                 classString = classString.substring(0, classString.length() - 4);
                 classString += ".\n\n";
             }
-
-            classStrings.put(subname, classString);
         }
+
+        return classString;
     }
 }
