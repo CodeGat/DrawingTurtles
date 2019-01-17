@@ -10,6 +10,7 @@ import javafx.geometry.Insets;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.WritableImage;
@@ -20,8 +21,10 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.RenderedImage;
@@ -31,6 +34,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * The Controller for application.fxml: takes care of actions from the application.
@@ -46,8 +50,9 @@ public class Controller {
     public Pane drawPane;
     public ScrollPane scrollPane;
     public Button addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn, clearPrefixBtn, saveGraphBtn, loadGraphBtn,
-            exportTllBtn, exportPngBtn, instrBtn;
+            exportTllBtn, exportPngBtn, instrBtn , optionsBtn;
     public Label  statusLbl, drawStatusLbl;
+    private ArrayList<Boolean> config = new ArrayList<>();
 
     private final ArrayList<String> prefixes   = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
@@ -676,6 +681,10 @@ public class Controller {
         showInstructionsAlert();
     }
 
+    @FXML private void showOptionsAction() {
+        showOptionsDialog();
+    }
+
     /**
      * Extend the canvas width and height if any new element gets to close to the bounds of the drawPane canvas.
      * @param x x coordinate to check if we need to extend the width of the canvas.
@@ -784,6 +793,53 @@ public class Controller {
 
         instrAlert.showAndWait();
     }
+
+    private void showOptionsDialog() {
+        Dialog<ArrayList<Boolean>> dialog = new Dialog<>();
+        dialog.setTitle("Options for the current Project");
+        dialog.setHeaderText(null);
+
+        Label collectionsEx1Lbl = new Label("\n:s :p (:o1 :o2 ...) .");
+        Label insteadLbl1 = new Label("instead of:");
+        Label collectionsEx2Lbl = new Label(":s\n  :p\n    :o1 ,\n    :o2 ,\n    ... .");
+        Label nodeEx1Lbl = new Label("\n:s :p [:p1 :o1; :p2 :o2; ...].");
+        Label insteadLbl2 = new Label("instead of:");
+        Label nodeEx2Lbl = new Label(":s :p _:a .\n\n_:a :p1 :o1;\n  :p2 :o2 .");
+        collectionsEx1Lbl.setFont(Font.font("Courier New"));
+        collectionsEx2Lbl.setFont(Font.font("Courier New"));
+        nodeEx1Lbl.setFont(Font.font("Courier New"));
+        nodeEx2Lbl.setFont(Font.font("Courier New"));
+
+        ArrayList<CheckBox> checkBoxes = new ArrayList<>(Arrays.asList(
+                new CheckBox("Use Collections '()' syntax for multi-object predicates"),
+                new CheckBox("Use Blank Node Property List '[]' syntax instead of explicit Blank Nodes")
+        ));
+
+        GridPane grid = new GridPane();
+        grid.setVgap(5);
+        grid.addColumn(0, checkBoxes.get(0), collectionsEx1Lbl, insteadLbl1, collectionsEx2Lbl,
+                new Separator(), checkBoxes.get(1), nodeEx1Lbl, insteadLbl2, nodeEx2Lbl, new Separator()
+        );
+
+        ButtonType commitBtnType = new ButtonType("Commit Changes", ButtonBar.ButtonData.OK_DONE);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().add(commitBtnType);
+
+        dialog.setResultConverter(btn -> {
+            if (btn == commitBtnType) {
+                return checkBoxes
+                        .stream()
+                        .map(cb -> cb.selectedProperty().getValue())
+                        .collect(Collectors.toCollection(ArrayList::new));
+            } else return null;
+        });
+
+        Optional<ArrayList<Boolean>> optDialogResult = dialog.showAndWait();
+        optDialogResult.ifPresent(res -> config = res);
+    }
+
+    public ArrayList<Boolean> getConfig() { return config; }
 
     /**
      * Creates an alert that displays the current prefixes.

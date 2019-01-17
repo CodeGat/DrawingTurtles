@@ -29,18 +29,6 @@ class Converter {
         Converter.classes    = classes;
         Converter.properties = properties;
 
-        // sort such that classes are parsed before literals, as literals are often appended to the class in .ttl.
-        Converter.classes.sort((o1, o2) -> {
-            boolean o1c = o1.getType() == Vertex.GraphElemType.CLASS;
-            boolean o1l = o1.getType() == Vertex.GraphElemType.LITERAL;
-            boolean o2c = o2.getType() == Vertex.GraphElemType.CLASS;
-            boolean o2l = o2.getType() == Vertex.GraphElemType.LITERAL;
-
-            if      (o1c && o2l) return -1;
-            else if (o1l && o2c) return 1;
-            else return 0;
-        });
-
         String fixesNeeded = getFixes();
         String stringPrefixes = convertPrefixes();
         String stringProperties = convertGProperties();

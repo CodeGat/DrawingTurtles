@@ -23,6 +23,7 @@
             <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png"/>
             <Separator />
             <Button fx:id="instrBtn" maxWidth="Infinity" onMouseClicked="#showInstructionsAction" text="Instructions"/>
+            <Button fx:id="optionsBtn" maxWidth="Infinity" onMouseClicked="#showOptionsAction" text="Options"/>
         </ToolBar>
     </left>
     <top>
