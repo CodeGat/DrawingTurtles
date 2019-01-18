@@ -811,8 +811,8 @@ public class Controller {
         nodeEx2Lbl.setFont(Font.font("Courier New"));
 
         ArrayList<CheckBox> checkBoxes = new ArrayList<>(Arrays.asList(
-                new CheckBox("Use Collections '()' syntax for multi-object predicates"),
-                new CheckBox("Use Blank Node Property List '[]' syntax instead of explicit Blank Nodes")
+                makeCheckBox("Use Collections '()' syntax for multi-object predicates", config.get(0)),
+                makeCheckBox("Use Blank Node Property List '[]' syntax", config.get(1))
         ));
 
         GridPane grid = new GridPane();
@@ -837,6 +837,12 @@ public class Controller {
 
         Optional<ArrayList<Boolean>> optDialogResult = dialog.showAndWait();
         optDialogResult.ifPresent(res -> config = res);
+    }
+
+    private CheckBox makeCheckBox(String text, boolean initialValue){
+        CheckBox checkBox = new CheckBox(text);
+        checkBox.setSelected(initialValue);
+        return checkBox;
     }
 
     /**
