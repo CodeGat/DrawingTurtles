@@ -86,6 +86,8 @@ public class Controller {
             exportPngAction();
         } else if (key == KeyCode.X) {
             exportTtlAction();
+        } else if (key == KeyCode.O) {
+            showOptionsAction();
         }
     }
 
