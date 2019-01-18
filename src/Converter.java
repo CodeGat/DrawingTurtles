@@ -15,6 +15,8 @@ class Converter {
     private static ArrayList<Edge>    properties;
     private static ArrayList<Boolean> config;
 
+    private static String subjectClassRedefinition;
+
     /**
      * The overarching method for conversion of a graph into a string.
      * @param prefixes the Arraylist of known prefixes.
@@ -142,65 +144,113 @@ class Converter {
 
         for (Vertex graphClass : classes)
             if (graphClass.getType() == Vertex.GraphElemType.CLASS)
-                classStrs.append(convertClass(graphClass));
+                classStrs.append(convertTriple(graphClass));
 
         return classStrs.toString();
     }
 
+    private static String convertTriple(Vertex klass) {
+        return convertTriple(klass, false);
+    }
+
     /**
      * Converts a Class into it's .ttl representation, with append
-     * @param klass the GraphClass (Class) that will be converted.
+     * @param klass the Vertex and it's outgoing Edges that will be converted.
      */
-    private static String convertClass(Vertex klass) {
-        //first create the base subject text.
-        String subname = klass.getName();
-        String classString;
+    // TODO: 18/01/2019 split class along lines of CFG
+    private static String convertTriple(Vertex klass, boolean isBlankSubject) {
+        String tripleString = "";
 
-        subname = subname.matches("http:.*") ? "<"+subname+">" : subname;
-        classString = subname + " a owl:Class .\n\n";
+        if (!isBlankSubject) tripleString = createSubject(klass);
 
-        //then group properties with their potentially multiple objects
-        HashMap<String, ArrayList<String>> commonObjects = new HashMap<>();
+        HashMap<String, ArrayList<Vertex>> commonObjects = new HashMap<>();
         for (Edge edge : klass.getOutgoingEdges()){
+            Vertex obj = edge.getObject();
             String edgeName = edge.getName();
-            String objName = edge.getObject().getName();
 
-            if (commonObjects.containsKey(edgeName)) commonObjects.get(edgeName).add(objName);
-            else commonObjects.put(edgeName, new ArrayList<>(Collections.singletonList(objName)));
+            if (commonObjects.containsKey(edgeName)) commonObjects.get(edgeName).add(obj);
+            else commonObjects.put(edgeName, new ArrayList<>(Collections.singletonList(obj)));
         }
 
-        //finally add properties and objects to the overall classString.
-        for (Map.Entry<String, ArrayList<String>> e : commonObjects.entrySet()){
+        if (isBlankSubject) {
+            int removeBlankIx = tripleString.length();
+            tripleString += createPredicateObjectList(commonObjects);
+            tripleString = tripleString.substring(0, removeBlankIx) + tripleString.substring(removeBlankIx + 4);
+        } else tripleString += createPredicateObjectList(commonObjects);
+
+        if (subjectClassRedefinition != null) {
+            tripleString = tripleString.replaceFirst("owl:Class", subjectClassRedefinition);
+            subjectClassRedefinition = null;
+        }
+
+        return isBlankSubject ? tripleString.substring(0, tripleString.length() - 3) : tripleString;
+    }
+
+    /**
+     * Get all predicates and their associated objects of a certain subject.
+     * @param commonObjects a map of predicates and their associated objects of a subject.
+     * @return a .ttl representation of the predicates and objects of a subject.
+     */
+    private static String createPredicateObjectList(HashMap<String, ArrayList<Vertex>> commonObjects){
+        StringBuilder predicateObjectSB = new StringBuilder();
+
+        for (Map.Entry<String, ArrayList<Vertex>> e : commonObjects.entrySet()){
             String propName = e.getKey();
-            ArrayList<String> objectNames = e.getValue();
+            String predicateObjectStr;
+            ArrayList<Vertex> objs = e.getValue();
 
             //check if the property assigns a rdf:type to the subject.
             if (propName.matches("a|https://www.w3.org/1999/02/22-rdf-syntax-ns#type|rdf:type")){
-                classString = classString.replaceFirst("owl:Class", objectNames.get(0));
+                subjectClassRedefinition = objs.get(0).getName();
                 continue;
-            } else {
-                propName = propName.matches("http:.*|mailto:.*") ? "<"+propName+">" : propName;
-                classString = classString.substring(0, classString.length() - 3);
             }
 
-            classString += ";\n\t" + propName + " " + convertObjectList(objectNames, config.get(0)) + " .\n\n";
+            propName = propName.matches("http:.*|mailto:.*") ? "<" + propName + ">" : propName;
+            predicateObjectStr = " ;\n\t" + propName + " " + convertObjectList(objs);
+            predicateObjectSB.append(predicateObjectStr);
         }
 
-        return classString;
+        return predicateObjectSB.toString() + " .\n\n";
     }
 
-    private static String convertObjectList(ArrayList<String> objectNames, boolean asContainer){
-        StringBuilder list = new StringBuilder();
+    private static String convertObjectList(ArrayList<Vertex> objects){
+        StringBuilder objectListSB = new StringBuilder();
+        boolean asContainer = config.get(0);
+        boolean asBlankNodeList = config.get(1);
 
-        if (objectNames.size() == 1) return objectNames.get(0);
-
-        list.append(asContainer ? "(" : "\n\t\t");
-        for (String objName : objectNames){
-            objName  = objName.matches("http:.*|mailto:.*") ? "<"+objName+">" : objName;
-            list.append(objName);
-            list.append(asContainer ? " " : " ,\n\t\t");
+        if (objects.size() == 1){
+            Vertex object = objects.get(0);
+            return object.isBlank() && asBlankNodeList ? "["+ convertTriple(object, true)+"]" : objects.get(0).getName();
         }
 
-        return asContainer ? list.substring(0, list.length() - 1) + ")" : list.substring(0, list.length() - 5);
+        objectListSB.append(asContainer ? "(" : "\n\t\t");
+        for (Vertex object : objects){
+            String objectListStr;
+            String objectName = object.getName();
+
+            if (object.isBlank() && asBlankNodeList) objectListStr = "[" + convertTriple(object, true) + "]";
+            else {
+                objectName  = objectName.matches("http:.*|mailto:.*") ? "<"+objectName+">" : objectName;
+                objectListStr = objectName + (asContainer ? " " : " ,\n\t\t");
+            }
+            objectListSB.append(objectListStr);
+        }
+
+        if (asContainer)
+            return objectListSB.substring(0, objectListSB.length() - 1) + ")";
+        else
+            return objectListSB.substring(0, objectListSB.length() - 5);
+    }
+
+    /**
+     * Converts the subject node into the base class definition.
+     * @param klass the subject to be converted.
+     * @return a string representation of the subjects class.
+     */
+    private static String createSubject(Vertex klass){
+        String subname = klass.getName();
+
+        subname = subname.matches("http:.*|mailto:.*") ? "<"+subname+">" : subname;
+        return subname + " a owl:Class";
     }
 }

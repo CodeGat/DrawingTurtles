@@ -33,6 +33,7 @@ public class Vertex {
     private StackPane container;
     private double x, y;
     private ArrayList<Edge> incomingEdges, outgoingEdges;
+    private boolean isBlankNode;
 
 
     /**
@@ -49,7 +50,10 @@ public class Vertex {
 
         this.name = ((Text) container.getChildren().get(1)).getText();
 
-        if (this.name.charAt(0) == '_') ((Text) container.getChildren().get(1)).setText("");
+        if (this.name.charAt(0) == '_') {
+            ((Text) container.getChildren().get(1)).setText("");
+            isBlankNode = true;
+        } else isBlankNode = false;
 
         this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
         incomingEdges = new ArrayList<>();
@@ -128,6 +132,8 @@ public class Vertex {
     public double getX() { return x; }
 
     public double getY() { return y; }
+
+    public boolean isBlank() { return isBlankNode; }
 
     public static char getNextBlankNodeName() {
         nextBlankNodeName += 1;
