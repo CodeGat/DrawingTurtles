@@ -34,6 +34,7 @@ public class Vertex {
     private double x, y;
     private ArrayList<Edge> incomingEdges, outgoingEdges;
     private boolean isBlankNode;
+    private String typeDefinition;
 
 
     /**
@@ -115,8 +116,13 @@ public class Vertex {
         incomingEdges.add(e);
     }
 
+    // TODO: 20/01/2019 determine the effect of removing the edge to the typedef.
     public void addOutgoingEdge(Edge e){
-        outgoingEdges.add(e);
+        if (e.getName().matches("a|rdf:type|http://www.w3.org/1999/02/22-rdf-syntax-ns#type")){
+            typeDefinition = e.getObject().name;
+        } else {
+            outgoingEdges.add(e);
+        }
     }
 
     public ArrayList<Edge> getIncomingEdges() { return incomingEdges; }
@@ -142,4 +148,6 @@ public class Vertex {
     }
 
     public static ArrayList<Character> getBlankNodeNames(){ return blankNodeNames; }
+
+    public String getTypeDefinition() { return typeDefinition; }
 }

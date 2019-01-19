@@ -1,10 +1,7 @@
 import Conceptual.Edge;
 import Conceptual.Vertex;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Class that is responsible for the conversion of a visual graph into a .ttl string.
@@ -15,7 +12,7 @@ class Converter {
     private static ArrayList<Edge>    properties;
     private static ArrayList<Boolean> config;
 
-    private static String subjectClassRedefinition;
+    private static String tabs = "\t";
 
     /**
      * The overarching method for conversion of a graph into a string.
@@ -157,14 +154,10 @@ class Converter {
         String subjectString = createSubject(subject);
         String predicateObjectString = createPredicateObjectList(subject);
 
-        if (predicateObjectString.length() == 0) subjectString = subjectString.substring(0, subjectString.length() - 3);
+        if (predicateObjectString.length() == 0)
+            subjectString = subjectString.substring(0, subjectString.length() - 4);
 
-        if (subjectClassRedefinition != null) {
-            subjectString = subjectString.replaceFirst("owl:Class", subjectClassRedefinition);
-            subjectClassRedefinition = null;
-        }
-
-        return subjectString + predicateObjectString + ".\n\n";
+        return subjectString + predicateObjectString + " .\n\n";
     }
 
     private static String createPredicateObjectList(Vertex subject) {
@@ -181,7 +174,7 @@ class Converter {
         }
 
         for (Map.Entry<String, ArrayList<Vertex>> e : commonObjects.entrySet()){
-            String predicateObjectListStr;
+            String predicateObjectListStr = "";
             String propName = e.getKey();
             String objectListStr;
             ArrayList<Vertex> objectList = e.getValue();
@@ -189,10 +182,8 @@ class Converter {
             propName      = propName.matches("http:.*|mailto:.*") ? "<"+propName+">" : propName;
             objectListStr = convertObjectList(objectList);
 
-            if (first){
-                predicateObjectListStr = "";
-                first = false;
-            } else predicateObjectListStr = " ; ";
+            if (first) first = false;
+            else predicateObjectListStr = " ;\n" + tabs;
 
             predicateObjectListStr += propName + " " + objectListStr;
             predicateObjectListSB.append(predicateObjectListStr);
@@ -208,12 +199,10 @@ class Converter {
 
         if (asCollection) objectListSB.append("(");
         for (Vertex object : objectList){
-            String objectListStr;
+            String objectListStr = "";
 
-            if (first){
-                objectListStr = "";
-                first = false;
-            } else objectListStr = asCollection ? " " : " , ";
+            if (first) first = false;
+            else objectListStr = asCollection ? " " : " , \n";
 
             objectListStr += convertObject(object);
             objectListSB.append(objectListStr);
@@ -225,7 +214,12 @@ class Converter {
     private static String convertObject(Vertex object) {
         String objectStr = object.getName();
 
-        if (config.get(1) && object.isBlank()) objectStr = "[\n\t\t" + createPredicateObjectList(object) + "\n\t]";
+        if (config.get(1) && object.isBlank()) {
+            tabs += "\t";
+            objectStr = "[\n" + tabs + createPredicateObjectList(object) + "\n";
+            tabs = tabs.substring(0, tabs.length() - 1);
+            objectStr += tabs + "]";
+        }
         else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
 
         return objectStr;
@@ -238,8 +232,9 @@ class Converter {
      */
     private static String createSubject(Vertex klass){
         String subname = klass.getName();
+        String typeDef = klass.getTypeDefinition() != null ? klass.getTypeDefinition() : "owl:Class";
 
         subname = subname.matches("http:.*|mailto:.*") ? "<"+subname+">" : subname;
-        return subname + " a owl:Class ;\n\t";
+        return subname + " a " + typeDef + " ;\n" + tabs;
     }
 }
