@@ -153,18 +153,11 @@ class Converter {
         return classStrs.toString();
     }
 
-    /**
-     * Converts a Class into it's .ttl representation, with append
-     * @param subject the Vertex and it's outgoing Edges that will be converted.
-     */
-    private static String convertTriple(Vertex subject) {
+    private static String convertTriple(Vertex subject){
         String subjectString = createSubject(subject);
-        String predicateObjectString = createPredicateObjectListOf(subject);
+        String predicateObjectString = createPredicateObjectList(subject);
 
-        if (predicateObjectString.length() != 0)
-            predicateObjectString = predicateObjectString.substring(0, predicateObjectString.length() - 3);
-        else
-            subjectString = subjectString.substring(0, subjectString.length() - 3);
+        if (predicateObjectString.length() == 0) subjectString = subjectString.substring(0, subjectString.length() - 3);
 
         if (subjectClassRedefinition != null) {
             subjectString = subjectString.replaceFirst("owl:Class", subjectClassRedefinition);
@@ -174,15 +167,11 @@ class Converter {
         return subjectString + predicateObjectString + ".\n\n";
     }
 
-    /**
-     * Get all predicates and their associated objects of a certain subject.
-     * @param subject the subject of the associated predicate-object list.
-     * @return a .ttl representation of the predicates and objects of a subject.
-     */
-    private static String createPredicateObjectListOf(Vertex subject){
-        StringBuilder predicateObjectSB = new StringBuilder();
-        HashMap<String, ArrayList<Vertex>> commonObjects = new HashMap<>();
+    private static String createPredicateObjectList(Vertex subject) {
+        StringBuilder predicateObjectListSB = new StringBuilder();
+        boolean first = true;
 
+        HashMap<String, ArrayList<Vertex>> commonObjects = new HashMap<>();
         for (Edge edge : subject.getOutgoingEdges()){
             Vertex obj = edge.getObject();
             String edgeName = edge.getName();
@@ -192,58 +181,54 @@ class Converter {
         }
 
         for (Map.Entry<String, ArrayList<Vertex>> e : commonObjects.entrySet()){
+            String predicateObjectListStr;
             String propName = e.getKey();
-            String predicateObjectStr;
-            ArrayList<Vertex> objs = e.getValue();
+            String objectListStr;
+            ArrayList<Vertex> objectList = e.getValue();
 
-            //check if the property assigns a rdf:type to the subject.
-            if (propName.matches("a|https://www.w3.org/1999/02/22-rdf-syntax-ns#type|rdf:type")){
-                subjectClassRedefinition = objs.get(0).getName();
-                continue;
-            }
+            propName      = propName.matches("http:.*|mailto:.*") ? "<"+propName+">" : propName;
+            objectListStr = convertObjectList(objectList);
 
-            propName = propName.matches("http:.*|mailto:.*") ? "<" + propName + ">" : propName;
+            if (first){
+                predicateObjectListStr = "";
+                first = false;
+            } else predicateObjectListStr = " ; ";
 
-            predicateObjectStr = propName + " " + convertObjectList(objs) +" ;\n\t";
-            predicateObjectSB.append(predicateObjectStr);
+            predicateObjectListStr += propName + " " + objectListStr;
+            predicateObjectListSB.append(predicateObjectListStr);
         }
 
-        return predicateObjectSB.toString();
+        return predicateObjectListSB.toString();
     }
 
-    private static String convertObjectList(ArrayList<Vertex> objects){
+    private static String convertObjectList(ArrayList<Vertex> objectList) {
         StringBuilder objectListSB = new StringBuilder();
-        boolean asContainer = config.get(0);
-        boolean asBlankNodeList = config.get(1);
+        boolean asCollection = config.get(0) && objectList.size() > 1;
+        boolean first = true;
 
-        objectListSB.append(asContainer ? "(" : "\n\t\t");
-        for (Vertex object : objects){
+        if (asCollection) objectListSB.append("(");
+        for (Vertex object : objectList){
             String objectListStr;
-            String objectName = object.getName();
-            asBlankNodeList = config.get(1) && object.isBlank();
 
+            if (first){
+                objectListStr = "";
+                first = false;
+            } else objectListStr = asCollection ? " " : " , ";
 
-            if (asBlankNodeList) {
-                objectListStr = "[\n\t\t" + createPredicateObjectListOf(object);
-                objectListStr = objectListStr.substring(0, objectListStr.length() - 3)+ " \n\t]";
-            } else {
-                objectName  = objectName.matches("http:.*|mailto:.*") ? "<"+objectName+">" : objectName;
-                objectListStr = objectName + (asContainer ? " " : " ,\n\t\t");
-            }
+            objectListStr += convertObject(object);
             objectListSB.append(objectListStr);
         }
-        // TODO: 19/01/2019 different when blanknodelist, ect.
-        if (objects.size() == 1) {
-            return objectListSB.substring(3, objectListSB.length() - 5);
-        } else if (asBlankNodeList && asContainer) {
-            return objectListSB.toString() + ")";
-        } else if (asBlankNodeList) {
-            return objectListSB.toString();
-        } else if (asContainer) {
-            return objectListSB.substring(0, objectListSB.length() - 1) + ")";
-        } else {
-            return objectListSB.substring(0, objectListSB.length() - 5);
-        }
+        if (asCollection) objectListSB.append(")");
+        return objectListSB.toString();
+    }
+
+    private static String convertObject(Vertex object) {
+        String objectStr = object.getName();
+
+        if (config.get(1) && object.isBlank()) objectStr = "[\n\t\t" + createPredicateObjectList(object) + "\n\t]";
+        else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
+
+        return objectStr;
     }
 
     /**
