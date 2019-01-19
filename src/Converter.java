@@ -194,20 +194,34 @@ class Converter {
 
     private static String convertObjectList(ArrayList<Vertex> objectList) {
         StringBuilder objectListSB = new StringBuilder();
-        boolean asCollection = config.get(0) && objectList.size() > 1;
+        boolean asCollection = config.get(0);
         boolean first = true;
 
-        if (asCollection) objectListSB.append("(");
+        if (asCollection && objectList.size() > 1) objectListSB.append("(");
         for (Vertex object : objectList){
-            String objectListStr = "";
+            String objectListStr;
 
-            if (first) first = false;
-            else objectListStr = asCollection ? " " : " , \n";
+            if (objectList.size() == 1 || (first && asCollection)){ //
+                objectListSB.append(convertObject(object));
+                first = false;
+            } else if (first) { // first && !asCollection
+                tabs += "\t";
+                objectListStr = "\n" + tabs + convertObject(object);
+                objectListSB.append(objectListStr);
+                tabs = tabs.substring(0, tabs.length() - 1);
+                first = false;
+            } else if (asCollection){ // !first && asCollection
+                objectListStr = " " + convertObject(object);
+                objectListSB.append(objectListStr);
+            } else { // !first && !asCollection
+                tabs += "\t";
+                objectListStr = " ,\n" + tabs +  convertObject(object);
+                objectListSB.append(objectListStr);
+                tabs = tabs.substring(0, tabs.length() - 1);
+            }
 
-            objectListStr += convertObject(object);
-            objectListSB.append(objectListStr);
         }
-        if (asCollection) objectListSB.append(")");
+        if (asCollection && objectList.size() > 1) objectListSB.append(")");
         return objectListSB.toString();
     }
 
