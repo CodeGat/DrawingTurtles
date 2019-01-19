@@ -144,7 +144,7 @@ class Converter {
         boolean isBlanknode;
 
         for (Vertex graphClass : classes) {
-            isBlanknode = config.get(1) && graphClass.getName().matches("_:.");
+            isBlanknode = config.get(1) && graphClass.isBlank();
 
             if (graphClass.getType() == Vertex.GraphElemType.CLASS && !isBlanknode)
                 classStrs.append(convertTriple(graphClass));
@@ -214,15 +214,7 @@ class Converter {
     private static String convertObjectList(ArrayList<Vertex> objects){
         StringBuilder objectListSB = new StringBuilder();
         boolean asContainer = config.get(0);
-        boolean asBlankNodeList;
-
-        if (objects.size() == 1){
-            Vertex object = objects.get(0);
-            asBlankNodeList = config.get(1) && object.isBlank();
-
-            return asBlankNodeList ? "[\n"+ createPredicateObjectListOf(object)+"]" : objects.get(0).getName();
-        }
-
+        boolean asBlankNodeList = config.get(1);
 
         objectListSB.append(asContainer ? "(" : "\n\t\t");
         for (Vertex object : objects){
@@ -232,18 +224,26 @@ class Converter {
 
 
             if (asBlankNodeList) {
-                objectListStr = "[\n" + createPredicateObjectListOf(object) + "]";
+                objectListStr = "[\n\t\t" + createPredicateObjectListOf(object);
+                objectListStr = objectListStr.substring(0, objectListStr.length() - 3)+ " \n\t]";
             } else {
                 objectName  = objectName.matches("http:.*|mailto:.*") ? "<"+objectName+">" : objectName;
                 objectListStr = objectName + (asContainer ? " " : " ,\n\t\t");
             }
             objectListSB.append(objectListStr);
         }
-
-        if (asContainer)
+        // TODO: 19/01/2019 different when blanknodelist, ect.
+        if (objects.size() == 1) {
+            return objectListSB.substring(3, objectListSB.length() - 5);
+        } else if (asBlankNodeList && asContainer) {
+            return objectListSB.toString() + ")";
+        } else if (asBlankNodeList) {
+            return objectListSB.toString();
+        } else if (asContainer) {
             return objectListSB.substring(0, objectListSB.length() - 1) + ")";
-        else
+        } else {
             return objectListSB.substring(0, objectListSB.length() - 5);
+        }
     }
 
     /**
