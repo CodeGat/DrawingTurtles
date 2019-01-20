@@ -129,7 +129,6 @@ class Converter {
 
     /**
      * Comversion of visual Classes and Literals into their .ttl string equivalent.
-     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList, ArrayList)}.
      * @return the converted Classes and Literals into thier .ttl equivalent.
      */
     private static String convertGClasses() {
@@ -150,9 +149,14 @@ class Converter {
         return classStrs.toString();
     }
 
+    /**
+     * Converts a triple to a String. Equivalent to https://www.w3.org/TR/turtle/#grammar-production-triples.
+     * @param subject the subject of the triple.
+     * @return the triple in String form.
+     */
     private static String convertTriple(Vertex subject){
-        String subjectString = createSubject(subject);
-        String predicateObjectString = createPredicateObjectList(subject);
+        String subjectString = convertSubject(subject);
+        String predicateObjectString = convertPredicateObjectList(subject);
 
         if (predicateObjectString.length() == 0)
             subjectString = subjectString.substring(0, subjectString.length() - 4);
@@ -160,7 +164,13 @@ class Converter {
         return subjectString + predicateObjectString + " .\n\n";
     }
 
-    private static String createPredicateObjectList(Vertex subject) {
+    /**
+     * Creates the predicate-object list of the given subject.
+     * Equivalent to https://www.w3.org/TR/turtle/#grammar-production-predicateObjectList
+     * @param subject the Vertex of the predicate-object list.
+     * @return the predicate-object list in String form.
+     */
+    private static String convertPredicateObjectList(Vertex subject) {
         StringBuilder predicateObjectListSB = new StringBuilder();
         boolean first = true;
 
@@ -192,6 +202,12 @@ class Converter {
         return predicateObjectListSB.toString();
     }
 
+    /**
+     * Creates the object list of a predicate.
+     * Equivalent to https://www.w3.org/TR/turtle/#grammar-production-objectList
+     * @param objectList list of Vertices to be converted.
+     * @return the object list in String form.
+     */
     private static String convertObjectList(ArrayList<Vertex> objectList) {
         StringBuilder objectListSB = new StringBuilder();
         boolean asCollection = config.get(0);
@@ -220,12 +236,18 @@ class Converter {
         return objectListSB.toString();
     }
 
+    /**
+     * Creates the object, turning it into a string representation of the Vertex.
+     * Closely models https://www.w3.org/TR/turtle/#grammar-production-object
+     * @param object the Vertex to be converted.
+     * @return the Object as a string.
+     */
     private static String convertObject(Vertex object) {
         String objectStr = object.getName();
 
         if (config.get(1) && object.isBlank()) {
             indentTab();
-            objectStr = "[\n" + tabs + createPredicateObjectList(object) + "\n";
+            objectStr = "[\n" + tabs + convertPredicateObjectList(object) + "\n";
             dedentTab();
             objectStr += tabs + "]";
         }
@@ -236,10 +258,11 @@ class Converter {
 
     /**
      * Converts the subject node into the base class definition.
+     * Closely models https://www.w3.org/TR/turtle/#grammar-production-subject
      * @param klass the subject to be converted.
      * @return a string representation of the subjects class.
      */
-    private static String createSubject(Vertex klass){
+    private static String convertSubject(Vertex klass){
         String subname = klass.getName();
         String typeDef = klass.getTypeDefinition() != null ? klass.getTypeDefinition() : "owl:Class";
 

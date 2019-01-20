@@ -72,23 +72,17 @@ public class Controller {
         if (key == KeyCode.S && keyEvent.isControlDown()){
             savePrefixAction();
             saveGraphAction();
-        } else if (key == KeyCode.S) {
-            saveGraphAction();
-        } else if (key == KeyCode.L && keyEvent.isControlDown()){
-            loadPrefixAction();
-            loadGraphAction();
-        } else if (key == KeyCode.L) {
-            loadGraphAction();
-        } else if (key == KeyCode.P) {
-            addPrefixAction();
         } else if (key == KeyCode.X && keyEvent.isControlDown()){
             exportTtlAction();
             exportPngAction();
-        } else if (key == KeyCode.X) {
-            exportTtlAction();
-        } else if (key == KeyCode.O) {
-            showOptionsAction();
-        }
+        } else if (key == KeyCode.L && keyEvent.isControlDown()) {
+            loadPrefixAction();
+            loadGraphAction();
+        } else if (key == KeyCode.S) saveGraphAction();
+        else if (key == KeyCode.L) loadGraphAction();
+        else if (key == KeyCode.P) addPrefixAction();
+        else if (key == KeyCode.X) exportTtlAction();
+        else if (key == KeyCode.O) showOptionsAction();
     }
 
     /**
@@ -683,6 +677,9 @@ public class Controller {
         showInstructionsAlert();
     }
 
+    /**
+     * On clicking options button, show the options dialog...
+     */
     @FXML private void showOptionsAction() {
         showOptionsDialog();
     }
@@ -796,6 +793,9 @@ public class Controller {
         instrAlert.showAndWait();
     }
 
+    /**
+     * Creates a options dialog.
+     */
     private void showOptionsDialog() {
         Dialog<ArrayList<Boolean>> dialog = new Dialog<>();
         dialog.setTitle("Options for the current Project");
@@ -841,6 +841,12 @@ public class Controller {
         optDialogResult.ifPresent(res -> config = res);
     }
 
+    /**
+     * Factory method for CheckBoxes.
+     * @param text text following the checkbox.
+     * @param initialValue initial truth or falsity of the checkbox.
+     * @return the CheckBox.
+     */
     private CheckBox makeCheckBox(String text, boolean initialValue){
         CheckBox checkBox = new CheckBox(text);
         checkBox.setSelected(initialValue);
