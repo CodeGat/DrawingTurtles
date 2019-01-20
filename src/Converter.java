@@ -201,23 +201,18 @@ class Converter {
         for (Vertex object : objectList){
             String objectListStr;
 
-            if (objectList.size() == 1 || (first && asCollection)){ //
+            if (objectList.size() == 1 || (first && asCollection)){
                 objectListSB.append(convertObject(object));
                 first = false;
-            } else if (first) { // first && !asCollection
-                tabs += "\t";
-                objectListStr = "\n" + tabs + convertObject(object);
-                objectListSB.append(objectListStr);
-                tabs = tabs.substring(0, tabs.length() - 1);
-                first = false;
-            } else if (asCollection){ // !first && asCollection
+            } else if (asCollection){
                 objectListStr = " " + convertObject(object);
                 objectListSB.append(objectListStr);
-            } else { // !first && !asCollection
-                tabs += "\t";
-                objectListStr = " ,\n" + tabs +  convertObject(object);
+            } else {
+                indentTab();
+                objectListStr = (!first ? " ," : "") + "\n" + tabs +  convertObject(object);
                 objectListSB.append(objectListStr);
-                tabs = tabs.substring(0, tabs.length() - 1);
+                dedentTab();
+                first = false;
             }
 
         }
@@ -229,9 +224,9 @@ class Converter {
         String objectStr = object.getName();
 
         if (config.get(1) && object.isBlank()) {
-            tabs += "\t";
+            indentTab();
             objectStr = "[\n" + tabs + createPredicateObjectList(object) + "\n";
-            tabs = tabs.substring(0, tabs.length() - 1);
+            dedentTab();
             objectStr += tabs + "]";
         }
         else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
@@ -251,4 +246,8 @@ class Converter {
         subname = subname.matches("http:.*|mailto:.*") ? "<"+subname+">" : subname;
         return subname + " a " + typeDef + " ;\n" + tabs;
     }
+
+    private static void indentTab() { tabs += "\t"; }
+
+    private static void dedentTab() { tabs = tabs.substring(0, tabs.length() - 1); }
 }
