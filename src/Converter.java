@@ -246,10 +246,14 @@ class Converter {
         String objectStr = object.getName();
 
         if (config.get(1) && object.isBlank()) {
-            indentTab();
-            objectStr = "[\n" + tabs + convertPredicateObjectList(object) + "\n";
-            dedentTab();
-            objectStr += tabs + "]";
+            String predicateObjectList = convertPredicateObjectList(object);
+
+            if (predicateObjectList.contains(";") || predicateObjectList.contains(",")) {
+                indentTab();
+                objectStr = "[\n" + tabs + convertPredicateObjectList(object) + "\n";
+                dedentTab();
+                objectStr += tabs + "]";
+            } else objectStr = "[" + predicateObjectList + "]";
         }
         else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
 
