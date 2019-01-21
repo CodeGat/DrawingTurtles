@@ -23,6 +23,7 @@
             <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png"/>
             <Separator />
             <Button fx:id="instrBtn" maxWidth="Infinity" onMouseClicked="#showInstructionsAction" text="Instructions"/>
+            <Button fx:id="optionsBtn" maxWidth="Infinity" onMouseClicked="#showOptionsAction" text="Options"/>
         </ToolBar>
     </left>
     <top>
@@ -44,7 +45,7 @@
     </center>
     <bottom>
         <ToolBar>
-            <Text text="[P]-Add Prefix [S/Ctrl+S]-Save Graph/All [L/Ctrl+L]-Load Graph/All [X/Ctrl+X] Export .tll/All" />
+            <Text text="[P]-Add Prefix [S/Ctrl+S]-Save Graph/All [L/Ctrl+L]-Load Graph/All [X/Ctrl+X] Export .tll/All [O] Open Options" />
         </ToolBar>
     </bottom>
 </BorderPane>

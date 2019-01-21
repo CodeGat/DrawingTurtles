@@ -33,6 +33,8 @@ public class Vertex {
     private StackPane container;
     private double x, y;
     private ArrayList<Edge> incomingEdges, outgoingEdges;
+    private boolean isBlankNode;
+    private String typeDefinition;
 
 
     /**
@@ -49,7 +51,10 @@ public class Vertex {
 
         this.name = ((Text) container.getChildren().get(1)).getText();
 
-        if (this.name.charAt(0) == '_') ((Text) container.getChildren().get(1)).setText("");
+        if (this.name.charAt(0) == '_') {
+            ((Text) container.getChildren().get(1)).setText("");
+            isBlankNode = true;
+        } else isBlankNode = false;
 
         this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
         incomingEdges = new ArrayList<>();
@@ -111,8 +116,13 @@ public class Vertex {
         incomingEdges.add(e);
     }
 
+    // TODO: 20/01/2019 determine the effect of removing the edge to the typedef.
     public void addOutgoingEdge(Edge e){
-        outgoingEdges.add(e);
+        if (e.getName().matches("a|rdf:type|http://www.w3.org/1999/02/22-rdf-syntax-ns#type")){
+            typeDefinition = e.getObject().name;
+        } else {
+            outgoingEdges.add(e);
+        }
     }
 
     public ArrayList<Edge> getIncomingEdges() { return incomingEdges; }
@@ -129,6 +139,8 @@ public class Vertex {
 
     public double getY() { return y; }
 
+    public boolean isBlank() { return isBlankNode; }
+
     public static char getNextBlankNodeName() {
         nextBlankNodeName += 1;
         blankNodeNames.add(nextBlankNodeName);
@@ -136,4 +148,6 @@ public class Vertex {
     }
 
     public static ArrayList<Character> getBlankNodeNames(){ return blankNodeNames; }
+
+    public String getTypeDefinition() { return typeDefinition; }
 }

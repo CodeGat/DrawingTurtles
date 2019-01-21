@@ -10,6 +10,7 @@ import javafx.geometry.Insets;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.WritableImage;
@@ -20,8 +21,10 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.RenderedImage;
@@ -31,6 +34,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * The Controller for application.fxml: takes care of actions from the application.
@@ -46,8 +50,9 @@ public class Controller {
     public Pane drawPane;
     public ScrollPane scrollPane;
     public Button addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn, clearPrefixBtn, saveGraphBtn, loadGraphBtn,
-            exportTllBtn, exportPngBtn, instrBtn;
+            exportTllBtn, exportPngBtn, instrBtn , optionsBtn;
     public Label  statusLbl, drawStatusLbl;
+    private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false));
 
     private final ArrayList<String> prefixes   = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
@@ -67,35 +72,17 @@ public class Controller {
         if (key == KeyCode.S && keyEvent.isControlDown()){
             savePrefixAction();
             saveGraphAction();
-        } else if (key == KeyCode.S) {
-            saveGraphAction();
-        } else if (key == KeyCode.L && keyEvent.isControlDown()){
-            loadPrefixAction();
-            loadGraphAction();
-        } else if (key == KeyCode.L) {
-            loadGraphAction();
-        } else if (key == KeyCode.P) {
-            addPrefixAction();
         } else if (key == KeyCode.X && keyEvent.isControlDown()){
             exportTtlAction();
             exportPngAction();
-        } else if (key == KeyCode.X) {
-            exportTtlAction();
-        } else if (key == KeyCode.SLASH && keyEvent.isShiftDown()){
-            undebugAction();
-        } else if (key == KeyCode.SLASH) {
-            debugAction();
-        }
-    }
-
-    private void undebugAction() {}
-
-    private void debugAction() {
-        for (Vertex vertex : classes){
-            DebugUtils.makeBounds(vertex);
-        }
-
-        drawPane.getChildren().addAll(DebugUtils.rectangles);
+        } else if (key == KeyCode.L && keyEvent.isControlDown()) {
+            loadPrefixAction();
+            loadGraphAction();
+        } else if (key == KeyCode.S) saveGraphAction();
+        else if (key == KeyCode.L) loadGraphAction();
+        else if (key == KeyCode.P) addPrefixAction();
+        else if (key == KeyCode.X) exportTtlAction();
+        else if (key == KeyCode.O) showOptionsAction();
     }
 
     /**
@@ -423,8 +410,6 @@ public class Controller {
     private Vertex findClassUnder(double x, double y) {
         for (Vertex klass : classes) {
             Bounds classBounds = klass.getBounds();
-            DebugUtils.makeBounds(classBounds);
-
             Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
 
             if (classBounds.intersects(pointBounds)) return klass;
@@ -459,7 +444,7 @@ public class Controller {
                 null
         );
         if (saveFile != null){
-            String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties);
+            String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties, config);
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(ttl);
@@ -693,6 +678,13 @@ public class Controller {
     }
 
     /**
+     * On clicking options button, show the options dialog...
+     */
+    @FXML private void showOptionsAction() {
+        showOptionsDialog();
+    }
+
+    /**
      * Extend the canvas width and height if any new element gets to close to the bounds of the drawPane canvas.
      * @param x x coordinate to check if we need to extend the width of the canvas.
      * @param y y coordinate to check if we need to extend the height of the canvas.
@@ -799,6 +791,66 @@ public class Controller {
         );
 
         instrAlert.showAndWait();
+    }
+
+    /**
+     * Creates a options dialog.
+     */
+    private void showOptionsDialog() {
+        Dialog<ArrayList<Boolean>> dialog = new Dialog<>();
+        dialog.setTitle("Options for the current Project");
+        dialog.setHeaderText(null);
+
+        Label collectionsEx1Lbl = new Label("\n:s :p (:o1 :o2 ...) .");
+        Label insteadLbl1 = new Label("instead of:");
+        Label collectionsEx2Lbl = new Label(":s\n  :p\n    :o1 ,\n    :o2 ,\n    ... .");
+        Label nodeEx1Lbl = new Label("\n:s :p [:p1 :o1; :p2 :o2; ...].");
+        Label insteadLbl2 = new Label("instead of:");
+        Label nodeEx2Lbl = new Label(":s :p _:a .\n\n_:a :p1 :o1;\n  :p2 :o2 .");
+        collectionsEx1Lbl.setFont(Font.font("Courier New"));
+        collectionsEx2Lbl.setFont(Font.font("Courier New"));
+        nodeEx1Lbl.setFont(Font.font("Courier New"));
+        nodeEx2Lbl.setFont(Font.font("Courier New"));
+
+        ArrayList<CheckBox> checkBoxes = new ArrayList<>(Arrays.asList(
+                makeCheckBox("Use Collections '()' syntax for multi-object predicates", config.get(0)),
+                makeCheckBox("Use Blank Node Property List '[]' syntax", config.get(1))
+        ));
+
+        GridPane grid = new GridPane();
+        grid.setVgap(5);
+        grid.addColumn(0, checkBoxes.get(0), collectionsEx1Lbl, insteadLbl1, collectionsEx2Lbl,
+                new Separator(), checkBoxes.get(1), nodeEx1Lbl, insteadLbl2, nodeEx2Lbl, new Separator()
+        );
+
+        ButtonType commitBtnType = new ButtonType("Commit Changes", ButtonBar.ButtonData.OK_DONE);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().add(commitBtnType);
+
+        dialog.setResultConverter(btn -> {
+            if (btn == commitBtnType) {
+                return checkBoxes
+                        .stream()
+                        .map(cb -> cb.selectedProperty().getValue())
+                        .collect(Collectors.toCollection(ArrayList::new));
+            } else return null;
+        });
+
+        Optional<ArrayList<Boolean>> optDialogResult = dialog.showAndWait();
+        optDialogResult.ifPresent(res -> config = res);
+    }
+
+    /**
+     * Factory method for CheckBoxes.
+     * @param text text following the checkbox.
+     * @param initialValue initial truth or falsity of the checkbox.
+     * @return the CheckBox.
+     */
+    private CheckBox makeCheckBox(String text, boolean initialValue){
+        CheckBox checkBox = new CheckBox(text);
+        checkBox.setSelected(initialValue);
+        return checkBox;
     }
 
     /**
