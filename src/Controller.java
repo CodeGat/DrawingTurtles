@@ -24,14 +24,17 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import javafx.util.Pair;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.RenderedImage;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -50,7 +53,7 @@ public class Controller {
     public Pane drawPane;
     public ScrollPane scrollPane;
     public Button addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn, clearPrefixBtn, saveGraphBtn, loadGraphBtn,
-            exportTllBtn, exportPngBtn, instrBtn , optionsBtn;
+            exportTllBtn, exportPngBtn, eatCsvBtn, rdfXmlBtn, instrBtn , optionsBtn;
     public Label  statusLbl, drawStatusLbl;
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false));
 
@@ -61,6 +64,9 @@ public class Controller {
     private Arrow arrow;
     private Vertex subject;
     private boolean srcClick = true;
+
+    private List<CSVRecord> csv;
+    private Map<String, Integer> headers;
 
     /**
      * Method invoked on any key press in the main application.
@@ -241,7 +247,7 @@ public class Controller {
             properties.clear();
 
             try (FileReader reader = new FileReader(loadFile)){
-                char[] rawGraph = new char[10000];
+                char[] rawGraph = new char[10000]; //needs to be arbitrary
                 if (reader.read(rawGraph) == 0 ) {
                     statusLbl.setText("Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
@@ -867,5 +873,37 @@ public class Controller {
         alert.setContentText("These are the prefixes that are currently in this project, apart from the basic owl, r" +
                 "df, rdfs prefixes: \n" + (prefixList.length() == 0 ? "<none>" : prefixList));
         alert.showAndWait();
+    }
+
+    @FXML protected void ingestCsvAction(){
+        File loadFile = showLoadFileDialog("Load .csv for RDF/XML generation");
+        if (loadFile != null){
+            try (Reader reader = new BufferedReader(new FileReader(loadFile))){
+                CSVParser parser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
+                headers = parser.getHeaderMap();
+                csv = parser.getRecords();
+                statusLbl.setText(".csv ingested. Yum.");
+                LOGGER.info("Ingested " + loadFile.getName() + ".");
+                rdfXmlBtn.setDisable(false);
+                parser.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @FXML protected void rdfXmlGenAction() {
+        String rdfxml;
+        RDFXMLGenerator generator = new RDFXMLGenerator(headers, csv, classes);
+        Pair<Map<String, Integer>, ArrayList<Vertex>> uncorrelated = generator.getUncorrelatedHeaders();
+
+        if (uncorrelated == null) rdfxml = generator.generate();
+        else {
+            showManualCorrelationDialog(uncorrelated);
+        }
+    }
+
+    private void showManualCorrelationDialog(Pair<Map<String, Integer>, ArrayList<Vertex>> uncorrelated) {
+
     }
 }
