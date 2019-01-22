@@ -28,6 +28,7 @@ import javafx.util.Pair;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import rdfxml.RDFXMLGenerator;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -897,10 +898,8 @@ public class Controller {
         RDFXMLGenerator generator = new RDFXMLGenerator(headers, csv, classes);
         Pair<Map<String, Integer>, ArrayList<Vertex>> uncorrelated = generator.getUncorrelatedHeaders();
 
-        if (uncorrelated == null) rdfxml = generator.generate();
-        else {
-            showManualCorrelationDialog(uncorrelated);
-        }
+        if (uncorrelated != null) showManualCorrelationDialog(uncorrelated);
+        rdfxml = generator.generate();
     }
 
     private void showManualCorrelationDialog(Pair<Map<String, Integer>, ArrayList<Vertex>> uncorrelated) {

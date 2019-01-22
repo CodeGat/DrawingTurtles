@@ -1,3 +1,5 @@
+package rdfxml;
+
 import Conceptual.Vertex;
 import javafx.util.Pair;
 import org.apache.commons.csv.CSVRecord;
@@ -6,18 +8,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-class RDFXMLGenerator {
-    Map<String, Integer> headers;
-    List<CSVRecord> csv;
-    ArrayList<Vertex> classes;
+public class RDFXMLGenerator {
+    private Map<String, Integer> headers;
+    private List<CSVRecord> csv;
+    private ArrayList<Vertex> classes;
+    private Correlation csvTtlCorrelations;
 
-    RDFXMLGenerator(Map<String, Integer> headers, List<CSVRecord> csv, ArrayList<Vertex> classes){
+    public RDFXMLGenerator(Map<String, Integer> headers, List<CSVRecord> csv, ArrayList<Vertex> classes){
         this.headers = headers;
         this.csv = csv;
         this.classes = classes;
     }
 
-    String generate() {
+    public String generate() {
         return null;
     }
 
@@ -25,13 +28,14 @@ class RDFXMLGenerator {
      * Find either classes or csv headers that do not directly correlate (namely, are equal.
      * @return the uncorrelated headers and classes as a Pair.
      */
-    Pair<Map<String, Integer>, ArrayList<Vertex>> getUncorrelatedHeaders(){
+    public Pair<Map<String, Integer>, ArrayList<Vertex>> getUncorrelatedHeaders(){
         ArrayList<Vertex> uncorrelatedClasses = classes;
         Map<String, Integer> uncorrelatedHeaders = headers;
 
         for (Map.Entry<String, Integer> header : headers.entrySet()){
             for (Vertex klass : classes){
                 if (header.getKey().equals(klass.getName())){
+                    csvTtlCorrelations.addCorrelation(header.getValue(), header.getKey(), klass);
                     uncorrelatedHeaders.remove(header.getKey());
                     uncorrelatedClasses.remove(klass);
                     break;
