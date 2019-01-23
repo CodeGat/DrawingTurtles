@@ -1,4 +1,4 @@
-package Conceptual;
+package model.conceptual;
 
 import javafx.event.EventTarget;
 import javafx.geometry.BoundingBox;

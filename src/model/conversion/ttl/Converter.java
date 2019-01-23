@@ -1,12 +1,14 @@
-import Conceptual.Edge;
-import Conceptual.Vertex;
+package model.conversion.ttl;
+
+import model.conceptual.Edge;
+import model.conceptual.Vertex;
 
 import java.util.*;
 
 /**
- * Class that is responsible for the conversion of a visual graph into a .ttl string.
+ * Class that is responsible for the conversion of a visual model.graph into a .ttl string.
  */
-class Converter {
+public class Converter {
     private static ArrayList<String>  prefixes;
     private static ArrayList<Vertex>  classes;
     private static ArrayList<Edge>    properties;
@@ -21,7 +23,7 @@ class Converter {
      * @param properties the Arraylist of visual Properties.
      * @return a String representation of the graph as Turtle RDF syntax.
      */
-    static String convertGraphToTtlString(
+    public static String convertGraphToTtlString(
             ArrayList<String> prefixes,
             ArrayList<Vertex> classes,
             ArrayList<Edge> properties,

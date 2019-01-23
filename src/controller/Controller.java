@@ -1,7 +1,15 @@
-import Conceptual.Edge;
-import Conceptual.Vertex;
-import Conceptual.Vertex.OutsideElementException;
-import Graph.Arrow;
+package controller;
+
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import model.conceptual.Edge;
+import model.conceptual.Vertex;
+import model.conceptual.Vertex.OutsideElementException;
+import model.conversion.rdfxml.RDFXMLGenerator;
+import model.graph.Arrow;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.BoundingBox;
@@ -28,7 +36,7 @@ import javafx.util.Pair;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import rdfxml.RDFXMLGenerator;
+import model.conversion.ttl.*;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -896,13 +904,40 @@ public class Controller {
     @FXML protected void rdfXmlGenAction() {
         String rdfxml;
         RDFXMLGenerator generator = new RDFXMLGenerator(headers, csv, classes);
-        Pair<Map<String, Integer>, ArrayList<Vertex>> uncorrelated = generator.getUncorrelatedHeaders();
+        Pair<ArrayList<String>, ArrayList<Vertex>> uncorrelated = generator.getUncorrelatedHeaders();
 
+        // maybe loop
         if (uncorrelated != null) showManualCorrelationDialog(uncorrelated);
         rdfxml = generator.generate();
+        File saveFile = showSaveFileDialog("rdf.xml", "Save RDF/XML Document", null);
+        if (saveFile != null){
+            try {
+                FileWriter writer = new FileWriter(saveFile);
+                writer.write(rdfxml);
+                writer.flush();
+                writer.close();
+                statusLbl.setText("RDF/XML saved.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    private void showManualCorrelationDialog(Pair<Map<String, Integer>, ArrayList<Vertex>> uncorrelated) {
+    private void showManualCorrelationDialog(Pair<ArrayList<String>, ArrayList<Vertex>> uncorrelated) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/correlateDialog.fxml"));
+            Parent parent = loader.load();
+            CorrelateDialogController controller = loader.getController();
+            controller.setUncorrelated(uncorrelated);
 
+            Scene scene = new Scene(parent);
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(scene);
+            stage.setResizable(false);
+            stage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
