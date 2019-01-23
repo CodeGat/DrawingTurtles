@@ -32,7 +32,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import javafx.util.Pair;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -76,6 +75,7 @@ public class Controller {
 
     private List<CSVRecord> csv;
     private Map<String, Integer> headers;
+    RDFXMLGenerator rdfxmlGenerator;
 
     /**
      * Method invoked on any key press in the main application.
@@ -892,7 +892,7 @@ public class Controller {
                 headers = parser.getHeaderMap();
                 csv = parser.getRecords();
                 statusLbl.setText(".csv ingested. Yum.");
-                LOGGER.info("Ingested " + loadFile.getName() + ".");
+                LOGGER.info("Ingested " + loadFile.getName() + ".\nFound csv headers: " + headers);
                 rdfXmlBtn.setDisable(false);
                 parser.close();
             } catch (IOException e) {
@@ -903,13 +903,22 @@ public class Controller {
 
     @FXML protected void rdfXmlGenAction() {
         String rdfxml;
-        RDFXMLGenerator generator = new RDFXMLGenerator(headers, csv, classes);
-        Pair<ArrayList<String>, ArrayList<Vertex>> uncorrelated = generator.getUncorrelatedHeaders();
+        rdfxmlGenerator = new RDFXMLGenerator(headers, csv, classes);
+        rdfxmlGenerator.attemptCorrelationOfHeaders();
 
-        // maybe loop
-        if (uncorrelated != null) showManualCorrelationDialog(uncorrelated);
-        rdfxml = generator.generate();
-        File saveFile = showSaveFileDialog("rdf.xml", "Save RDF/XML Document", null);
+        LOGGER.info("BEFORE Correlation:\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
+                "\nUncorrelated: " + rdfxmlGenerator.getUncorrelated().toString());
+
+        if (rdfxmlGenerator.getUncorrelated() != null) showManualCorrelationDialog(rdfxmlGenerator);
+        if (rdfxmlGenerator.getUncorrelated() != null){
+            LOGGER.info("Cancelled Manual Correlations. ");
+            return;
+        }
+
+        LOGGER.info("AFTER Correlation:\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString());
+
+        rdfxml = rdfxmlGenerator.generate();
+        File saveFile = showSaveFileDialog("rdf.rdf", "Save RDF/XML Document", null);
         if (saveFile != null){
             try {
                 FileWriter writer = new FileWriter(saveFile);
@@ -923,16 +932,17 @@ public class Controller {
         }
     }
 
-    private void showManualCorrelationDialog(Pair<ArrayList<String>, ArrayList<Vertex>> uncorrelated) {
+    private void showManualCorrelationDialog(RDFXMLGenerator generator){
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/correlateDialog.fxml"));
             Parent parent = loader.load();
             CorrelateDialogController controller = loader.getController();
-            controller.setUncorrelated(uncorrelated);
+            controller.setGenerator(generator);
 
             Scene scene = new Scene(parent);
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Create Manual Correlations");
             stage.setScene(scene);
             stage.setResizable(false);
             stage.showAndWait();

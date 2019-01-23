@@ -34,8 +34,8 @@ public class Vertex {
     private double x, y;
     private ArrayList<Edge> incomingEdges, outgoingEdges;
     private boolean isBlankNode;
+    private boolean isIri;
     private String typeDefinition;
-
 
     /**
      * Constructor for the creation of a new GraphClass that doesn't yet exist.
@@ -54,9 +54,18 @@ public class Vertex {
         if (this.name.charAt(0) == '_') {
             ((Text) container.getChildren().get(1)).setText("");
             isBlankNode = true;
-        } else isBlankNode = false;
+            isIri = false;
+        } else if (this.name.matches("http:.*|mailto:.*")){
+            this.name = "<" + this.name + ">";
+            isBlankNode = false;
+            isIri = true;
+        } else {
+            isBlankNode = false;
+            isIri = false;
+        }
 
         this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
+        this.isIri = this.name.matches("http:.*|mailto:.*");
         incomingEdges = new ArrayList<>();
         outgoingEdges = new ArrayList<>();
     }
@@ -140,6 +149,8 @@ public class Vertex {
     public double getY() { return y; }
 
     public boolean isBlank() { return isBlankNode; }
+
+    public boolean isIri() { return isIri; }
 
     public static char getNextBlankNodeName() {
         nextBlankNodeName += 1;

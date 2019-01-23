@@ -8,87 +8,110 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
-import javafx.util.Pair;
+import javafx.stage.Stage;
 import model.conceptual.Vertex;
-import model.conversion.rdfxml.Correlations;
+import model.conversion.rdfxml.Correlation;
+import model.conversion.rdfxml.RDFXMLGenerator;
 
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-public class CorrelateDialogController implements Initializable {
-    @FXML Button addManualCorrBtn, remManualCorrBtn, addHeaderBtn, commitBtn;
+public class CorrelateDialogController extends Controller implements Initializable {
+    @FXML Button addManualCorrBtn, addHeaderBtn, commitBtn, cancelBtn;
     @FXML ListView<String> csvHeaderList;
-    @FXML ListView<Correlations> csvTtlCorrelationList;
+    @FXML ListView<String> csvTtlCorrelationList;
     @FXML ListView<String> ttlHeaderList;
 
     private BooleanProperty isSelectionFromCsvList = new SimpleBooleanProperty(false);
     private BooleanProperty isSelectionFromTtlList = new SimpleBooleanProperty(false);
     private BooleanBinding isSelectionFromBothLists = isSelectionFromCsvList.and(isSelectionFromTtlList);
 
-    private Correlations      correlations = new Correlations();
+    private BooleanProperty isCsvListEmpty = new SimpleBooleanProperty(false);
+    private BooleanProperty isTtlListEmpty = new SimpleBooleanProperty(false);
+    private BooleanBinding  isBothListsEmpty = isCsvListEmpty.and(isTtlListEmpty);
+
+    private ArrayList<Correlation> correlations = new ArrayList<>();
     private ArrayList<String> uncorrelatedCsvHeaders;
     private ArrayList<Vertex> uncorrelatedTtlClasses;
     private ArrayList<String> uncorrelatedTtlClassNames;
 
+    private RDFXMLGenerator rdfxmlGenerator;
+
     @Override public void initialize(URL location, ResourceBundle resources) {
-        isSelectionFromBothLists.addListener((observable, oldValue, newValue) -> {
+        isSelectionFromBothLists.addListener((observable, oldV, newV) -> {
             if (observable.getValue().booleanValue()) addManualCorrBtn.setDisable(false);
             else addManualCorrBtn.setDisable(true);
         });
+
+        isBothListsEmpty.addListener(((observable, oldV, newV) -> {
+            if (observable.getValue().booleanValue()) commitBtn.setDisable(false);
+            else commitBtn.setDisable(true);
+        }));
+
+        csvHeaderList.getSelectionModel().selectedItemProperty().addListener((observable, oldV, newV) -> {
+            if (csvHeaderList.getItems().isEmpty()) isCsvListEmpty.setValue(true);
+            if      (oldV == null) isSelectionFromCsvList.setValue(true);
+            else if (newV == null) isSelectionFromCsvList.setValue(false);
+        });
+
+        ttlHeaderList.getSelectionModel().selectedItemProperty().addListener(((observable, oldV, newV) -> {
+            if (ttlHeaderList.getItems().isEmpty()) isTtlListEmpty.setValue(true);
+            if      (oldV == null) isSelectionFromTtlList.setValue(true);
+            else if (newV == null) isSelectionFromTtlList.setValue(false);
+        }));
     }
 
-    void setUncorrelated(Pair<ArrayList<String>, ArrayList<Vertex>> uncorrelated){
-        uncorrelatedCsvHeaders = uncorrelated.getKey();
-        csvHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedCsvHeaders));
-        uncorrelatedTtlClasses = uncorrelated.getValue();
-        uncorrelatedTtlClassNames = uncorrelatedTtlClasses
-                    .stream()
-                    .map(Vertex::getName)
-                    .collect(Collectors.toCollection(ArrayList::new));
-        ttlHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedTtlClassNames));
+    void setGenerator(RDFXMLGenerator generator){
+        rdfxmlGenerator = generator;
+        correlations = rdfxmlGenerator.getCorrelations();
+        ArrayList<String> correlationStrings = correlations
+                .stream()
+                .map(Correlation::toString)
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        csvHeaderList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            System.out.println(oldValue + " -> " + newValue);
-            if (oldValue == null) isSelectionFromCsvList.setValue(true);
-            else if (newValue == null) isSelectionFromCsvList.setValue(false);
-        });
-        ttlHeaderList.getSelectionModel().selectedItemProperty().addListener(((observable, oldValue, newValue) -> {
-            System.out.println(oldValue + " -> " + newValue);
-            if (oldValue == null) isSelectionFromTtlList.setValue(true);
-            else if (newValue == null) isSelectionFromTtlList.setValue(false);
-        }));
+        csvTtlCorrelationList.setItems(FXCollections.observableArrayList(correlationStrings));
+
+        uncorrelatedCsvHeaders = rdfxmlGenerator.getUncorrelated().getKey();
+        csvHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedCsvHeaders));
+        uncorrelatedTtlClasses = generator.getUncorrelated().getValue();
+        uncorrelatedTtlClassNames = uncorrelatedTtlClasses
+                .stream()
+                .map(Vertex::getName)
+                .collect(Collectors.toCollection(ArrayList::new));
+        ttlHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedTtlClassNames));
     }
 
     @FXML void addManualCorrelationAction() {
         String selectedCsvHeader = csvHeaderList.getSelectionModel().getSelectedItem();
-        Integer index = Integer.parseInt(selectedCsvHeader.split(" ")[0]);
+        int index = Integer.parseInt(selectedCsvHeader.split(" ")[0]);
         String csvAttribute = selectedCsvHeader.split(" ")[1];
         String selectedTtlClass = ttlHeaderList.getSelectionModel().getSelectedItem();
         Vertex ttlClass = null;
         for (Vertex klass : uncorrelatedTtlClasses) {
-            String lck = klass.getName().toLowerCase();
-            String sk  = selectedTtlClass.toLowerCase();
+            String klassName = klass.getName().toLowerCase();
+            String selectedKlass = selectedTtlClass.toLowerCase();
 
-            if (klass.getName().toLowerCase().matches(".*:" + selectedTtlClass.toLowerCase())) {
+            if (klassName.equals(selectedKlass)) {
                 ttlClass = klass;
                 uncorrelatedTtlClasses.remove(klass);
                 uncorrelatedTtlClassNames.remove(selectedTtlClass);
                 uncorrelatedCsvHeaders.remove(selectedCsvHeader);
-//                csvHeaderList.refresh();
-//                ttlHeaderList.refresh();
-//                ttlHeaderList.getItems().remove(selectedTtlClass);
-//                csvHeaderList.getItems().remove(selectedCsvHeader);
+                ttlHeaderList.getItems().remove(selectedTtlClass);
+                csvHeaderList.getItems().remove(selectedCsvHeader);
+                ttlHeaderList.getSelectionModel().clearSelection();
+                csvHeaderList.getSelectionModel().clearSelection();
                 break;
             }
         }
 
-        correlations.addCorrelation(index, csvAttribute, ttlClass);
-    }
-
-    @FXML void removeManualCorrelationAction() {
-
+        correlations.add(new Correlation(index, csvAttribute, ttlClass));
+        ArrayList<String> correlationStrList = correlations
+                        .stream()
+                        .map(Correlation::toString)
+                        .collect(Collectors.toCollection(ArrayList::new));
+        csvTtlCorrelationList.setItems(FXCollections.observableArrayList(correlationStrList));
     }
 
     @FXML void addHeaderAction() {
@@ -96,6 +119,15 @@ public class CorrelateDialogController implements Initializable {
     }
 
     @FXML void commitCorrelationBtn() {
+        rdfxmlGenerator.setCorrelations(correlations);
+        rdfxmlGenerator.setUncorrelated(null);
+        super.rdfxmlGenerator = rdfxmlGenerator;
+        Stage stage = (Stage) commitBtn.getScene().getWindow();
+        stage.close();
+    }
 
+    @FXML void cancelCorrelationBtn() {
+        Stage stage = (Stage) cancelBtn.getScene().getWindow();
+        stage.close();
     }
 }

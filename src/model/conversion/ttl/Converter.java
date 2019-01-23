@@ -99,10 +99,6 @@ public class Converter {
             String obj = property.getObject().getName();
             String sub = property.getSubject().getName();
 
-            prop = prop.contains("http:") ? "<"+prop+">" : prop;
-            obj = obj.matches("http:.*|mailto:.*") ? "<"+obj+">" : obj;
-            sub = sub.matches("http:.*|mailto:.*") ? "<"+sub+">" : sub;
-
             String subType = null;
             String objType = null;
             String ints = "[+\\-]?\\d";
@@ -191,7 +187,6 @@ public class Converter {
             String objectListStr;
             ArrayList<Vertex> objectList = e.getValue();
 
-            propName      = propName.matches("http:.*|mailto:.*") ? "<"+propName+">" : propName;
             objectListStr = convertObjectList(objectList);
 
             if (first) first = false;
@@ -257,7 +252,6 @@ public class Converter {
                 objectStr += tabs + "]";
             } else objectStr = "[" + predicateObjectList + "]";
         }
-        else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
 
         return objectStr;
     }
@@ -272,7 +266,6 @@ public class Converter {
         String subname = klass.getName();
         String typeDef = klass.getTypeDefinition() != null ? klass.getTypeDefinition() : "owl:Class";
 
-        subname = subname.matches("http:.*|mailto:.*") ? "<"+subname+">" : subname;
         return subname + " a " + typeDef + " ;\n" + tabs;
     }
 

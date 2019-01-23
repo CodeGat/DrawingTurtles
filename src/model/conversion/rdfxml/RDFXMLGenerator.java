@@ -5,6 +5,7 @@ import javafx.util.Pair;
 import org.apache.commons.csv.CSVRecord;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,7 +14,8 @@ public class RDFXMLGenerator {
     private Map<String, Integer> headers;
     private List<CSVRecord> csv;
     private ArrayList<Vertex> classes;
-    private Correlations csvTtlCorrelations;
+    private ArrayList<Correlation> csvTtlCorrelations = new ArrayList<>();
+    private Pair<ArrayList<String>, ArrayList<Vertex>> csvTtlUncorrelated;
 
     public RDFXMLGenerator(Map<String, Integer> headers, List<CSVRecord> csv, ArrayList<Vertex> classes){
         this.headers = headers;
@@ -27,20 +29,20 @@ public class RDFXMLGenerator {
 
     /**
      * Find either classes or csv headers that do not directly correlate (namely, are equal.
-     * @return the uncorrelated headers and classes as a Pair.
      */
-    public Pair<ArrayList<String>, ArrayList<Vertex>> getUncorrelatedHeaders(){
-        ArrayList<Vertex> uncorrelatedClasses = classes;
-        Map<String, Integer> uncorrelatedHeaders = headers;
+    public void attemptCorrelationOfHeaders(){
+        ArrayList<Vertex> uncorrelatedClasses = new ArrayList<>(classes);
+        Map<String, Integer> uncorrelatedHeaders = new HashMap<>(headers);
 
         for (Map.Entry<String, Integer> header : headers.entrySet()){
             for (Vertex klass : classes){
                 boolean isExactMatch = header.getKey().equals(klass.getName());
-                boolean isCloseMatch = header.getKey().contains(":")
+                boolean isCloseMatch = !klass.isIri()
+                        && klass.getType() != Vertex.GraphElemType.LITERAL
                         && header.getKey().equals(klass.getName().split(":", 2)[1]);
 
                 if (isExactMatch || isCloseMatch){
-                    csvTtlCorrelations.addCorrelation(header.getValue(), header.getKey(), klass);
+                    csvTtlCorrelations.add(new Correlation(header.getValue(), header.getKey(), klass));
                     uncorrelatedHeaders.remove(header.getKey());
                     uncorrelatedClasses.remove(klass);
                     break;
@@ -48,15 +50,25 @@ public class RDFXMLGenerator {
             }
         }
 
-        if (uncorrelatedClasses.size() == 0 && uncorrelatedHeaders.size() == 0) return null;
-        else {
-            ArrayList<String> uncorrelatedHeadersList =
-                    uncorrelatedHeaders
-                            .entrySet()
-                            .stream()
-                            .map(e -> e.getValue() + " "  + e.getKey())
-                            .collect(Collectors.toCollection(ArrayList::new));
-            return new Pair<>(uncorrelatedHeadersList, uncorrelatedClasses);
+        if (uncorrelatedHeaders.size() != 0 || uncorrelatedClasses.size() != 0) {
+            ArrayList<String> uncorrelatedHeadersList = uncorrelatedHeaders
+                    .entrySet()
+                    .stream()
+                    .map(e -> e.getValue() + " " + e.getKey())
+                    .collect(Collectors.toCollection(ArrayList::new));
+            csvTtlUncorrelated = new Pair<>(uncorrelatedHeadersList, uncorrelatedClasses);
         }
+    }
+
+    public ArrayList<Correlation> getCorrelations() { return csvTtlCorrelations; }
+
+    public Pair<ArrayList<String>, ArrayList<Vertex>> getUncorrelated() { return csvTtlUncorrelated; }
+
+    public void setCorrelations(ArrayList<Correlation> correlations) {
+        this.csvTtlCorrelations = correlations;
+    }
+
+    public void setUncorrelated(Pair<ArrayList<String>, ArrayList<Vertex>> uncorrelated) {
+        this.csvTtlUncorrelated = uncorrelated;
     }
 }

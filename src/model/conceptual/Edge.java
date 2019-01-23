@@ -9,10 +9,11 @@ import javafx.scene.layout.StackPane;
  * A java-friendly representation of the Graphs properties as an Edge.
  */
 public class Edge {
-    private final String name;
+    private String name;
     private final StackPane container;
     private final Vertex subject;
     private final Vertex object;
+    private boolean isIri;
 
     /**
      * A simple constructor for the conceptual property.
@@ -25,6 +26,11 @@ public class Edge {
         this.name = name.getText();
         this.subject = subject;
         this.object = object;
+
+        if (this.name.matches("http:.*|mailto:.*")){
+            isIri = true;
+            this.name = "<" + this.name + ">";
+        }
     }
 
     public String getName() { return name; }
@@ -51,5 +57,7 @@ public class Edge {
                 name.getHeight()
         );
     }
+
+    public boolean isIri(){ return isIri; }
 }
 
