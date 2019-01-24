@@ -1,4 +1,4 @@
-package Conceptual;
+package model.conceptual;
 
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;

@@ -8,7 +8,7 @@
             xmlns="http://javafx.com/javafx/8.0.172-ea"
             xmlns:fx="http://javafx.com/fxml/1"
             onKeyPressed="#keyPressedAction"
-            fx:controller="Controller">
+            fx:controller="controller.Controller">
     <left>
         <ToolBar orientation="VERTICAL">
             <Button fx:id="addPrefixBtn"   maxWidth="Infinity" onMouseClicked="#addPrefixAction"   text="Add New Prefix"/>

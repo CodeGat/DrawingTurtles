@@ -1,7 +1,10 @@
-import Conceptual.Edge;
-import Conceptual.Vertex;
-import Conceptual.Vertex.OutsideElementException;
-import Graph.Arrow;
+package controller;
+
+import model.conceptual.Edge;
+import model.conceptual.Vertex;
+import model.conceptual.Vertex.OutsideElementException;
+import model.conversion.ttl.Converter;
+import model.graph.Arrow;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.BoundingBox;
