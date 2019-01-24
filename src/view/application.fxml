@@ -11,11 +11,7 @@
             fx:controller="controller.Controller">
     <left>
         <ToolBar orientation="VERTICAL">
-            <Button fx:id="addPrefixBtn"   maxWidth="Infinity" onMouseClicked="#addPrefixAction"   text="Add New Prefix"/>
-            <Button fx:id="savePrefixBtn"  maxWidth="Infinity" onMouseClicked="#savePrefixAction"  text="Save Prefixes"/>
-            <Button fx:id="loadPrefixBtn"  maxWidth="Infinity" onMouseClicked="#loadPrefixAction"  text="Load Prefixes"/>
-            <Button fx:id="showPrefixBtn"  maxWidth="Infinity" onMouseClicked="#showPrefixAction"  text="Show Prefixes"/>
-            <Button fx:id="clearPrefixBtn" maxWidth="Infinity" onMouseClicked="#clearPrefixAction" text="Clear Prefixes"/>
+            <Button fx:id="prefixBtn"   maxWidth="Infinity" onMouseClicked="#showPrefixMenuAction" text="Prefixes"/>
             <Separator/>
             <Button fx:id="saveGraphBtn" maxWidth="Infinity" onMouseClicked="#saveGraphAction" text="Save Graph"/>
             <Button fx:id="loadGraphBtn" maxWidth="Infinity" onMouseClicked="#loadGraphAction" text="Load Graph"/>
@@ -45,7 +41,7 @@
     </center>
     <bottom>
         <ToolBar>
-            <Text text="[P]-Add Prefix [S/Ctrl+S]-Save Graph/All [L/Ctrl+L]-Load Graph/All [X/Ctrl+X] Export .tll/All [O] Open Options" />
+            <Text text="[P]-Prefix Menu [S/Ctrl+S]-Save Graph/All [L/Ctrl+L]-Load Graph/All [X/Ctrl+X] Export .tll/All [O] Open Options" />
         </ToolBar>
     </bottom>
 </BorderPane>

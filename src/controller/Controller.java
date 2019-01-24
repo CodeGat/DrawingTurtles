@@ -1,5 +1,11 @@
 package controller;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.util.Pair;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
@@ -32,6 +38,8 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.RenderedImage;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -49,12 +57,11 @@ public class Controller {
 
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
-    public BorderPane root;
-    public Pane drawPane;
-    public ScrollPane scrollPane;
-    public Button addPrefixBtn, savePrefixBtn, loadPrefixBtn, showPrefixBtn, clearPrefixBtn, saveGraphBtn, loadGraphBtn,
-            exportTllBtn, exportPngBtn, instrBtn , optionsBtn;
-    public Label  statusLbl, drawStatusLbl;
+    @FXML BorderPane root;
+    @FXML Pane drawPane;
+    @FXML ScrollPane scrollPane;
+    @FXML Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn , optionsBtn;
+    @FXML Label  statusLbl, drawStatusLbl;
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false));
 
     private final ArrayList<String> prefixes   = new ArrayList<>();
@@ -69,103 +76,62 @@ public class Controller {
      * Method invoked on any key press in the main application.
      * @param keyEvent the key that invoked the method.
      */
-    @FXML protected void keyPressedAction(KeyEvent keyEvent){
+    @FXML protected void keyPressedAction(KeyEvent keyEvent) throws NoSuchMethodException {
         KeyCode key = keyEvent.getCode();
 
         if (key == KeyCode.S && keyEvent.isControlDown()){
-            savePrefixAction();
+//            savePrefixAction();
             saveGraphAction();
         } else if (key == KeyCode.X && keyEvent.isControlDown()){
             exportTtlAction();
             exportPngAction();
         } else if (key == KeyCode.L && keyEvent.isControlDown()) {
-            loadPrefixAction();
+//            loadPrefixAction();
             loadGraphAction();
         } else if (key == KeyCode.S) saveGraphAction();
         else if (key == KeyCode.L) loadGraphAction();
-        else if (key == KeyCode.P) addPrefixAction();
+        else if (key == KeyCode.P) showPrefixMenuAction();
         else if (key == KeyCode.X) exportTtlAction();
         else if (key == KeyCode.O) showOptionsAction();
     }
 
+    // make
     /**
-     * On clicking the 'Add Prefix' button, adds prefixes to the arraylist of existing prefixes unless malformed.
+     * Creates and displays the given window, also passing data (through methods) to the respective subController T.
+     * @param fxml the path to the .fxml file declaration.
+     * @param title the title of the new window.
+     * @param methods list of methods that are applied to <T>.
+     * @param <T> any subclass of Controller.
      */
-    @FXML protected void addPrefixAction() {
-        String prefixResult = showAddPrefixesDialog();
+    @SafeVarargs @FXML
+    public final <C extends Controller, T> void showWindow(String fxml, String title, Pair<Method, T[]>... methods){
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
+            Parent parent = loader.load();
+            C controller = loader.getController();
 
-        if (prefixResult == null) return;
-        String[] prefixList = prefixResult.split(", ");
+            for (Pair<Method, T[]> method : methods){
+                Method methodName = method.getKey();
+                Object[] methodArgs = method.getValue();
+                methodName.invoke(controller, methodArgs);
+            }
 
-        for (String prefix : prefixList){
-            if (prefix.matches("[a-z]* : .*")) prefixes.add(prefix);
-            else showPrefixMalformedAlert(prefix);
+            Scene scene = new Scene(parent);
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle(title);
+            stage.setScene(scene);
+            stage.setResizable(false);
+            stage.showAndWait();
+        } catch (IOException | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
         }
     }
 
-    /**
-     * On clicking the 'Save Prefix' button, attempts to write existing prefixes to a user-specified .txt file.
-     */
-    @FXML protected void savePrefixAction() {
-        File saveFile = showSaveFileDialog(
-                "prefixes.txt",
-                "Save Prefixes",
-                new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt")
-        );
-        if (saveFile != null && prefixes.size() != 0) {
-            StringBuilder prefixesToSave = new StringBuilder();
-            for (String prefix : prefixes)
-                prefixesToSave.append(prefix).append("\n");
-            prefixesToSave.deleteCharAt(prefixesToSave.length() - 1);
-
-            try {
-                FileWriter writer = new FileWriter(saveFile);
-                writer.write(prefixesToSave.toString());
-                writer.flush();
-                writer.close();
-                statusLbl.setText("Prefixes saved to file. ");
-            } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "failed to save prefixes: ", e);
-            }
-        } else statusLbl.setText("Prefixes save cancelled. ");
-    }
-
-    /**
-     * On clicking the 'Load Prefix' button, attempts to load prefixes from a user-specified .txt file.
-     */
-    @FXML protected void loadPrefixAction(){
-        File loadFile = showLoadFileDialog("Load Prefixes");
-
-        if (loadFile != null){
-            try (FileReader reader = new FileReader(loadFile)){
-                char[] rawPrefixes = new char[10000];
-                if (reader.read(rawPrefixes) == 0) {
-                    statusLbl.setText("Read failed: nothing in file.");
-                    LOGGER.warning("Nothing in prefix file. ");
-                }
-                String[] strPrefixes = new String(rawPrefixes).trim().split("\\n");
-                for (String strPrefix : strPrefixes) if (!prefixes.contains(strPrefix)) prefixes.add(strPrefix);
-                statusLbl.setText("Prefixes loaded from file. ");
-            } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "Loading prefixes failed: ", e);
-            }
-        } else statusLbl.setText("Prefix Load cancelled.");
-
-    }
-
-    /**
-     * on clicking 'Show Prefixes' button, show existing prefixes in an alert.
-     */
-    @FXML protected void showPrefixAction() {
-        showPrefixesAlert();
-    }
-
-    /**
-     * on clicking 'Clear Prefixes' button, removes existing user prefixes, excepting the base ones (owl, rdf, rdfs).
-     */
-    @FXML protected void clearPrefixAction() {
-        prefixes.clear();
-        statusLbl.setText("Prefixes cleared. ");
+    @FXML void showPrefixMenuAction() throws NoSuchMethodException {
+        Method method = PrefixMenuController.class.getMethod("setPrefs", String.class);
+        Object[] args = new String[]{"AAAAAAAAA it worked"};
+        showWindow("/view/prefixmenu.fxml", "Prefixes Menu", new Pair<>(method, args));
     }
 
     /**
@@ -706,19 +672,6 @@ public class Controller {
     }
 
     /**
-     * Creates a dialog that allows input of prefixes.
-     * @return the prefixes inputted, or null otherwise.
-     */
-    private String showAddPrefixesDialog() {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Add Ontology Prefixes");
-        dialog.setHeaderText("Of the form: <prefix name> : <URI prefix>\nCan add multiple as comma-seperated values.");
-
-        Optional<String> optPrefixResult = dialog.showAndWait();
-        return optPrefixResult.map(String::new).orElse(null);
-    }
-
-    /**
      * Creates a dialog that accepts a name of an element.
      * @return the name inputted or null otherwise.
      */
@@ -739,7 +692,7 @@ public class Controller {
      * @param extFilter the list of extension filters, for easy access to specific file types.
      * @return the file the user has chosen to save to, or null otherwise.
      */
-    private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
+    File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
         fileChooser.setTitle(windowTitle);
@@ -754,26 +707,12 @@ public class Controller {
      * @param title the title of the dialog.
      * @return the file that will be loaded from.
      */
-    private File showLoadFileDialog(String title){
+    File showLoadFileDialog(String title){
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         return fileChooser.showOpenDialog(root.getScene().getWindow());
-    }
-
-    /**
-     * Creates an alert that notifies the user that the specified prefix is malformed.*
-     * @param badPrefix the prefix that doesn't meet the regex criteria.
-     */
-    private void showPrefixMalformedAlert(String badPrefix) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setHeaderText(null);
-        alert.setContentText("Prefix: " + badPrefix + " was not of the form:\n" +
-                "\"<prefix name> : <URI prefix>\"\n" +
-                "This malformed prefix was discarded, try again.\n" +
-                "Example: \"foaf : http://xmlns.com/foaf/0.1/\"");
-        alert.showAndWait();
     }
 
     /**
@@ -854,21 +793,5 @@ public class Controller {
         CheckBox checkBox = new CheckBox(text);
         checkBox.setSelected(initialValue);
         return checkBox;
-    }
-
-    /**
-     * Creates an alert that displays the current prefixes.
-     */
-    private void showPrefixesAlert() {
-        StringBuilder prefixBuilder = new StringBuilder();
-        prefixes.forEach(p -> prefixBuilder.append(p).append("\n"));
-        String prefixList = prefixBuilder.toString();
-
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Currently added Prefixes");
-        alert.setHeaderText(null);
-        alert.setContentText("These are the prefixes that are currently in this project, apart from the basic owl, r" +
-                "df, rdfs prefixes: \n" + (prefixList.length() == 0 ? "<none>" : prefixList));
-        alert.showAndWait();
     }
 }
