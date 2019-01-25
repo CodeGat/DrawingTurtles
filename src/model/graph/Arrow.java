@@ -1,4 +1,4 @@
-package Graph;
+package model.graph;
 
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.DoubleProperty;
