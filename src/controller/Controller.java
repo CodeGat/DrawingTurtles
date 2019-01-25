@@ -81,15 +81,9 @@ public class Controller {
     @FXML protected void keyPressedAction(KeyEvent keyEvent) throws NoSuchMethodException {
         KeyCode key = keyEvent.getCode();
 
-        if (key == KeyCode.S && keyEvent.isControlDown()){
-//            savePrefixAction();
-            saveGraphAction();
-        } else if (key == KeyCode.X && keyEvent.isControlDown()){
+        if (key == KeyCode.X && keyEvent.isControlDown()){
             exportTtlAction();
             exportPngAction();
-        } else if (key == KeyCode.L && keyEvent.isControlDown()) {
-//            loadPrefixAction();
-            loadGraphAction();
         } else if (key == KeyCode.S) saveGraphAction();
         else if (key == KeyCode.L) loadGraphAction();
         else if (key == KeyCode.P) showPrefixMenuAction();
@@ -98,11 +92,13 @@ public class Controller {
     }
 
     /**
-     * Creates and displays the given window, also passing data (through methods) to the respective subController T.
-     * @param fxml the path to the .fxml file declaration.
+     * Creates and displays the Window defined in the fxml file, also passing data (through methods) to the
+     *    respective subController C.
+     * @param fxml the fxml file in which the layout is defined.
      * @param title the title of the new window.
-     * @param methods list of methods that are applied to <T>.
-     * @param <T> any subclass of Controller.
+     * @param methods the list of Method Name / Argument pairs to be applied to C.
+     * @param <C> a subclass of the base Controller Class.
+     * @param <T> a generic type of method arguments.
      */
     @SafeVarargs @FXML
     private final <C extends Controller, T> void showWindow(String fxml, String title, Pair<Method, T[]>... methods){

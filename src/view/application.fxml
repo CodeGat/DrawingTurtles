@@ -41,7 +41,7 @@
     </center>
     <bottom>
         <ToolBar>
-            <Text text="[P]-Prefix Menu [S/Ctrl+S]-Save Graph/All [L/Ctrl+L]-Load Graph/All [X/Ctrl+X] Export .tll/All [O] Open Options" />
+            <Text text="[P]-Prefix Menu [S]-Save Graph [L]-Load Graph [X/Ctrl+X] Export .tll/.ttl and .png [O] Open Options" />
         </ToolBar>
     </bottom>
 </BorderPane>

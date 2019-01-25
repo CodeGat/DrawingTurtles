@@ -38,8 +38,12 @@ public class PrefixMenuController extends Controller implements Initializable {
     private ArrayList<String> prefixes;
 
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    /**
+     * Overridden initialize method that is run after the PrefixMenuController constructor is called.
+     * @param location location of other resources.
+     * @param resources text resources that can be used by the PrefixMenu Controller.
+     */
+    @Override public void initialize(URL location, ResourceBundle resources) {
         prefixList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (oldValue == null) isItemSelected.setValue(true);
             else if (newValue == null) isItemSelected.setValue(false);
@@ -70,6 +74,9 @@ public class PrefixMenuController extends Controller implements Initializable {
         }
     }
 
+    /**
+     * Remove the currently selected prefix from the ListView and the underlying prefixes.
+     */
     @FXML void removePrefixAction() {
         String prefix = prefixList.getSelectionModel().getSelectedItem();
         prefixes.remove(prefix);
@@ -78,7 +85,7 @@ public class PrefixMenuController extends Controller implements Initializable {
     }
 
     /**
-     * on clicking 'Clear Prefixes' button, removes existing user prefixes, excepting the base ones (owl, rdf, rdfs).
+     * Removes existing user prefixes, excepting the base ones (owl, rdf, rdfs).
      */
     @FXML protected void clearPrefixAction() {
         prefixes.clear();
@@ -135,12 +142,18 @@ public class PrefixMenuController extends Controller implements Initializable {
 
     }
 
+    /**
+     * Commit to the current prefixes, giving them to the base Controller.
+     */
     @FXML void commitPrefixAction() {
         super.prefixes = prefixes;
         Stage stage = (Stage) cmtPrefixBtn.getScene().getWindow();
         stage.close();
     }
 
+    /**
+     * Close the window.
+     */
     @FXML void cancelPrefixAction() {
         Stage stage = (Stage) cmtPrefixBtn.getScene().getWindow();
         stage.close();
