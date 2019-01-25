@@ -50,7 +50,7 @@ import java.util.logging.Logger;
  */
 public class Controller {
     private class PropertyElemMissingException extends Exception {
-        PropertyElemMissingException(String msg) { super(msg); }
+        PropertyElemMissingException() { super(); }
     }
 
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
@@ -74,7 +74,6 @@ public class Controller {
      * Method invoked on any key press in the main application.
      * @param keyEvent the key that invoked the method.
      */
-    // TODO: 25/01/2019 the save/load prefix shortcut problem...
     @FXML protected void keyPressedAction(KeyEvent keyEvent) throws NoSuchMethodException {
         KeyCode key = keyEvent.getCode();
 
@@ -363,7 +362,7 @@ public class Controller {
             sub.addOutgoingEdge(edge);
             obj.addIncomingEdge(edge);
             properties.add(edge);
-        } else throw new PropertyElemMissingException("sub");
+        } else throw new PropertyElemMissingException();
     }
 
     /**

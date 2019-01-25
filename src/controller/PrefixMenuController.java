@@ -33,7 +33,7 @@ public class PrefixMenuController extends Controller implements Initializable {
     @FXML Button addPrefixBtn, remPrefixBtn, clrPrefixBtn, savPrefixBtn, lodPrefixBtn, cmtPrefixBtn, canPrefixBtn;
     @FXML ListView<String> prefixList;
 
-    private BooleanProperty isItemSelected = new SimpleBooleanProperty(false);
+    private final BooleanProperty isItemSelected = new SimpleBooleanProperty(false);
 
     private ArrayList<String> prefixes;
 

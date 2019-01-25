@@ -26,7 +26,7 @@ public class Vertex {
     }
 
     private static char nextBlankNodeName = (char) 96;
-    private static ArrayList<Character> blankNodeNames = new ArrayList<>();
+    private static final ArrayList<Character> blankNodeNames = new ArrayList<>();
 
     private GraphElemType type;
     private String name;
