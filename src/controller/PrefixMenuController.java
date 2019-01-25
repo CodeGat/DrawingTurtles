@@ -1,30 +1,56 @@
 package controller;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class PrefixMenuController extends Controller {
+/**
+ * Controller for the Prefix Menu.
+ */
+public class PrefixMenuController extends Controller implements Initializable {
+
     private static final Logger LOGGER = Logger.getLogger(PrefixMenuController.class.getName());
 
-    @FXML Button addPrefixBtn, remPrefixBtn, renPrefixBtn, clrPrefixBtn, savPrefixBtn, lodPrefixBtn, cmtPrefixBtn,
-            canPrefixBtn;
-    @FXML ListView prefixList;
+    @FXML Button addPrefixBtn, remPrefixBtn, clrPrefixBtn, savPrefixBtn, lodPrefixBtn, cmtPrefixBtn, canPrefixBtn;
+    @FXML ListView<String> prefixList;
+
+    private BooleanProperty isItemSelected = new SimpleBooleanProperty(false);
 
     private ArrayList<String> prefixes;
-    String e;
+
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        prefixList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (oldValue == null) isItemSelected.setValue(true);
+            else if (newValue == null) isItemSelected.setValue(false);
+        });
+
+        isItemSelected.addListener((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()) remPrefixBtn.setDisable(false);
+            else remPrefixBtn.setDisable(true);
+
+        });
+    }
 
     /**
      * On clicking the 'Add Prefix' button, adds prefixes to the arraylist of existing prefixes unless malformed.
@@ -33,12 +59,30 @@ public class PrefixMenuController extends Controller {
         String prefixResult = showAddPrefixesDialog();
 
         if (prefixResult == null) return;
-        String[] prefixList = prefixResult.split(", ");
+        String[] newPrefixes = prefixResult.split(", ");
 
-        for (String prefix : prefixList){
-            if (prefix.matches("[a-z]* : .*")) prefixes.add(prefix);
-            else showPrefixMalformedAlert(prefix);
+        for (String prefix : newPrefixes){
+            if (prefix.matches("[a-z]* : .*")) {
+                prefixes.add(prefix);
+                prefixList.getItems().add(prefix);
+
+            } else showPrefixMalformedAlert(prefix);
         }
+    }
+
+    @FXML void removePrefixAction() {
+        String prefix = prefixList.getSelectionModel().getSelectedItem();
+        prefixes.remove(prefix);
+        prefixList.getItems().remove(prefix);
+        prefixList.getSelectionModel().clearSelection();
+    }
+
+    /**
+     * on clicking 'Clear Prefixes' button, removes existing user prefixes, excepting the base ones (owl, rdf, rdfs).
+     */
+    @FXML protected void clearPrefixAction() {
+        prefixes.clear();
+        prefixList.getItems().clear();
     }
 
     /**
@@ -48,7 +92,8 @@ public class PrefixMenuController extends Controller {
         File saveFile = showSaveFileDialog(
                 "prefixes.txt",
                 "Save Prefixes",
-                new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt")
+                new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt"),
+                savPrefixBtn.getScene().getWindow()
         );
         if (saveFile != null && prefixes.size() != 0) {
             StringBuilder prefixesToSave = new StringBuilder();
@@ -61,42 +106,44 @@ public class PrefixMenuController extends Controller {
                 writer.write(prefixesToSave.toString());
                 writer.flush();
                 writer.close();
-                statusLbl.setText("Prefixes saved to file. ");
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "failed to save prefixes: ", e);
             }
-        } else statusLbl.setText("Prefixes save cancelled. ");
+        }
     }
 
     /**
      * On clicking the 'Load Prefix' button, attempts to load prefixes from a user-specified .txt file.
      */
     @FXML protected void loadPrefixAction(){
-        File loadFile = showLoadFileDialog("Load Prefixes");
+        File loadFile = showLoadFileDialog("Load Prefixes", lodPrefixBtn.getScene().getWindow());
 
         if (loadFile != null){
             try (FileReader reader = new FileReader(loadFile)){
                 char[] rawPrefixes = new char[10000];
-                if (reader.read(rawPrefixes) == 0) {
-                    statusLbl.setText("Read failed: nothing in file.");
-                    LOGGER.warning("Nothing in prefix file. ");
-                }
+
+                if (reader.read(rawPrefixes) == 0) LOGGER.warning("Nothing in prefix file. ");
                 String[] strPrefixes = new String(rawPrefixes).trim().split("\\n");
-                for (String strPrefix : strPrefixes) if (!prefixes.contains(strPrefix)) prefixes.add(strPrefix);
-                statusLbl.setText("Prefixes loaded from file. ");
+                for (String strPrefix : strPrefixes) if (!prefixes.contains(strPrefix)) {
+                    prefixes.add(strPrefix);
+                    prefixList.getItems().add(strPrefix);
+                }
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Loading prefixes failed: ", e);
             }
-        } else statusLbl.setText("Prefix Load cancelled.");
+        }
 
     }
 
-    /**
-     * on clicking 'Clear Prefixes' button, removes existing user prefixes, excepting the base ones (owl, rdf, rdfs).
-     */
-    @FXML protected void clearPrefixAction() {
-        prefixes.clear();
-        statusLbl.setText("Prefixes cleared. ");
+    @FXML void commitPrefixAction() {
+        super.prefixes = prefixes;
+        Stage stage = (Stage) cmtPrefixBtn.getScene().getWindow();
+        stage.close();
+    }
+
+    @FXML void cancelPrefixAction() {
+        Stage stage = (Stage) cmtPrefixBtn.getScene().getWindow();
+        stage.close();
     }
 
     /**
@@ -126,28 +173,14 @@ public class PrefixMenuController extends Controller {
         alert.showAndWait();
     }
 
+    /**
+     * Sets the prefixes of the PrefixMenuController.
+     * Suppression of warning as reflection requires public access even if nothing access it.
+     * @param initialPrefixes the prefixes to be passed to the controller.
+     */
+    @SuppressWarnings("WeakerAccess")
     public void setPrefixes(ArrayList<String> initialPrefixes){
         prefixes = initialPrefixes;
-    }
-
-    public void setPrefs(String eee){
-        e = eee;
-        System.out.println(e);
-    }
-
-    @FXML void removePrefixAction() {
-
-    }
-
-    @FXML void renamePrefixAction() {
-
-    }
-
-    @FXML void commitPrefixAction() {
-
-    }
-
-    @FXML void cancelPrefixAction() {
-
+        prefixList.setItems(FXCollections.observableArrayList(prefixes));
     }
 }

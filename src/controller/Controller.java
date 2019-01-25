@@ -5,6 +5,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.Pair;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
@@ -57,14 +58,14 @@ public class Controller {
 
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
-    @FXML BorderPane root;
-    @FXML Pane drawPane;
-    @FXML ScrollPane scrollPane;
-    @FXML Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn , optionsBtn;
-    @FXML Label  statusLbl, drawStatusLbl;
+    @FXML protected BorderPane root;
+    @FXML protected Pane drawPane;
+    @FXML protected ScrollPane scrollPane;
+    @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn, optionsBtn;
+    @FXML protected Label  statusLbl, drawStatusLbl;
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false));
 
-    private final ArrayList<String> prefixes   = new ArrayList<>();
+    ArrayList<String> prefixes   = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
@@ -76,6 +77,7 @@ public class Controller {
      * Method invoked on any key press in the main application.
      * @param keyEvent the key that invoked the method.
      */
+    // TODO: 25/01/2019 the save/load prefix shortcut problem...
     @FXML protected void keyPressedAction(KeyEvent keyEvent) throws NoSuchMethodException {
         KeyCode key = keyEvent.getCode();
 
@@ -95,7 +97,6 @@ public class Controller {
         else if (key == KeyCode.O) showOptionsAction();
     }
 
-    // make
     /**
      * Creates and displays the given window, also passing data (through methods) to the respective subController T.
      * @param fxml the path to the .fxml file declaration.
@@ -104,7 +105,7 @@ public class Controller {
      * @param <T> any subclass of Controller.
      */
     @SafeVarargs @FXML
-    public final <C extends Controller, T> void showWindow(String fxml, String title, Pair<Method, T[]>... methods){
+    private final <C extends Controller, T> void showWindow(String fxml, String title, Pair<Method, T[]>... methods){
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             Parent parent = loader.load();
@@ -129,8 +130,8 @@ public class Controller {
     }
 
     @FXML void showPrefixMenuAction() throws NoSuchMethodException {
-        Method method = PrefixMenuController.class.getMethod("setPrefs", String.class);
-        Object[] args = new String[]{"AAAAAAAAA it worked"};
+        Method method = PrefixMenuController.class.getMethod("setPrefixes", ArrayList.class);
+        Object[] args = new ArrayList[]{prefixes};
         showWindow("/view/prefixmenu.fxml", "Prefixes Menu", new Pair<>(method, args));
     }
 
@@ -139,7 +140,12 @@ public class Controller {
      *   a user-specified .gat file. That's a Graph Accessor Type format, not just my name...
      */
     @FXML protected void saveGraphAction() {
-        File saveFile = showSaveFileDialog("graph.gat", "Save Graph As", null);
+        File saveFile = showSaveFileDialog(
+                "graph.gat",
+                "Save Graph As",
+                null,
+                root.getScene().getWindow()
+        );
         if (saveFile != null){
             String filetext = traverseCanvas();
             try {
@@ -202,7 +208,7 @@ public class Controller {
      *   into elements of a graph. It then binds the visual elements into meaningful java-friendly elements.
      */
     @FXML protected void loadGraphAction() {
-        File loadFile = showLoadFileDialog("Load Graph File");
+        File loadFile = showLoadFileDialog("Load Graph File", root.getScene().getWindow());
         if (loadFile != null){
             drawPane.getChildren().clear();
             prefixes.clear();
@@ -410,7 +416,8 @@ public class Controller {
         File saveFile = showSaveFileDialog(
                 "ontology.ttl",
                 "Save Turtle Ontology As",
-                null
+                null,
+                root.getScene().getWindow()
         );
         if (saveFile != null){
             String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties, config);
@@ -434,7 +441,8 @@ public class Controller {
         File saveFile = showSaveFileDialog(
                 "ontology.png",
                 "Save Conceptual Image As",
-                new FileChooser.ExtensionFilter("png files (*.png)", "*.png")
+                new FileChooser.ExtensionFilter("png files (*.png)", "*.png"),
+                root.getScene().getWindow()
         );
         if (saveFile != null){
             try {
@@ -690,29 +698,31 @@ public class Controller {
      * @param fileName the default filename the dialog will save the file as.
      * @param windowTitle the title of the dialog.
      * @param extFilter the list of extension filters, for easy access to specific file types.
+     * @param owner the window that owns the dialog.
      * @return the file the user has chosen to save to, or null otherwise.
      */
-    File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
+    File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter, Window owner) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
         fileChooser.setTitle(windowTitle);
         fileChooser.setSelectedExtensionFilter(extFilter);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
-        return fileChooser.showSaveDialog(root.getScene().getWindow());
+        return fileChooser.showSaveDialog(owner);
     }
 
     /**
      * Creates a load file dialog, which prompts the user to load from a specific file.
      * @param title the title of the dialog.
+     * @param owner the window that owns the dialog.
      * @return the file that will be loaded from.
      */
-    File showLoadFileDialog(String title){
+    File showLoadFileDialog(String title, Window owner){
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
-        return fileChooser.showOpenDialog(root.getScene().getWindow());
+        return fileChooser.showOpenDialog(owner);
     }
 
     /**
