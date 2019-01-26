@@ -3,8 +3,10 @@ package model.conceptual;
 import javafx.event.EventTarget;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
+import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Ellipse;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 
 import java.util.ArrayList;
@@ -90,6 +92,19 @@ public class Vertex {
             this.x = x;
             this.y = bounds.getMaxY();
         }
+    }
+
+    /**
+     * Places an arrow in the center of the shape, so it looks more natural.
+     */
+    public void snapToCenter() {
+        double minX = container.getBoundsInParent().getMinX();
+        double minY = container.getBoundsInParent().getMinY();
+        double maxX = container.getBoundsInParent().getMaxX();
+        double maxY = container.getBoundsInParent().getMaxY();
+
+        this.x = minX + (maxX - minX) / 2;
+        this.y = minY + (maxY - minY) / 2;
     }
 
     /**

@@ -318,6 +318,7 @@ public class Controller {
 
         compiledCls.getChildren().addAll(ellipse, name);
         drawPane.getChildren().add(compiledCls);
+
         try {
             classes.add(new Vertex(compiledCls));
         } catch (OutsideElementException e) {
@@ -354,6 +355,7 @@ public class Controller {
 
         compiledProp.getChildren().addAll(arrow, name);
         drawPane.getChildren().add(compiledProp);
+        compiledProp.toBack();
 
         Vertex sub = findClassUnder(sx, sy);
         Vertex obj = findClassUnder(ex, ey);
@@ -549,6 +551,7 @@ public class Controller {
 
         compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
+        compiledProperty.toBack();
 
         Edge edge = new Edge(compiledProperty, propertyName, subject, obj);
         properties.add(edge);
@@ -567,7 +570,7 @@ public class Controller {
      */
     private void addSubjectOfProperty(MouseEvent mouseEvent, Vertex sub) {
         subject = sub;
-        subject.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
+        subject.snapToCenter();
 
         arrow = new Arrow();
         arrow.setMouseTransparent(true);
@@ -577,6 +580,7 @@ public class Controller {
         arrow.setEndY(subject.getY());
 
         drawPane.getChildren().add(arrow);
+        arrow.toBack();
         srcClick = false;
         statusLbl.setText("Subject selected. Click another element for the Object.");
     }
