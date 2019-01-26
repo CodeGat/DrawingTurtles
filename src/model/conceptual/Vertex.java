@@ -6,6 +6,7 @@ import javafx.geometry.Bounds;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.text.Text;
+import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,34 +63,150 @@ public class Vertex {
     }
 
     /**
-     * We get the shortest distance between the mouse click and the edge of the Vertex and set the corresponding coord
-     *   to it, giving us a nice little snap-to feature.
-     * @param x the x coordinate the mouse was at when clicked.
-     * @param y the y coordinate the mouse was at when clicked.
+     * Snap the users property arrow as close to the edge of the shape as possible. This is fairly straightforward for
+     *    a Literal, but is much more involved for a Class.
+     * @param subX the x value of the subject of the property arrow - needed to find the intercept of the line and the
+     *             ellipse.
+     * @param subY the y value of the subject of the property arrow - needed to find the intercept of the line and the
+     *             ellipse.
+     * @param x the x value of the users click.
+     * @param y the y value of the users click.
      */
-    public void setSnapTo(double x, double y){
-        Bounds bounds = container.getBoundsInParent();
-        double distMinX = Math.abs(bounds.getMinX() - x);
-        double distMaxX = Math.abs(bounds.getMaxX() - x);
-        double distMinY = Math.abs(bounds.getMinY() - y);
-        double distMaxY = Math.abs(bounds.getMaxY() - y);
-        double[] distArray = {distMinX, distMaxX, distMinY, distMaxY};
-        Arrays.sort(distArray);
-        double   minDist = distArray[0];
+    public void setSnapTo(double subX, double subY, double x, double y){
+        if (this.type == GraphElemType.LITERAL) {
+            Bounds bounds = container.getBoundsInParent();
+            double distMinX = Math.abs(bounds.getMinX() - x);
+            double distMaxX = Math.abs(bounds.getMaxX() - x);
+            double distMinY = Math.abs(bounds.getMinY() - y);
+            double distMaxY = Math.abs(bounds.getMaxY() - y);
+            double[] distArray = {distMinX, distMaxX, distMinY, distMaxY};
+            Arrays.sort(distArray);
+            double minDist = distArray[0];
 
-        if (minDist == distMinX) {
-            this.x = bounds.getMinX();
-            this.y = y;
-        } else if (minDist == distMaxX) {
-            this.x = bounds.getMaxX();
-            this.y = y;
-        } else if (minDist == distMinY){
-            this.x = x;
-            this.y = bounds.getMinY();
+            if (minDist == distMinX) {
+                this.x = bounds.getMinX();
+                this.y = y;
+            } else if (minDist == distMaxX) {
+                this.x = bounds.getMaxX();
+                this.y = y;
+            } else if (minDist == distMinY) {
+                this.x = x;
+                this.y = bounds.getMinY();
+            } else {
+                this.x = x;
+                this.y = bounds.getMaxY();
+            }
         } else {
-            this.x = x;
-            this.y = bounds.getMaxY();
+            this.snapToCenter();
+
+            Bounds b = container.getBoundsInParent();
+            Ellipse e = (Ellipse) container.getChildren().get(0);
+
+            ArrayList<Pair<Double, Double>> coords = getIntersection(
+                    subX, subY,
+                    this.x, this.y,
+                    b.getMinX() + e.getRadiusX(), b.getMinY() + e.getRadiusY(),
+                    e.getRadiusX(), e.getRadiusY()
+            );
+
+            if (coords.size() > 1) System.out.println("Went across two shapes, exiting. ");
+
+            this.x = coords.get(0).getKey();
+            this.y = coords.get(0).getValue();
         }
+    }
+
+    /**
+     * Find the intersection(s) of the property arrow and the Object ellipse. Should usually be a single intersection,
+     *    multiple denote a pass across the shape rather than into it.
+     * @param x1 subject point x-value.
+     * @param y1 subject point y-value.
+     * @param x2 object x-value.
+     * @param y2 object y-value.
+     * @param midX x-value of the midpoint of the ellipse.
+     * @param midY y-value of the midpoint of the ellipse.
+     * @param h the major axis of the ellipse.
+     * @param v the minor axis of the ellipse.
+     * @return list of coordinates in which the ellipse and the line intersect.
+     */
+    private static ArrayList<Pair<Double, Double>> getIntersection(
+            double x1, double y1,
+            double x2, double y2,
+            double midX, double midY,
+            double h, double v) {
+        ArrayList<Pair<Double, Double>> points = new ArrayList<>();
+
+        x1 -= midX;
+        y1 -= midY;
+
+        x2 -= midX;
+        y2 -= midY;
+
+        if (x1 == x2) {
+            double y = (v/h)*Math.sqrt(h*h-x1*x1);
+            if (Math.min(y1, y2) <= y && y <= Math.max(y1, y2)) points.add(new Pair<>(x1+midX, y+midY));
+            if (Math.min(y1, y2) <= -y && -y <= Math.max(y1, y2)) points.add(new Pair<>(x1+midX, -y+midY));
+        } else {
+            double a = (y2 - y1) / (x2 - x1);
+            double b = (y1 - a*x1);
+
+            double r = a*a*h*h + v*v;
+            double s = 2*a*b*h*h;
+            double t = h*h*b*b - h*h*v*v;
+
+            double d = s*s - 4*r*t;
+
+            if (d > 0) {
+                double xi1 = (-s+Math.sqrt(d))/(2*r);
+                double xi2 = (-s-Math.sqrt(d))/(2*r);
+
+                double yi1 = a*xi1+b;
+                double yi2 = a*xi2+b;
+
+                if (isPointInLine(x1, y1, x2, y2, xi1, yi1)) points.add(new Pair<>(xi1+midX, yi1+midY));
+                if (isPointInLine(x1, y1, x2, y2, xi2, yi2)) points.add(new Pair<>(xi2+midX, yi2+midY));
+            } else if (d == 0) {
+                double xi = -s/(2*r);
+                double yi = a*xi+b;
+
+                if (isPointInLine(x1, y1, x2, y2, xi, yi)) points.add(new Pair<>(xi+midX, yi+midY));
+            }
+        }
+
+        return points;
+    }
+
+    /**
+     * Determines if a given point is within the the given line.
+     * @param x1 subject x-value.
+     * @param y1 subject y-value.
+     * @param x2 object x-value.
+     * @param y2 object y-value.
+     * @param px given points x-value.
+     * @param py given points y-value.
+     * @return whether the point is within the line or not.
+     */
+    private static boolean isPointInLine(double x1, double y1, double x2, double y2, double px, double py) {
+        double xMin = Math.min(x1, x2);
+        double xMax = Math.max(x1, x2);
+
+        double yMin = Math.min(y1, y2);
+        double yMax = Math.max(y1, y2);
+
+        return (xMin <= px && px <= xMax) && (yMin <= py && py <= yMax);
+    }
+
+    /**
+     * Places the arrow's origin in the center of the shape, so it looks more natural when moving it around.
+     */
+    public void snapToCenter() {
+        double minX = container.getBoundsInParent().getMinX();
+        double minY = container.getBoundsInParent().getMinY();
+        double maxX = container.getBoundsInParent().getMaxX();
+        double maxY = container.getBoundsInParent().getMaxY();
+
+        this.x = minX + (maxX - minX) / 2;
+        this.y = minY + (maxY - minY) / 2;
     }
 
     /**
@@ -112,6 +229,9 @@ public class Vertex {
         }
     }
 
+    /**
+     * Accessor methods.
+     */
     public void addIncomingEdge(Edge e){
         incomingEdges.add(e);
     }
