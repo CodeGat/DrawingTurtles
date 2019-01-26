@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.text.Text?>
+<BorderPane fx:id="root"
+            xmlns="http://javafx.com/javafx/8.0.172-ea"
+            xmlns:fx="http://javafx.com/fxml/1"
+            onKeyPressed="#keyPressedAction"
+            fx:controller="controller.Controller">
+    <left>
+        <ToolBar orientation="VERTICAL">
+            <Button fx:id="prefixBtn"   maxWidth="Infinity" onMouseClicked="#showPrefixMenuAction" text="Prefixes"/>
+            <Separator/>
+            <Button fx:id="saveGraphBtn" maxWidth="Infinity" onMouseClicked="#saveGraphAction" text="Save Graph"/>
+            <Button fx:id="loadGraphBtn" maxWidth="Infinity" onMouseClicked="#loadGraphAction" text="Load Graph"/>
+            <Button fx:id="exportTllBtn" maxWidth="Infinity" onMouseClicked="#exportTtlAction" text="Export as .ttl"/>
+            <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png"/>
+            <Separator />
+            <Button fx:id="instrBtn" maxWidth="Infinity" onMouseClicked="#showInstructionsAction" text="Instructions"/>
+            <Button fx:id="optionsBtn" maxWidth="Infinity" onMouseClicked="#showOptionsAction" text="Options"/>
+        </ToolBar>
+    </left>
+    <top>
+        <ToolBar>
+            <Label text="Drawing Turtles "/>
+            <Separator />
+            <Label fx:id="drawStatusLbl"/>
+            <Separator />
+            <Label fx:id="statusLbl"/>
+        </ToolBar>
+    </top>
+    <center>
+        <ScrollPane fx:id="scrollPane" vbarPolicy="ALWAYS" hbarPolicy="ALWAYS">
+            <Pane fx:id="drawPane" prefHeight="1000" prefWidth="1000"
+                  onMousePressed="#canvasAction"
+                  onMouseMoved="#moveArrowAction"
+            />
+        </ScrollPane>
+    </center>
+    <bottom>
+        <ToolBar>
+            <Text text="[P]-Prefix Menu [S]-Save Graph [L]-Load Graph [X/Ctrl+X] Export .tll/.ttl and .png [O] Open Options" />
+        </ToolBar>
+    </bottom>
+</BorderPane>
