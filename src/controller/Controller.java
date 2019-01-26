@@ -461,7 +461,7 @@ public class Controller {
         if (mouseEvent.isSecondaryButtonDown()){
             deleteGraphElement(mouseEvent);
         } else if ((vertex = findClassUnder(x, y)) != null && srcClick){
-            addSubjectOfProperty(mouseEvent, vertex);
+            addSubjectOfProperty(vertex);
         } else if ((vertex = findClassUnder(x, y)) != null){
             addObjectOfProperty(mouseEvent, vertex);
         } else if (srcClick){
@@ -523,7 +523,7 @@ public class Controller {
      * @param mouseEvent the second click on the canvas when 'Property' is selected.
      */
     private void addObjectOfProperty(MouseEvent mouseEvent, Vertex obj) {
-        obj.setSnapTo(mouseEvent.getX(), mouseEvent.getY());
+        obj.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
 
         arrow.setEndX(obj.getX());
         arrow.setEndY(obj.getY());
@@ -566,9 +566,8 @@ public class Controller {
 
     /**
      * Defines the Subject, or domain, of the property.
-     * @param mouseEvent the first click on the canvas when .
      */
-    private void addSubjectOfProperty(MouseEvent mouseEvent, Vertex sub) {
+    private void addSubjectOfProperty(Vertex sub) {
         subject = sub;
         subject.snapToCenter();
 
