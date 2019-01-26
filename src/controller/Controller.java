@@ -60,7 +60,7 @@ public class Controller {
     @FXML protected ScrollPane scrollPane;
     @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn, optionsBtn;
     @FXML protected Label  statusLbl, drawStatusLbl;
-    ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false));
+    ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
     ArrayList<String> prefixes = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();

@@ -14,6 +14,8 @@ public class Converter {
     private static ArrayList<Edge>    properties;
     private static ArrayList<Boolean> config;
 
+    private static boolean isOntology;
+
     private static String tabs = "\t";
 
     /**
@@ -21,6 +23,7 @@ public class Converter {
      * @param prefixes the Arraylist of known prefixes.
      * @param classes the Arraylist of visual Classes and Literals.
      * @param properties the Arraylist of visual Properties.
+     * @param config the options specified by the user.
      * @return a String representation of the graph as Turtle RDF syntax.
      */
     public static String convertGraphToTtlString(
@@ -32,6 +35,8 @@ public class Converter {
         Converter.classes    = classes;
         Converter.properties = properties;
         Converter.config     = config;
+
+        isOntology = config.get(2);
 
         String fixesNeeded = getFixes();
         String stringPrefixes = convertPrefixes();
@@ -87,6 +92,8 @@ public class Converter {
      * @return the properties as a valid .tll string.
      */
     private static String convertGProperties() {
+        if (!isOntology) return "";
+
         StringBuilder propStrs = new StringBuilder(
                 "\n##################################################\n" +
                 "#####          Ontology Properties           #####\n" +
@@ -270,10 +277,13 @@ public class Converter {
      */
     private static String convertSubject(Vertex klass){
         String subname = klass.getName();
-        String typeDef = klass.getTypeDefinition() != null ? klass.getTypeDefinition() : "owl:Class";
 
-        subname = subname.matches("http:.*|mailto:.*") ? "<"+subname+">" : subname;
-        return subname + " a " + typeDef + " ;\n" + tabs;
+        if (isOntology) {
+            String typeDef = klass.getTypeDefinition() != null ? klass.getTypeDefinition() : "owl:Class";
+
+            subname = subname.matches("http:.*|mailto:.*") ? "<" + subname + ">" : subname;
+            return subname + " a " + typeDef + " ;\n" + tabs;
+        } else return subname + "    \n" + tabs;
     }
 
     private static void indentTab() { tabs += "\t"; }

@@ -12,7 +12,7 @@ import java.util.ArrayList;
  */
 public class OptionsMenuController extends Controller {
     @FXML Button cancelBtn, commitBtn;
-    @FXML CheckBox collectionsCbx, blankCbx;
+    @FXML CheckBox collectionsCbx, blankCbx, ontologyCbx;
     private ArrayList<Boolean> config;
 
     /**
@@ -24,6 +24,7 @@ public class OptionsMenuController extends Controller {
         config = initial_config;
         collectionsCbx.setSelected(config.get(0));
         blankCbx.setSelected(config.get(1));
+        ontologyCbx.setSelected(config.get(2));
     }
 
     /**
@@ -32,6 +33,7 @@ public class OptionsMenuController extends Controller {
     @FXML void commitConfigBtn() {
         config.set(0, collectionsCbx.isSelected());
         config.set(1, blankCbx.isSelected());
+        config.set(2, ontologyCbx.isSelected());
         super.config = config;
         Stage stage = (Stage) commitBtn.getScene().getWindow();
         stage.close();
