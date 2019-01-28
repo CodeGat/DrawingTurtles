@@ -86,12 +86,14 @@ public final class Controller {
     }
 
     /**
-     * Creates and displays the Window defined in the fxml file, also passing data (through methods) to the
-     *    respective subController C.
+     * Creates and displays the Window defined in the fxml file, also passing data to a controller C.
      * @param fxml the fxml file in which the layout is defined.
      * @param title the title of the new window.
-     * @param <C> a subclass of the base Controller Class.
-     * @param <T> a generic type of method arguments.
+     * @param data the parameters passed to the Controller.
+     * @param <C> a Controller that can pass data to and recieve data from this method (extending
+     *           AbstractDataSharingController).
+     * @param <T> the type of data passed to and from the Controller.
+     * @return the data after it has been modified by the Controller.
      */
     @FXML @SuppressWarnings("unchecked")
     private <C extends AbstractDataSharingController<T>, T> ArrayList<T> showWindow(String fxml, String title, ArrayList<T> data){
@@ -119,6 +121,9 @@ public final class Controller {
         return null;
     }
 
+    /**
+     * Shows the Prefixes menu, updating the prefixes if they have been modified in the menu.
+     */
     @FXML void showPrefixMenuAction() {
         ArrayList<String> updatedPrefixes = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", prefixes);
         if (updatedPrefixes != null) prefixes = updatedPrefixes;
@@ -234,6 +239,10 @@ public final class Controller {
         }
     }
 
+    /**
+     * Determine the initial size of the canvas.
+     * @param size the String representation of the size of the canvas.
+     */
     private void bindCanvas(String size) {
         String[] canvasSize = size.split("[Gx]");
         double width = Double.valueOf(canvasSize[1]);
@@ -282,8 +291,7 @@ public final class Controller {
     }
 
     /**
-     * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Class GraphClass.
-     * Helper Method of {@link #bindGraph(String)}.
+     * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Vertex.
      * @param cls the .gat String serialization of a Class.
      */
     private void bindClass(String cls) {
@@ -323,8 +331,7 @@ public final class Controller {
     }
 
     /**
-     * Creates a human-friendly graph property arrow, and binds a java-friendly GraphProperty.
-     * Helper Method of {@link #bindGraph(String)}.
+     * Creates a human-friendly graph property arrow, and binds a java-friendly Edge.
      * @param prop the .gat String serialization of a Property.
      */
     private void bindProperty(String prop) throws PropertyElemMissingException {
@@ -366,7 +373,6 @@ public final class Controller {
     /**
      * Ties a coordinate to the class or literal below it, used in finding the subject and object of a property given
      *    the general start and end coordinates of the arrow. Also finds the class below a users click.
-     * Helper Method of {@link #bindProperty(String)} and in extension {@link #bindGraph(String)}.
      * @param x a x coordinate, given some leeway in the Bounds.
      * @param y a y coordinate, given some leeway in the Bounds.
      * @return the class or literal under the (x, y) coordinate, or null otherwise.
