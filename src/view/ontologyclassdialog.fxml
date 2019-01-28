@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<BorderPane prefHeight="400.0" prefWidth="429.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.OntologyClassDialogController">
+    <center>
+        <GridPane hgap="10" prefWidth="213.0" vgap="10">
+            <padding><Insets left="10" right="10" top="10" /></padding>
+            <Label text="Class Name: " GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <TextField fx:id="nameTfd" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+            <Label text="rdfs:label: " GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <TextField fx:id="labelTfd" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Label text="rdfs:comment: " GridPane.columnIndex="0" GridPane.rowIndex="2" />
+            <TextField fx:id="commentTfd" prefHeight="31.0" prefWidth="300.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+         <columnConstraints>
+            <ColumnConstraints />
+            <ColumnConstraints />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+         </rowConstraints>
+        </GridPane>
+    </center>
+    <bottom>
+        <HBox>
+            <padding><Insets bottom="10" left="10" right="10" top="10" /></padding>
+            <Button fx:id="cmtBtn" onMouseClicked="#addNewClassAction" text="Add Ontology Class" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="cancelBtn" onMouseClicked="#cancelClassAction" text="Cancel" />
+        </HBox>
+    </bottom>
+</BorderPane>

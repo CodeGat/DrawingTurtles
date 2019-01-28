@@ -16,9 +16,7 @@ import java.util.Arrays;
  */
 public class Vertex {
 
-    public enum GraphElemType {
-        CLASS, LITERAL
-    }
+    public enum GraphElemType {CLASS, LITERAL}
 
     public class OutsideElementException extends Exception {
         OutsideElementException(){
@@ -37,6 +35,13 @@ public class Vertex {
     private boolean isBlankNode;
     private String typeDefinition;
 
+    private String rdfsLabel, rdfsComment;
+
+    public Vertex(EventTarget element, String rdfsLabel, String rdfsComment) throws OutsideElementException {
+        this(element);
+        this.rdfsLabel = rdfsLabel;
+        this.rdfsComment = rdfsComment;
+    }
 
     /**
      * Constructor for the creation of a new GraphClass that doesn't yet exist.
@@ -270,4 +275,12 @@ public class Vertex {
     public static ArrayList<Character> getBlankNodeNames(){ return blankNodeNames; }
 
     public String getTypeDefinition() { return typeDefinition; }
+
+    public String getRdfsLabel() {
+        return rdfsLabel;
+    }
+
+    public String getRdfsComment() {
+        return rdfsComment;
+    }
 }

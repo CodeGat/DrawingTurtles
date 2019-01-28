@@ -592,6 +592,7 @@ public final class Controller {
     private void addElementSubaction(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
+        boolean isOntology = config.get(2);
         boolean isClass;
 
         // from https://www.w3.org/TR/turtle/ definition of a literal.
@@ -605,9 +606,19 @@ public final class Controller {
         compiledElement.setLayoutX(x);
         compiledElement.setLayoutY(y);
 
-        Text elementName = showNameElementDialog();
-        if (elementName == null) return;
-        else if (elementName.getText().equals("")){
+        Text elementName;
+        ArrayList<String> ontologyClassInfo =  new ArrayList<>();
+
+        if (isOntology) {
+            ontologyClassInfo = showNameOntologyClassDialog();
+            if (ontologyClassInfo == null) return;
+            elementName = new Text(ontologyClassInfo.get(0));
+        } else {
+            elementName = showNameElementDialog();
+            if (elementName == null) return;
+        }
+
+        if (elementName.getText().equals("")){
             isClass = true;
             elementName = new Text("_:" + Vertex.getNextBlankNodeName());
         } else isClass = !elementName.getText().matches(regex);
@@ -635,10 +646,21 @@ public final class Controller {
 
         drawPane.getChildren().add(compiledElement);
         try {
-            classes.add(new Vertex(compiledElement));
+            if (isOntology) {
+                String rdfslabel = ontologyClassInfo.get(1);
+                String rdfscomment = ontologyClassInfo.get(2);
+                classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment));
+            }
+            else classes.add(new Vertex(compiledElement));
         } catch (OutsideElementException e) {
             e.printStackTrace();
         }
+    }
+
+    private ArrayList<String> showNameOntologyClassDialog() {
+        ArrayList<String> ontologyClass = showWindow("/view/ontologyclassdialog.fxml", "Add new Ontology Class", null);
+        if (ontologyClass != null && ontologyClass.size() != 0) return ontologyClass;
+        else return null;
     }
 
     /**
