@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<AnchorPane maxHeight="400.0" maxWidth="600.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.PrefixMenuController">
+<AnchorPane fx:id="root" maxHeight="400.0" maxWidth="600.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.PrefixMenuController">
     <GridPane>
         <ListView fx:id="prefixList" prefHeight="400.0" prefWidth="400.0" GridPane.columnIndex="0" GridPane.rowIndex="0" />
         <ToolBar orientation="VERTICAL" prefHeight="400.0" prefWidth="0.0" GridPane.columnIndex="1" GridPane.rowIndex="0">

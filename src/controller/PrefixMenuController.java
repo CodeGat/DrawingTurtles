@@ -9,8 +9,10 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 
 import java.io.File;
 import java.io.FileReader;
@@ -26,15 +28,17 @@ import java.util.logging.Logger;
 /**
  * Controller for the Prefix Menu.
  */
-public class PrefixMenuController extends Controller implements Initializable {
+public class PrefixMenuController extends AbstractDataSharingController<String> implements Initializable {
 
     private static final Logger LOGGER = Logger.getLogger(PrefixMenuController.class.getName());
 
+    @FXML AnchorPane root;
     @FXML Button addPrefixBtn, remPrefixBtn, clrPrefixBtn, savPrefixBtn, lodPrefixBtn, cmtPrefixBtn, canPrefixBtn;
     @FXML ListView<String> prefixList;
 
     private final BooleanProperty isItemSelected = new SimpleBooleanProperty(false);
 
+    private ArrayList<String> commit_prefixes;
     private ArrayList<String> prefixes;
 
 
@@ -97,8 +101,6 @@ public class PrefixMenuController extends Controller implements Initializable {
      */
     @FXML protected void savePrefixAction() {
         File saveFile = showSaveFileDialog(
-                "prefixes.txt",
-                "Save Prefixes",
                 new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt"),
                 savPrefixBtn.getScene().getWindow()
         );
@@ -123,7 +125,7 @@ public class PrefixMenuController extends Controller implements Initializable {
      * On clicking the 'Load Prefix' button, attempts to load prefixes from a user-specified .txt file.
      */
     @FXML protected void loadPrefixAction(){
-        File loadFile = showLoadFileDialog("Load Prefixes", lodPrefixBtn.getScene().getWindow());
+        File loadFile = showLoadFileDialog(lodPrefixBtn.getScene().getWindow());
 
         if (loadFile != null){
             try (FileReader reader = new FileReader(loadFile)){
@@ -146,7 +148,7 @@ public class PrefixMenuController extends Controller implements Initializable {
      * Commit to the current prefixes, giving them to the base Controller.
      */
     @FXML void commitPrefixAction() {
-        super.prefixes = prefixes;
+        commit_prefixes = prefixes;
         Stage stage = (Stage) cmtPrefixBtn.getScene().getWindow();
         stage.close();
     }
@@ -187,13 +189,42 @@ public class PrefixMenuController extends Controller implements Initializable {
     }
 
     /**
-     * Sets the prefixes of the PrefixMenuController.
-     * Suppression of warning as reflection requires public access even if nothing access it.
-     * @param initialPrefixes the prefixes to be passed to the controller.
+     * Creates a save file dialog, prompting the user to select a file to create and/or save data to.
+     * @param extFilter the list of extension filters, for easy access to specific file types.
+     * @param owner the window that owns the dialog.
+     * @return the file the user has chosen to save to, or null otherwise.
      */
-    @SuppressWarnings("WeakerAccess")
-    public void setPrefixes(ArrayList<String> initialPrefixes){
-        prefixes = initialPrefixes;
+    private File showSaveFileDialog(FileChooser.ExtensionFilter extFilter, Window owner) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialFileName("prefixes.txt");
+        fileChooser.setTitle("Save Prefixes");
+        fileChooser.setSelectedExtensionFilter(extFilter);
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+        return fileChooser.showSaveDialog(owner);
+    }
+
+    /**
+     * Creates a load file dialog, which prompts the user to load from a specific file.
+     * @param owner the window that owns the dialog.
+     * @return the file that will be loaded from.
+     */
+    private File showLoadFileDialog(Window owner){
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Load Prefixes");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+        return fileChooser.showOpenDialog(owner);
+    }
+
+    @Override
+    public void setData(ArrayList<String> data) {
+        prefixes = data;
         prefixList.setItems(FXCollections.observableArrayList(prefixes));
+    }
+
+    @Override
+    public ArrayList<String> getData() {
+        return commit_prefixes;
     }
 }

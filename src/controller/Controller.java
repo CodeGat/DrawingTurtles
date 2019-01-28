@@ -5,8 +5,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.Window;
-import javafx.util.Pair;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
@@ -48,7 +46,7 @@ import java.util.logging.Logger;
 /**
  * The Controller for application.fxml: takes care of actions from the application.
  */
-public class Controller {
+public final class Controller {
     private class PropertyElemMissingException extends Exception {
         PropertyElemMissingException() { super(); }
     }
@@ -60,9 +58,9 @@ public class Controller {
     @FXML protected ScrollPane scrollPane;
     @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn, optionsBtn;
     @FXML protected Label  statusLbl, drawStatusLbl;
-    ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
+    private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
-    ArrayList<String> prefixes = new ArrayList<>();
+    private ArrayList<String> prefixes = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
@@ -74,7 +72,7 @@ public class Controller {
      * Method invoked on any key press in the main application.
      * @param keyEvent the key that invoked the method.
      */
-    @FXML protected void keyPressedAction(KeyEvent keyEvent) throws NoSuchMethodException {
+    @FXML protected void keyPressedAction(KeyEvent keyEvent) {
         KeyCode key = keyEvent.getCode();
 
         if (key == KeyCode.X && keyEvent.isControlDown()){
@@ -88,26 +86,24 @@ public class Controller {
     }
 
     /**
-     * Creates and displays the Window defined in the fxml file, also passing data (through methods) to the
-     *    respective subController C.
+     * Creates and displays the Window defined in the fxml file, also passing data to a controller C.
      * @param fxml the fxml file in which the layout is defined.
      * @param title the title of the new window.
-     * @param methods the list of Method Name / Argument pairs to be applied to C.
-     * @param <C> a subclass of the base Controller Class.
-     * @param <T> a generic type of method arguments.
+     * @param data the parameters passed to the Controller.
+     * @param <C> a Controller that can pass data to and recieve data from this method (extending
+     *           AbstractDataSharingController).
+     * @param <T> the type of data passed to and from the Controller.
+     * @return the data after it has been modified by the Controller.
      */
-    @SafeVarargs @FXML
-    private final <C extends Controller, T> void showWindow(String fxml, String title, Pair<Method, T[]>... methods){
+    @FXML @SuppressWarnings("unchecked")
+    private <C extends AbstractDataSharingController<T>, T> ArrayList<T> showWindow(String fxml, String title, ArrayList<T> data){
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             Parent parent = loader.load();
             C controller = loader.getController();
 
-            for (Pair<Method, T[]> method : methods){
-                Method methodName = method.getKey();
-                Object[] methodArgs = method.getValue();
-                methodName.invoke(controller, methodArgs);
-            }
+            Method methodName = controller.getClass().getMethod("setData", ArrayList.class);
+            methodName.invoke(controller, data);
 
             Scene scene = new Scene(parent);
             Stage stage = new Stage();
@@ -116,27 +112,32 @@ public class Controller {
             stage.setScene(scene);
             stage.setResizable(false);
             stage.showAndWait();
-        } catch (IOException | IllegalAccessException | InvocationTargetException e) {
+
+            methodName = controller.getClass().getMethod("getData");
+            return (ArrayList<T>) methodName.invoke(controller);
+        } catch (IOException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
-    @FXML void showPrefixMenuAction() throws NoSuchMethodException {
-        Method method = PrefixMenuController.class.getMethod("setPrefixes", ArrayList.class);
-        Object[] args = new ArrayList[]{prefixes};
-        showWindow("/view/prefixmenu.fxml", "Prefixes Menu", new Pair<>(method, args));
+    /**
+     * Shows the Prefixes menu, updating the prefixes if they have been modified in the menu.
+     */
+    @FXML void showPrefixMenuAction() {
+        ArrayList<String> updatedPrefixes = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", prefixes);
+        if (updatedPrefixes != null) prefixes = updatedPrefixes;
     }
 
     /**
      * on clicking 'Save Graph' button, attempt to traverse the graph and save a bespoke serialization of the graph to
      *   a user-specified .gat file. That's a Graph Accessor Type format, not just my name...
      */
-    @FXML protected void saveGraphAction() {
+    @FXML public void saveGraphAction() {
         File saveFile = showSaveFileDialog(
                 "graph.gat",
                 "Save Graph As",
-                null,
-                root.getScene().getWindow()
+                null
         );
         if (saveFile != null){
             String filetext = traverseCanvas();
@@ -198,8 +199,8 @@ public class Controller {
      * On clicking the 'Load Graph' button, clears the canvas and attempts to deserialize the user-specified .gat file
      *   into elements of a graph. It then binds the visual elements into meaningful java-friendly elements.
      */
-    @FXML protected void loadGraphAction() {
-        File loadFile = showLoadFileDialog("Load Graph File", root.getScene().getWindow());
+    @FXML public void loadGraphAction() {
+        File loadFile = showLoadFileDialog();
         if (loadFile != null){
             drawPane.getChildren().clear();
             prefixes.clear();
@@ -238,6 +239,10 @@ public class Controller {
         }
     }
 
+    /**
+     * Determine the initial size of the canvas.
+     * @param size the String representation of the size of the canvas.
+     */
     private void bindCanvas(String size) {
         String[] canvasSize = size.split("[Gx]");
         double width = Double.valueOf(canvasSize[1]);
@@ -286,8 +291,7 @@ public class Controller {
     }
 
     /**
-     * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Class GraphClass.
-     * Helper Method of {@link #bindGraph(String)}.
+     * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Vertex.
      * @param cls the .gat String serialization of a Class.
      */
     private void bindClass(String cls) {
@@ -327,8 +331,7 @@ public class Controller {
     }
 
     /**
-     * Creates a human-friendly graph property arrow, and binds a java-friendly GraphProperty.
-     * Helper Method of {@link #bindGraph(String)}.
+     * Creates a human-friendly graph property arrow, and binds a java-friendly Edge.
      * @param prop the .gat String serialization of a Property.
      */
     private void bindProperty(String prop) throws PropertyElemMissingException {
@@ -370,7 +373,6 @@ public class Controller {
     /**
      * Ties a coordinate to the class or literal below it, used in finding the subject and object of a property given
      *    the general start and end coordinates of the arrow. Also finds the class below a users click.
-     * Helper Method of {@link #bindProperty(String)} and in extension {@link #bindGraph(String)}.
      * @param x a x coordinate, given some leeway in the Bounds.
      * @param y a y coordinate, given some leeway in the Bounds.
      * @return the class or literal under the (x, y) coordinate, or null otherwise.
@@ -409,8 +411,7 @@ public class Controller {
         File saveFile = showSaveFileDialog(
                 "ontology.ttl",
                 "Save Turtle Ontology As",
-                null,
-                root.getScene().getWindow()
+                null
         );
         if (saveFile != null){
             String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties, config);
@@ -434,8 +435,7 @@ public class Controller {
         File saveFile = showSaveFileDialog(
                 "ontology.png",
                 "Save Conceptual Image As",
-                new FileChooser.ExtensionFilter("png files (*.png)", "*.png"),
-                root.getScene().getWindow()
+                new FileChooser.ExtensionFilter("png files (*.png)", "*.png")
         );
         if (saveFile != null){
             try {
@@ -651,7 +651,7 @@ public class Controller {
     /**
      * On clicking options button, show the options dialog...
      */
-    @FXML private void showOptionsAction() throws NoSuchMethodException {
+    @FXML private void showOptionsAction() {
         showOptionsDialog();
     }
 
@@ -692,31 +692,28 @@ public class Controller {
      * @param fileName the default filename the dialog will save the file as.
      * @param windowTitle the title of the dialog.
      * @param extFilter the list of extension filters, for easy access to specific file types.
-     * @param owner the window that owns the dialog.
      * @return the file the user has chosen to save to, or null otherwise.
      */
-    File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter, Window owner) {
+    private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
         fileChooser.setTitle(windowTitle);
         fileChooser.setSelectedExtensionFilter(extFilter);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
-        return fileChooser.showSaveDialog(owner);
+        return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
 
     /**
      * Creates a load file dialog, which prompts the user to load from a specific file.
-     * @param title the title of the dialog.
-     * @param owner the window that owns the dialog.
      * @return the file that will be loaded from.
      */
-    File showLoadFileDialog(String title, Window owner){
+    private File showLoadFileDialog(){
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle(title);
+        fileChooser.setTitle("Load Graph File");
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
-        return fileChooser.showOpenDialog(owner);
+        return fileChooser.showOpenDialog(root.getScene().getWindow());
     }
 
     /**
@@ -742,9 +739,8 @@ public class Controller {
     /**
      * Creates a options dialog.
      */
-    private void showOptionsDialog() throws NoSuchMethodException {
-        Method method = OptionsMenuController.class.getMethod("setConfig", ArrayList.class);
-        Object[] args = {config};
-        showWindow("/view/optionsmenu.fxml", "Options for the Current Project", new Pair<>(method, args));
+    private void showOptionsDialog() {
+        ArrayList<Boolean> updatedConfig = showWindow("/view/optionsmenu.fxml", "Options for the Current Project", config);
+        if (updatedConfig != null) config = updatedConfig;
     }
 }
