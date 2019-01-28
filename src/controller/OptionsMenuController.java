@@ -39,6 +39,7 @@ public class OptionsMenuController extends AbstractDataSharingController<Boolean
     public void setData(ArrayList<Boolean> data) {
         collectionsCbx.setSelected(data.get(0));
         blankCbx.setSelected(data.get(1));
+        ontologyCbx.setSelected(data.get(2));
     }
 
     @Override

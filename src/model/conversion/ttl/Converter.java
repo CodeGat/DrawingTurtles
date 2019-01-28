@@ -194,6 +194,12 @@ public class Converter {
             else commonObjects.put(edgeName, new ArrayList<>(Collections.singletonList(obj)));
         }
 
+        if (isOntology) {
+            int initPredObjListSBLength = predicateObjectListSB.length();
+            predicateObjectListSB.append(getRdfsProperties(subject));
+            if (predicateObjectListSB.length() > initPredObjListSBLength) first = false;
+        }
+
         for (Map.Entry<String, ArrayList<Vertex>> e : commonObjects.entrySet()){
             String predicateObjectListStr = "";
             String propName = e.getKey();
@@ -211,6 +217,20 @@ public class Converter {
         }
 
         return predicateObjectListSB.toString();
+    }
+
+    // TODO: 28/01/2019 need to save rdfs props too!
+    private static String getRdfsProperties(Vertex subject) {
+        String result = "";
+        String rdfsLabel = subject.getRdfsLabel();
+        String rdfsComment = subject.getRdfsComment();
+
+        if (rdfsLabel != null && rdfsLabel.length() != 0)
+            result += "rdfs:label \"" + rdfsLabel + "\" ;\n" + tabs;
+        if (rdfsComment != null && rdfsComment.length() != 0)
+            result += "rdfs:comment \"" + rdfsComment + "\" ;\n" + tabs;
+
+        return result.length() != 0 ? result.substring(0, result.length() - 4) : result;
     }
 
     /**
