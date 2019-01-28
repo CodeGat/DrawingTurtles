@@ -10,29 +10,18 @@ import java.util.ArrayList;
 /**
  * Controller for the Options Menu.
  */
-public class OptionsMenuController extends Controller {
+public class OptionsMenuController extends AbstractDataSharingController<Boolean> {
     @FXML Button cancelBtn, commitBtn;
     @FXML CheckBox collectionsCbx, blankCbx;
-    private ArrayList<Boolean> config;
 
-    /**
-     * Sets the config as defined in the Controller.
-     * @param initial_config the config in the Controller.
-     */
-    @SuppressWarnings("WeakerAccess")
-    public void setConfig(ArrayList<Boolean> initial_config){
-        config = initial_config;
-        collectionsCbx.setSelected(config.get(0));
-        blankCbx.setSelected(config.get(1));
-    }
+    private ArrayList<Boolean> commit_config = new ArrayList<>();
 
     /**
      * Commits the changes to the base Controller.
      */
     @FXML void commitConfigBtn() {
-        config.set(0, collectionsCbx.isSelected());
-        config.set(1, blankCbx.isSelected());
-        super.config = config;
+        commit_config.add(collectionsCbx.isSelected());
+        commit_config.add(blankCbx.isSelected());
         Stage stage = (Stage) commitBtn.getScene().getWindow();
         stage.close();
     }
@@ -43,5 +32,16 @@ public class OptionsMenuController extends Controller {
     @FXML void cancelConfigBtn() {
         Stage stage = (Stage) cancelBtn.getScene().getWindow();
         stage.close();
+    }
+
+    @Override
+    public void setData(ArrayList<Boolean> data) {
+        collectionsCbx.setSelected(data.get(0));
+        blankCbx.setSelected(data.get(1));
+    }
+
+    @Override
+    public ArrayList<Boolean> getData() {
+        return commit_config;
     }
 }
