@@ -26,8 +26,6 @@
         <ToolBar>
             <Label text="Drawing Turtles "/>
             <Separator />
-            <Label fx:id="drawStatusLbl"/>
-            <Separator />
             <Label fx:id="statusLbl"/>
         </ToolBar>
     </top>

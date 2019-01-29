@@ -5,11 +5,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.Window;
-import javafx.util.Pair;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
+import model.conversion.gat.CanvasBinder;
+import model.conversion.gat.ElementConverter;
 import model.conversion.ttl.Converter;
 import model.graph.Arrow;
 import javafx.embed.swing.SwingFXUtils;
@@ -48,21 +48,17 @@ import java.util.logging.Logger;
 /**
  * The Controller for application.fxml: takes care of actions from the application.
  */
-public class Controller {
-    private class PropertyElemMissingException extends Exception {
-        PropertyElemMissingException() { super(); }
-    }
-
+public final class Controller {
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
     @FXML protected BorderPane root;
     @FXML protected Pane drawPane;
     @FXML protected ScrollPane scrollPane;
     @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn, optionsBtn;
-    @FXML protected Label  statusLbl, drawStatusLbl;
-    ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false));
+    @FXML protected Label  statusLbl;
+    private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false));
 
-    ArrayList<String> prefixes = new ArrayList<>();
+    private ArrayList<String> prefixes = new ArrayList<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
@@ -74,7 +70,7 @@ public class Controller {
      * Method invoked on any key press in the main application.
      * @param keyEvent the key that invoked the method.
      */
-    @FXML protected void keyPressedAction(KeyEvent keyEvent) throws NoSuchMethodException {
+    @FXML protected void keyPressedAction(KeyEvent keyEvent) {
         KeyCode key = keyEvent.getCode();
 
         if (key == KeyCode.X && keyEvent.isControlDown()){
@@ -88,26 +84,24 @@ public class Controller {
     }
 
     /**
-     * Creates and displays the Window defined in the fxml file, also passing data (through methods) to the
-     *    respective subController C.
+     * Creates and displays the Window defined in the fxml file, also passing data to a controller C.
      * @param fxml the fxml file in which the layout is defined.
      * @param title the title of the new window.
-     * @param methods the list of Method Name / Argument pairs to be applied to C.
-     * @param <C> a subclass of the base Controller Class.
-     * @param <T> a generic type of method arguments.
+     * @param data the parameters passed to the Controller.
+     * @param <C> a Controller that can pass data to and recieve data from this method (extending
+     *           AbstractDataSharingController).
+     * @param <T> the type of data passed to and from the Controller.
+     * @return the data after it has been modified by the Controller.
      */
-    @SafeVarargs @FXML
-    private final <C extends Controller, T> void showWindow(String fxml, String title, Pair<Method, T[]>... methods){
+    @FXML @SuppressWarnings("unchecked")
+    private <C extends AbstractDataSharingController<T>, T> ArrayList<T> showWindow(String fxml, String title, ArrayList<T> data){
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             Parent parent = loader.load();
             C controller = loader.getController();
 
-            for (Pair<Method, T[]> method : methods){
-                Method methodName = method.getKey();
-                Object[] methodArgs = method.getValue();
-                methodName.invoke(controller, methodArgs);
-            }
+            Method methodName = controller.getClass().getMethod("setData", ArrayList.class);
+            methodName.invoke(controller, data);
 
             Scene scene = new Scene(parent);
             Stage stage = new Stage();
@@ -116,30 +110,40 @@ public class Controller {
             stage.setScene(scene);
             stage.setResizable(false);
             stage.showAndWait();
-        } catch (IOException | IllegalAccessException | InvocationTargetException e) {
+
+            methodName = controller.getClass().getMethod("getData");
+            return (ArrayList<T>) methodName.invoke(controller);
+        } catch (IOException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
-    @FXML void showPrefixMenuAction() throws NoSuchMethodException {
-        Method method = PrefixMenuController.class.getMethod("setPrefixes", ArrayList.class);
-        Object[] args = new ArrayList[]{prefixes};
-        showWindow("/view/prefixmenu.fxml", "Prefixes Menu", new Pair<>(method, args));
+    /**
+     * Shows the Prefixes menu, updating the prefixes if they have been modified in the menu.
+     */
+    @FXML void showPrefixMenuAction() {
+        ArrayList<String> updatedPrefixes = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", prefixes);
+        if (updatedPrefixes != null) prefixes = updatedPrefixes;
     }
 
     /**
      * on clicking 'Save Graph' button, attempt to traverse the graph and save a bespoke serialization of the graph to
      *   a user-specified .gat file. That's a Graph Accessor Type format, not just my name...
      */
-    @FXML protected void saveGraphAction() {
+    @FXML public void saveGraphAction() {
         File saveFile = showSaveFileDialog(
                 "graph.gat",
                 "Save Graph As",
-                null,
-                root.getScene().getWindow()
+                null
         );
         if (saveFile != null){
-            String filetext = traverseCanvas();
+            String filetext = ElementConverter.traverseCanvas(
+                    drawPane.getWidth(),
+                    drawPane.getHeight(),
+                    classes,
+                    properties
+            );
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(filetext);
@@ -153,53 +157,11 @@ public class Controller {
     }
 
     /**
-     * Traverses the graph through the children of the canvas (the drawPane), in order of creation, and gives the
-     *    canvas size.
-     * There is no need for recursive definitions, as the tree is a shallow one with depth at most 3.
-     * @return a bespoke string serialization of the children of the canvas (the elements of the graph).
-     */
-    private String traverseCanvas() {
-        StringBuilder result = new StringBuilder();
-
-        String canvasSize = "G" + drawPane.getWidth() + "x" + drawPane.getHeight();
-        result.append(canvasSize);
-
-        for (Vertex v : classes) {
-            result.append("[");
-            if (v.getType() == Vertex.GraphElemType.CLASS){
-                Ellipse e = (Ellipse) v.getContainer().getChildren().get(0);
-                String shapeInfo = "E"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
-                        e.getRadiusY() + "|" + e.getFill().toString();
-                String shapeName = "=" + v.getName();
-                result.append(shapeInfo).append(shapeName);
-            } else if (v.getType() == Vertex.GraphElemType.LITERAL){
-                Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
-                String shapeInfo = "R" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
-                        r.getWidth() + "|" + r.getHeight() + "|" + r.getFill().toString();
-                String shapeName = "=" + v.getName();
-                result.append(shapeInfo).append(shapeName);
-            }
-            result.append("]");
-        }
-
-        for (Edge e : properties) {
-            result.append("[");
-            Arrow a = (Arrow) e.getContainer().getChildren().get(0);
-            String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
-            String shapeName = "=" + e.getName();
-            result.append(shapeInfo).append(shapeName);
-            result.append("]");
-        }
-
-        return result.toString();
-    }
-
-    /**
      * On clicking the 'Load Graph' button, clears the canvas and attempts to deserialize the user-specified .gat file
      *   into elements of a graph. It then binds the visual elements into meaningful java-friendly elements.
      */
-    @FXML protected void loadGraphAction() {
-        File loadFile = showLoadFileDialog("Load Graph File", root.getScene().getWindow());
+    @FXML public void loadGraphAction() {
+        File loadFile = showLoadFileDialog();
         if (loadFile != null){
             drawPane.getChildren().clear();
             prefixes.clear();
@@ -212,165 +174,26 @@ public class Controller {
                     statusLbl.setText("Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
                 }
-                bindGraph(new String(rawGraph));
+                CanvasBinder binder = new CanvasBinder(new String(rawGraph));
+                binder.bindGraph();
+                classes.addAll(binder.getClasses());
+                properties.addAll(binder.getProperties());
+                drawPane.setPrefSize(binder.getCanvasWidth(), binder.getCanvasHeight());
+                drawPane.getChildren().addAll(binder.getCompiledElements());
+                for (StackPane compiledProperty : binder.getCompiledProperties()){
+                    drawPane.getChildren().add(compiledProperty);
+                    compiledProperty.toBack();
+                }
+                statusLbl.setText("Graph load successful.");
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
-            } catch (PropertyElemMissingException e) {
-                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
         } else statusLbl.setText("Graph load cancelled.");
     }
 
     /**
-     * Splits the output of the .gat file into it's respective elements and attempts to bind them.
-     * @param graph the raw .gat file data.
-     */
-    private void bindGraph(String graph) throws PropertyElemMissingException {
-        String[] elements = Arrays.stream(graph.split("]\\[|\\[|]"))
-                .filter(s -> !s.equals(""))
-                .toArray(String[]::new);
-
-        for (String element : elements){
-            if      (element.charAt(0) == 'R') bindLiteral(element);
-            else if (element.charAt(0) == 'E') bindClass(element);
-            else if (element.charAt(0) == 'A') bindProperty(element);
-            else if (element.charAt(0) == 'G') bindCanvas(element);
-        }
-    }
-
-    private void bindCanvas(String size) {
-        String[] canvasSize = size.split("[Gx]");
-        double width = Double.valueOf(canvasSize[1]);
-        double height = Double.valueOf(canvasSize[2]);
-
-        drawPane.setMinSize(width, height);
-        drawPane.setPrefSize(width, height);
-    }
-
-    /**
-     * Binds a literal into both a human-friendly visual element of the graph, and a java-friendly Literal GraphClass.
-     * Helper method of {@link #bindGraph(String)}.
-     * @param lit the .gat String serialization of a Literal.
-     */
-    private void bindLiteral(String lit) {
-        String[] litElements = lit.split("=");
-        String[] litInfo = litElements[0].substring(1).split("\\|");
-        String   litName = litElements[1];
-        double   x = Double.valueOf(litInfo[0]);
-        double   y = Double.valueOf(litInfo[1]);
-        double   w = Double.valueOf(litInfo[2]);
-        double   h = Double.valueOf(litInfo[3]);
-        Color    col = Color.web(litInfo[4]);
-
-        resizeEdgeOfCanvas(x, y);
-
-        StackPane compiledLit = new StackPane();
-        compiledLit.setLayoutX(x);
-        compiledLit.setLayoutY(y);
-
-        Rectangle rect = new Rectangle();
-        rect.setWidth(w);
-        rect.setHeight(h);
-        rect.setFill(col);
-        rect.setStroke(Color.BLACK);
-
-        Text name = new Text(litName);
-
-        compiledLit.getChildren().addAll(rect, name);
-        drawPane.getChildren().add(compiledLit);
-        try {
-            classes.add(new Vertex(compiledLit));
-        } catch (OutsideElementException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Class GraphClass.
-     * Helper Method of {@link #bindGraph(String)}.
-     * @param cls the .gat String serialization of a Class.
-     */
-    private void bindClass(String cls) {
-        String[] clsElements = cls.split("=");
-        String[] clsInfo     = clsElements[0].substring(1).split("\\|");
-        String   clsName     = clsElements[1];
-        double   x = Double.valueOf(clsInfo[0]);
-        double   y = Double.valueOf(clsInfo[1]);
-        double   rx = Double.valueOf(clsInfo[2]);
-        double   ry = Double.valueOf(clsInfo[3]);
-        Color    col = Color.web(clsInfo[4]);
-
-        resizeEdgeOfCanvas(x, y);
-
-        StackPane compiledCls = new StackPane();
-        compiledCls.setLayoutX(x);
-        compiledCls.setLayoutY(y);
-
-        Ellipse ellipse = new Ellipse();
-        ellipse.setCenterX(x);
-        ellipse.setCenterY(y);
-        ellipse.setRadiusX(rx);
-        ellipse.setRadiusY(ry);
-        ellipse.setFill(col);
-        ellipse.setStroke(Color.BLACK);
-
-        Text name = new Text(clsName);
-
-        compiledCls.getChildren().addAll(ellipse, name);
-        drawPane.getChildren().add(compiledCls);
-
-        try {
-            classes.add(new Vertex(compiledCls));
-        } catch (OutsideElementException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Creates a human-friendly graph property arrow, and binds a java-friendly GraphProperty.
-     * Helper Method of {@link #bindGraph(String)}.
-     * @param prop the .gat String serialization of a Property.
-     */
-    private void bindProperty(String prop) throws PropertyElemMissingException {
-        String[] propElements = prop.split("=");
-        String[] propInfo     = propElements[0].substring(1).split("\\|");
-        String   propName     = propElements[1];
-        double sx = Double.valueOf(propInfo[0]);
-        double sy = Double.valueOf(propInfo[1]);
-        double ex = Double.valueOf(propInfo[2]);
-        double ey = Double.valueOf(propInfo[3]);
-
-        StackPane compiledProp = new StackPane();
-        compiledProp.setLayoutX(sx < ex ? sx : ex);
-        compiledProp.setLayoutY(sy < ey ? sy : ey);
-
-        Arrow arrow = new Arrow();
-        arrow.setStartX(sx);
-        arrow.setStartY(sy);
-        arrow.setEndX(ex);
-        arrow.setEndY(ey);
-
-        Label name = new Label(propName);
-        name.setBackground(new Background(new BackgroundFill(Color.web("f4f4f4"), CornerRadii.EMPTY, Insets.EMPTY)));
-
-        compiledProp.getChildren().addAll(arrow, name);
-        drawPane.getChildren().add(compiledProp);
-        compiledProp.toBack();
-
-        Vertex sub = findClassUnder(sx, sy);
-        Vertex obj = findClassUnder(ex, ey);
-        if (sub != null && obj != null) {
-            Edge edge = new Edge(compiledProp, name, sub, obj);
-            sub.addOutgoingEdge(edge);
-            obj.addIncomingEdge(edge);
-            properties.add(edge);
-        } else throw new PropertyElemMissingException();
-    }
-
-    /**
      * Ties a coordinate to the class or literal below it, used in finding the subject and object of a property given
      *    the general start and end coordinates of the arrow. Also finds the class below a users click.
-     * Helper Method of {@link #bindProperty(String)} and in extension {@link #bindGraph(String)}.
      * @param x a x coordinate, given some leeway in the Bounds.
      * @param y a y coordinate, given some leeway in the Bounds.
      * @return the class or literal under the (x, y) coordinate, or null otherwise.
@@ -409,8 +232,7 @@ public class Controller {
         File saveFile = showSaveFileDialog(
                 "ontology.ttl",
                 "Save Turtle Ontology As",
-                null,
-                root.getScene().getWindow()
+                null
         );
         if (saveFile != null){
             String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties, config);
@@ -434,8 +256,7 @@ public class Controller {
         File saveFile = showSaveFileDialog(
                 "ontology.png",
                 "Save Conceptual Image As",
-                new FileChooser.ExtensionFilter("png files (*.png)", "*.png"),
-                root.getScene().getWindow()
+                new FileChooser.ExtensionFilter("png files (*.png)", "*.png")
         );
         if (saveFile != null){
             try {
@@ -651,7 +472,7 @@ public class Controller {
     /**
      * On clicking options button, show the options dialog...
      */
-    @FXML private void showOptionsAction() throws NoSuchMethodException {
+    @FXML private void showOptionsAction() {
         showOptionsDialog();
     }
 
@@ -692,31 +513,28 @@ public class Controller {
      * @param fileName the default filename the dialog will save the file as.
      * @param windowTitle the title of the dialog.
      * @param extFilter the list of extension filters, for easy access to specific file types.
-     * @param owner the window that owns the dialog.
      * @return the file the user has chosen to save to, or null otherwise.
      */
-    File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter, Window owner) {
+    private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
         fileChooser.setTitle(windowTitle);
         fileChooser.setSelectedExtensionFilter(extFilter);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
-        return fileChooser.showSaveDialog(owner);
+        return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
 
     /**
      * Creates a load file dialog, which prompts the user to load from a specific file.
-     * @param title the title of the dialog.
-     * @param owner the window that owns the dialog.
      * @return the file that will be loaded from.
      */
-    File showLoadFileDialog(String title, Window owner){
+    private File showLoadFileDialog(){
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle(title);
+        fileChooser.setTitle("Load Graph File");
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
-        return fileChooser.showOpenDialog(owner);
+        return fileChooser.showOpenDialog(root.getScene().getWindow());
     }
 
     /**
@@ -742,9 +560,8 @@ public class Controller {
     /**
      * Creates a options dialog.
      */
-    private void showOptionsDialog() throws NoSuchMethodException {
-        Method method = OptionsMenuController.class.getMethod("setConfig", ArrayList.class);
-        Object[] args = {config};
-        showWindow("/view/optionsmenu.fxml", "Options for the Current Project", new Pair<>(method, args));
+    private void showOptionsDialog() {
+        ArrayList<Boolean> updatedConfig = showWindow("/view/optionsmenu.fxml", "Options for the Current Project", config);
+        if (updatedConfig != null) config = updatedConfig;
     }
 }
