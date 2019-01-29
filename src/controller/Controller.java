@@ -134,11 +134,7 @@ public final class Controller {
      *   a user-specified .gat file. That's a Graph Accessor Type format, not just my name...
      */
     @FXML public void saveGraphAction() {
-        File saveFile = showSaveFileDialog(
-                "graph.gat",
-                "Save Graph As",
-                null
-        );
+        File saveFile = showSaveFileDialog("graph.gat", "Save Graph As", null);
         if (saveFile != null){
             String filetext = traverseCanvas();
             try {
@@ -171,8 +167,10 @@ public final class Controller {
                 Ellipse e = (Ellipse) v.getContainer().getChildren().get(0);
                 String shapeInfo = "E"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
                         e.getRadiusY() + "|" + e.getFill().toString();
-                String shapeName = "=" + v.getName();
-                result.append(shapeInfo).append(shapeName);
+                String shapeName = "\\=" + v.getName();
+                String rdfsLabel = v.getRdfsLabel() != null ? "\\|" + v.getRdfsLabel() : "\\|";
+                String rdfsComment = v.getRdfsComment() != null ? "\\|" + v.getRdfsComment() : "\\|\\|";
+                result.append(shapeInfo).append(shapeName).append(rdfsLabel).append(rdfsComment);
             } else if (v.getType() == Vertex.GraphElemType.LITERAL){
                 Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
                 String shapeInfo = "R" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
@@ -295,14 +293,17 @@ public final class Controller {
      * @param cls the .gat String serialization of a Class.
      */
     private void bindClass(String cls) {
-        String[] clsElements = cls.split("=");
-        String[] clsInfo     = clsElements[0].substring(1).split("\\|");
-        String   clsName     = clsElements[1];
-        double   x = Double.valueOf(clsInfo[0]);
-        double   y = Double.valueOf(clsInfo[1]);
-        double   rx = Double.valueOf(clsInfo[2]);
-        double   ry = Double.valueOf(clsInfo[3]);
-        Color    col = Color.web(clsInfo[4]);
+        String[] clsElements = cls.split("\\\\=");
+        String[] clsShape    = clsElements[0].substring(1).split("\\|");
+        String[] clsInfo     = clsElements[1].split("\\\\\\|", -1);
+        String   clsName     = clsInfo[0];
+        String   clsLabel    = clsInfo[1];
+        String   clsComment  = clsInfo[2];
+        double   x = Double.valueOf(clsShape[0]);
+        double   y = Double.valueOf(clsShape[1]);
+        double   rx = Double.valueOf(clsShape[2]);
+        double   ry = Double.valueOf(clsShape[3]);
+        Color    col = Color.web(clsShape[4]);
 
         resizeEdgeOfCanvas(x, y);
 
@@ -324,7 +325,7 @@ public final class Controller {
         drawPane.getChildren().add(compiledCls);
 
         try {
-            classes.add(new Vertex(compiledCls));
+            classes.add(new Vertex(compiledCls, clsLabel, clsComment));
         } catch (OutsideElementException e) {
             e.printStackTrace();
         }
