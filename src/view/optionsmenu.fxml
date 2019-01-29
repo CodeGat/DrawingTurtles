@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.text.Font?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<BorderPane prefHeight="400.0" prefWidth="397.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.OptionsMenuController">
+    <center>
+        <GridPane hgap="10" vgap="5">
+            <padding>
+                <Insets left="10" top="10" />
+            </padding>
+            <CheckBox fx:id="collectionsCbx" text="Use Collections '()' syntax for multi-object predicates" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <Label text="&#13;:s :p (:o1 :o2 ...) ." GridPane.rowIndex="1">
+                <font><Font name="Courier New" /></font>
+            </Label>
+            <Label text="instead of:" GridPane.rowIndex="2" />
+            <Label text=":s&#13;  :p&#13;    :o1 ,&#13;    :o2 ,&#13;    ... ." GridPane.rowIndex="3">
+                <font><Font name="Courier New" /></font>
+            </Label>
+            <Separator GridPane.rowIndex="4" />
+            <CheckBox fx:id="blankCbx" text="Use Blank Node Property List '[]' syntax" GridPane.rowIndex="5" />
+            <Label text="&#13;:s :p [:p1 :o1; :p2 :o2; ...]." GridPane.rowIndex="6">
+                <font><Font name="Courier New" /></font>
+            </Label>
+            <Label text="instead of:" GridPane.rowIndex="7" />
+            <Label text=":s :p _:a .&#13;&#13;_:a :p1 :o1;&#13;    :p2 :o2 ." GridPane.rowIndex="8">
+                <font><Font name="Courier New" /></font>
+            </Label>
+            <Separator GridPane.rowIndex="9"/>
+            <CheckBox fx:id="ontologyCbx" text="Optimize .ttl output for ontology creation (.owl)" GridPane.rowIndex="10"/>
+        </GridPane>
+    </center>
+    <bottom>
+        <HBox>
+            <padding><Insets left="10" right="10" bottom="10" top="10"/></padding>
+            <Button fx:id="commitBtn" onMouseClicked="#commitConfigBtn" text="Commit Options" />
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="cancelBtn" onMouseClicked="#cancelConfigBtn" text="Cancel" />
+        </HBox>
+    </bottom>
+</BorderPane>

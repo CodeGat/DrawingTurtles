@@ -14,6 +14,8 @@ public class Converter {
     private static ArrayList<Edge>    properties;
     private static ArrayList<Boolean> config;
 
+    private static boolean isOntology;
+
     private static String tabs = "\t";
 
     /**
@@ -21,6 +23,7 @@ public class Converter {
      * @param prefixes the Arraylist of known prefixes.
      * @param classes the Arraylist of visual Classes and Literals.
      * @param properties the Arraylist of visual Properties.
+     * @param config the options specified by the user.
      * @return a String representation of the graph as Turtle RDF syntax.
      */
     public static String convertGraphToTtlString(
@@ -32,6 +35,8 @@ public class Converter {
         Converter.classes    = classes;
         Converter.properties = properties;
         Converter.config     = config;
+
+        isOntology = config.get(2);
 
         String fixesNeeded = getFixes();
         String stringPrefixes = convertPrefixes();
@@ -69,7 +74,7 @@ public class Converter {
         StringBuilder prefixStrs = new StringBuilder();
         prefixStrs.append("@prefix rdf : <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n");
         prefixStrs.append("@prefix rdfs : <http://www.w3.org/2000/01/rdf-schema#> .\n");
-        prefixStrs.append("@prefix owl : <http://www.w3.org/2002/07/owl#> .\n");
+        if (isOntology) prefixStrs.append("@prefix owl : <http://www.w3.org/2002/07/owl#> .\n");
 
         for (String prefix : prefixes){
             String[] splitPrefix = prefix.split(" : ", 2);
@@ -87,6 +92,8 @@ public class Converter {
      * @return the properties as a valid .tll string.
      */
     private static String convertGProperties() {
+        if (!isOntology) return "";
+
         StringBuilder propStrs = new StringBuilder(
                 "\n##################################################\n" +
                 "#####          Ontology Properties           #####\n" +
@@ -156,7 +163,9 @@ public class Converter {
         String subjectString = convertSubject(subject);
         String predicateObjectString = convertPredicateObjectList(subject);
 
-        if (predicateObjectString.length() == 0)
+        if (predicateObjectString.length() == 0 && !isOntology){
+            return "";
+        } else if (predicateObjectString.length() == 0)
             subjectString = subjectString.substring(0, subjectString.length() - 4);
 
         return subjectString + predicateObjectString + " .\n\n";
@@ -181,6 +190,12 @@ public class Converter {
             else commonObjects.put(edgeName, new ArrayList<>(Collections.singletonList(obj)));
         }
 
+        if (isOntology) {
+            int initPredObjListSBLength = predicateObjectListSB.length();
+            predicateObjectListSB.append(getRdfsProperties(subject));
+            if (predicateObjectListSB.length() > initPredObjListSBLength) first = false;
+        }
+
         for (Map.Entry<String, ArrayList<Vertex>> e : commonObjects.entrySet()){
             String predicateObjectListStr = "";
             String propName = e.getKey();
@@ -197,6 +212,23 @@ public class Converter {
         }
 
         return predicateObjectListSB.toString();
+    }
+
+    private static String getRdfsProperties(Vertex subject) {
+        String result = "";
+        String rdfsLabel = subject.getRdfsLabel();
+        String rdfsComment = subject.getRdfsComment();
+
+        if (rdfsLabel != null && rdfsLabel.length() != 0 && rdfsLabel.contains("\n"))
+            result += "rdfs:label \"\"\"" + rdfsLabel + "\"\"\" ;\n" + tabs;
+        else if (rdfsLabel != null && rdfsLabel.length() != 0)
+            result += "rdfs:label \"" + rdfsLabel + "\" ;\n" + tabs;
+        if (rdfsComment != null && rdfsComment.length() != 0 && rdfsComment.contains("\n"))
+            result += "rdfs:comment \"\"\"" + rdfsComment + "\"\"\" ;\n" + tabs;
+        else if (rdfsComment != null && rdfsComment.length() != 0)
+            result += "rdfs:comment \"" + rdfsComment + "\" ;\n" + tabs;
+
+        return result.length() != 0 ? result.substring(0, result.length() - 4) : result;
     }
 
     /**
@@ -264,9 +296,13 @@ public class Converter {
      */
     private static String convertSubject(Vertex klass){
         String subname = klass.getName();
-        String typeDef = klass.getTypeDefinition() != null ? klass.getTypeDefinition() : "owl:Class";
 
-        return subname + " a " + typeDef + " ;\n" + tabs;
+        if (isOntology) {
+            String typeDef = klass.getTypeDefinition() != null ? klass.getTypeDefinition() : "owl:Class";
+
+            subname = subname.matches("http:.*|mailto:.*") ? "<" + subname + ">" : subname;
+            return subname + " a " + typeDef + " ;\n" + tabs;
+        } else return subname + "    \n" + tabs;
     }
 
     private static void indentTab() { tabs += "\t"; }
