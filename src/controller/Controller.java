@@ -8,6 +8,8 @@ import javafx.stage.Stage;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
+import model.conversion.gat.CanvasBinder;
+import model.conversion.gat.ElementConverter;
 import model.conversion.ttl.Converter;
 import model.graph.Arrow;
 import javafx.embed.swing.SwingFXUtils;
@@ -47,17 +49,13 @@ import java.util.logging.Logger;
  * The Controller for application.fxml: takes care of actions from the application.
  */
 public final class Controller {
-    private class PropertyElemMissingException extends Exception {
-        PropertyElemMissingException() { super(); }
-    }
-
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
     @FXML protected BorderPane root;
     @FXML protected Pane drawPane;
     @FXML protected ScrollPane scrollPane;
     @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn, optionsBtn;
-    @FXML protected Label  statusLbl, drawStatusLbl;
+    @FXML protected Label  statusLbl;
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false));
 
     private ArrayList<String> prefixes = new ArrayList<>();
@@ -140,7 +138,12 @@ public final class Controller {
                 null
         );
         if (saveFile != null){
-            String filetext = traverseCanvas();
+            String filetext = ElementConverter.traverseCanvas(
+                    drawPane.getWidth(),
+                    drawPane.getHeight(),
+                    classes,
+                    properties
+            );
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(filetext);
@@ -151,48 +154,6 @@ public final class Controller {
                 LOGGER.log(Level.SEVERE, "failed to save graph: ", e);
             }
         } else statusLbl.setText("File save cancelled.");
-    }
-
-    /**
-     * Traverses the graph through the children of the canvas (the drawPane), in order of creation, and gives the
-     *    canvas size.
-     * There is no need for recursive definitions, as the tree is a shallow one with depth at most 3.
-     * @return a bespoke string serialization of the children of the canvas (the elements of the graph).
-     */
-    private String traverseCanvas() {
-        StringBuilder result = new StringBuilder();
-
-        String canvasSize = "G" + drawPane.getWidth() + "x" + drawPane.getHeight();
-        result.append(canvasSize);
-
-        for (Vertex v : classes) {
-            result.append("[");
-            if (v.getType() == Vertex.GraphElemType.CLASS){
-                Ellipse e = (Ellipse) v.getContainer().getChildren().get(0);
-                String shapeInfo = "E"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
-                        e.getRadiusY() + "|" + e.getFill().toString();
-                String shapeName = "=" + v.getName();
-                result.append(shapeInfo).append(shapeName);
-            } else if (v.getType() == Vertex.GraphElemType.LITERAL){
-                Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
-                String shapeInfo = "R" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
-                        r.getWidth() + "|" + r.getHeight() + "|" + r.getFill().toString();
-                String shapeName = "=" + v.getName();
-                result.append(shapeInfo).append(shapeName);
-            }
-            result.append("]");
-        }
-
-        for (Edge e : properties) {
-            result.append("[");
-            Arrow a = (Arrow) e.getContainer().getChildren().get(0);
-            String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
-            String shapeName = "=" + e.getName();
-            result.append(shapeInfo).append(shapeName);
-            result.append("]");
-        }
-
-        return result.toString();
     }
 
     /**
@@ -213,161 +174,21 @@ public final class Controller {
                     statusLbl.setText("Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
                 }
-                bindGraph(new String(rawGraph));
+                CanvasBinder binder = new CanvasBinder(new String(rawGraph));
+                binder.bindGraph();
+                classes.addAll(binder.getClasses());
+                properties.addAll(binder.getProperties());
+                drawPane.setPrefSize(binder.getCanvasWidth(), binder.getCanvasHeight());
+                drawPane.getChildren().addAll(binder.getCompiledElements());
+                for (StackPane compiledProperty : binder.getCompiledProperties()){
+                    drawPane.getChildren().add(compiledProperty);
+                    compiledProperty.toBack();
+                }
+                statusLbl.setText("Graph load successful.");
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
-            } catch (PropertyElemMissingException e) {
-                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
         } else statusLbl.setText("Graph load cancelled.");
-    }
-
-    /**
-     * Splits the output of the .gat file into it's respective elements and attempts to bind them.
-     * @param graph the raw .gat file data.
-     */
-    private void bindGraph(String graph) throws PropertyElemMissingException {
-        String[] elements = Arrays.stream(graph.split("]\\[|\\[|]"))
-                .filter(s -> !s.equals(""))
-                .toArray(String[]::new);
-
-        for (String element : elements){
-            if      (element.charAt(0) == 'R') bindLiteral(element);
-            else if (element.charAt(0) == 'E') bindClass(element);
-            else if (element.charAt(0) == 'A') bindProperty(element);
-            else if (element.charAt(0) == 'G') bindCanvas(element);
-        }
-    }
-
-    /**
-     * Determine the initial size of the canvas.
-     * @param size the String representation of the size of the canvas.
-     */
-    private void bindCanvas(String size) {
-        String[] canvasSize = size.split("[Gx]");
-        double width = Double.valueOf(canvasSize[1]);
-        double height = Double.valueOf(canvasSize[2]);
-
-        drawPane.setMinSize(width, height);
-        drawPane.setPrefSize(width, height);
-    }
-
-    /**
-     * Binds a literal into both a human-friendly visual element of the graph, and a java-friendly Literal GraphClass.
-     * Helper method of {@link #bindGraph(String)}.
-     * @param lit the .gat String serialization of a Literal.
-     */
-    private void bindLiteral(String lit) {
-        String[] litElements = lit.split("=");
-        String[] litInfo = litElements[0].substring(1).split("\\|");
-        String   litName = litElements[1];
-        double   x = Double.valueOf(litInfo[0]);
-        double   y = Double.valueOf(litInfo[1]);
-        double   w = Double.valueOf(litInfo[2]);
-        double   h = Double.valueOf(litInfo[3]);
-        Color    col = Color.web(litInfo[4]);
-
-        resizeEdgeOfCanvas(x, y);
-
-        StackPane compiledLit = new StackPane();
-        compiledLit.setLayoutX(x);
-        compiledLit.setLayoutY(y);
-
-        Rectangle rect = new Rectangle();
-        rect.setWidth(w);
-        rect.setHeight(h);
-        rect.setFill(col);
-        rect.setStroke(Color.BLACK);
-
-        Text name = new Text(litName);
-
-        compiledLit.getChildren().addAll(rect, name);
-        drawPane.getChildren().add(compiledLit);
-        try {
-            classes.add(new Vertex(compiledLit));
-        } catch (OutsideElementException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Vertex.
-     * @param cls the .gat String serialization of a Class.
-     */
-    private void bindClass(String cls) {
-        String[] clsElements = cls.split("=");
-        String[] clsInfo     = clsElements[0].substring(1).split("\\|");
-        String   clsName     = clsElements[1];
-        double   x = Double.valueOf(clsInfo[0]);
-        double   y = Double.valueOf(clsInfo[1]);
-        double   rx = Double.valueOf(clsInfo[2]);
-        double   ry = Double.valueOf(clsInfo[3]);
-        Color    col = Color.web(clsInfo[4]);
-
-        resizeEdgeOfCanvas(x, y);
-
-        StackPane compiledCls = new StackPane();
-        compiledCls.setLayoutX(x);
-        compiledCls.setLayoutY(y);
-
-        Ellipse ellipse = new Ellipse();
-        ellipse.setCenterX(x);
-        ellipse.setCenterY(y);
-        ellipse.setRadiusX(rx);
-        ellipse.setRadiusY(ry);
-        ellipse.setFill(col);
-        ellipse.setStroke(Color.BLACK);
-
-        Text name = new Text(clsName);
-
-        compiledCls.getChildren().addAll(ellipse, name);
-        drawPane.getChildren().add(compiledCls);
-
-        try {
-            classes.add(new Vertex(compiledCls));
-        } catch (OutsideElementException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Creates a human-friendly graph property arrow, and binds a java-friendly Edge.
-     * @param prop the .gat String serialization of a Property.
-     */
-    private void bindProperty(String prop) throws PropertyElemMissingException {
-        String[] propElements = prop.split("=");
-        String[] propInfo     = propElements[0].substring(1).split("\\|");
-        String   propName     = propElements[1];
-        double sx = Double.valueOf(propInfo[0]);
-        double sy = Double.valueOf(propInfo[1]);
-        double ex = Double.valueOf(propInfo[2]);
-        double ey = Double.valueOf(propInfo[3]);
-
-        StackPane compiledProp = new StackPane();
-        compiledProp.setLayoutX(sx < ex ? sx : ex);
-        compiledProp.setLayoutY(sy < ey ? sy : ey);
-
-        Arrow arrow = new Arrow();
-        arrow.setStartX(sx);
-        arrow.setStartY(sy);
-        arrow.setEndX(ex);
-        arrow.setEndY(ey);
-
-        Label name = new Label(propName);
-        name.setBackground(new Background(new BackgroundFill(Color.web("f4f4f4"), CornerRadii.EMPTY, Insets.EMPTY)));
-
-        compiledProp.getChildren().addAll(arrow, name);
-        drawPane.getChildren().add(compiledProp);
-        compiledProp.toBack();
-
-        Vertex sub = findClassUnder(sx, sy);
-        Vertex obj = findClassUnder(ex, ey);
-        if (sub != null && obj != null) {
-            Edge edge = new Edge(compiledProp, name, sub, obj);
-            sub.addOutgoingEdge(edge);
-            obj.addIncomingEdge(edge);
-            properties.add(edge);
-        } else throw new PropertyElemMissingException();
     }
 
     /**
