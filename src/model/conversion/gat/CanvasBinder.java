@@ -21,6 +21,9 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Class for turning a loaded .gat file into a graph.
+ */
 public class CanvasBinder {
     private static final Logger LOGGER = Logger.getLogger(CanvasBinder.class.getName());
 
@@ -223,27 +226,13 @@ public class CanvasBinder {
         }
     }
 
-    public double getCanvasHeight() {
-        return canvasHeight;
-    }
-
-    public double getCanvasWidth() {
-        return canvasWidth;
-    }
-
-    public ArrayList<Vertex> getClasses() {
-        return classes;
-    }
-
-    public ArrayList<Edge> getProperties() {
-        return properties;
-    }
-
-    public ArrayList<StackPane> getCompiledElements() {
-        return compiledElements;
-    }
-
-    public ArrayList<StackPane> getCompiledProperties() {
-        return compiledProperties;
-    }
+    /**
+     * Accessor methods.
+     */
+    public double getCanvasHeight() { return canvasHeight; }
+    public double getCanvasWidth() { return canvasWidth; }
+    public ArrayList<Vertex> getClasses() { return classes; }
+    public ArrayList<Edge>   getProperties() { return properties; }
+    public ArrayList<StackPane> getCompiledElements() { return compiledElements; }
+    public ArrayList<StackPane> getCompiledProperties() { return compiledProperties; }
 }

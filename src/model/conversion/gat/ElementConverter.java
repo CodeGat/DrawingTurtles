@@ -12,6 +12,10 @@ public class ElementConverter {
     /**
      * Traverses the graph through the children of the canvas (the drawPane), in order of creation, and gives the
      *    canvas size.
+     * @param w width of the canvas.
+     * @param h height of the canvas.
+     * @param classes the Vertices we are converting to a .gat file.
+     * @param properties the Edges we are converting to a .gat file.
      * @return a bespoke string serialization of the children of the canvas (the elements of the graph).
      */
     public static String traverseCanvas(double w, double h, ArrayList<Vertex> classes, ArrayList<Edge> properties) {
@@ -20,6 +24,11 @@ public class ElementConverter {
                 traverseProperties(properties);
     }
 
+    /**
+     * Converts properties to the .gat structure.
+     * @param properties the properties to be converted.
+     * @return the String .gat representation of the properties.
+     */
     private static String traverseProperties(ArrayList<Edge> properties) {
         StringBuilder result = new StringBuilder();
 
@@ -35,6 +44,11 @@ public class ElementConverter {
         return result.toString();
     }
 
+    /**
+     * Converts classes to the .gat structure.
+     * @param classes the classes to be converted.
+     * @return the String .gat representation of the properties.
+     */
     private static String traverseClasses(ArrayList<Vertex> classes) {
         StringBuilder result = new StringBuilder();
 
