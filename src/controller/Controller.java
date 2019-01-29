@@ -169,7 +169,7 @@ public final class Controller {
                         e.getRadiusY() + "|" + e.getFill().toString();
                 String shapeName = "\\=" + v.getName();
                 String rdfsLabel = v.getRdfsLabel() != null ? "\\|" + v.getRdfsLabel() : "\\|";
-                String rdfsComment = v.getRdfsComment() != null ? "\\|" + v.getRdfsComment() : "\\|\\|";
+                String rdfsComment = v.getRdfsComment() != null ? "\\|" + v.getRdfsComment() : "\\|";
                 result.append(shapeInfo).append(shapeName).append(rdfsLabel).append(rdfsComment);
             } else if (v.getType() == Vertex.GraphElemType.LITERAL){
                 Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
