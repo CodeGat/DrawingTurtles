@@ -12,7 +12,7 @@ import java.util.ArrayList;
  */
 public class OptionsMenuController extends AbstractDataSharingController<Boolean> {
     @FXML Button cancelBtn, commitBtn;
-    @FXML CheckBox collectionsCbx, blankCbx;
+    @FXML CheckBox collectionsCbx, blankCbx, ontologyCbx;
 
     private ArrayList<Boolean> commit_config = new ArrayList<>();
 
@@ -22,6 +22,7 @@ public class OptionsMenuController extends AbstractDataSharingController<Boolean
     @FXML void commitConfigBtn() {
         commit_config.add(collectionsCbx.isSelected());
         commit_config.add(blankCbx.isSelected());
+        commit_config.add(ontologyCbx.isSelected());
         Stage stage = (Stage) commitBtn.getScene().getWindow();
         stage.close();
     }
@@ -38,6 +39,7 @@ public class OptionsMenuController extends AbstractDataSharingController<Boolean
     public void setData(ArrayList<Boolean> data) {
         collectionsCbx.setSelected(data.get(0));
         blankCbx.setSelected(data.get(1));
+        ontologyCbx.setSelected(data.get(2));
     }
 
     @Override

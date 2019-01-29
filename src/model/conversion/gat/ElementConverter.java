@@ -62,7 +62,9 @@ public class ElementConverter {
                 String shapeInfo = "E"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
                         e.getRadiusY() + "|" + e.getFill().toString();
                 String shapeName = "=" + v.getName();
-                result.append(shapeInfo).append(shapeName);
+                String rdfsLabel = v.getRdfsLabel() != null ? "\\|" + v.getRdfsLabel() : "\\|";
+                String rdfsComment = v.getRdfsComment() != null ? "\\|" + v.getRdfsComment() : "\\|";
+                result.append(shapeInfo).append(shapeName).append(rdfsLabel).append(rdfsComment);
             } else if (v.getType() == Vertex.GraphElemType.LITERAL){
                 Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
                 String shapeInfo = "R" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
