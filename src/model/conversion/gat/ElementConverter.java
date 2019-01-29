@@ -8,6 +8,9 @@ import model.graph.Arrow;
 
 import java.util.ArrayList;
 
+/**
+ * Class responsible for converting a graph into a .gat file.
+ */
 public class ElementConverter {
     /**
      * Traverses the graph through the children of the canvas (the drawPane), in order of creation, and gives the
