@@ -224,9 +224,13 @@ public class Converter {
         String rdfsLabel = subject.getRdfsLabel();
         String rdfsComment = subject.getRdfsComment();
 
-        if (rdfsLabel != null && rdfsLabel.length() != 0)
+        if (rdfsLabel != null && rdfsLabel.length() != 0 && rdfsLabel.contains("\n"))
+            result += "rdfs:label \"\"\"" + rdfsLabel + "\"\"\" ;\n" + tabs;
+        else if (rdfsLabel != null && rdfsLabel.length() != 0)
             result += "rdfs:label \"" + rdfsLabel + "\" ;\n" + tabs;
-        if (rdfsComment != null && rdfsComment.length() != 0)
+        if (rdfsComment != null && rdfsComment.length() != 0 && rdfsComment.contains("\n"))
+            result += "rdfs:comment \"\"\"" + rdfsComment + "\"\"\" ;\n" + tabs;
+        else if (rdfsComment != null && rdfsComment.length() != 0)
             result += "rdfs:comment \"" + rdfsComment + "\" ;\n" + tabs;
 
         return result.length() != 0 ? result.substring(0, result.length() - 4) : result;

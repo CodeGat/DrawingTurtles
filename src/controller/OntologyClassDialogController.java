@@ -2,6 +2,7 @@ package controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
@@ -10,7 +11,8 @@ import java.util.Arrays;
 
 public class OntologyClassDialogController extends AbstractDataSharingController<String> {
     @FXML Button cmtBtn, cancelBtn;
-    @FXML TextField nameTfd, labelTfd, commentTfd;
+    @FXML TextField nameTfd, labelTfd;
+    @FXML TextArea commentTxa;
 
     private ArrayList<String> commit_data = new ArrayList<>();
 
@@ -23,7 +25,7 @@ public class OntologyClassDialogController extends AbstractDataSharingController
     }
 
     @FXML void addNewClassAction() {
-        commit_data.addAll(Arrays.asList(nameTfd.getText(), labelTfd.getText(), commentTfd.getText()));
+        commit_data.addAll(Arrays.asList(nameTfd.getText(), labelTfd.getText(), commentTxa.getText()));
         Stage stage = (Stage) cmtBtn.getScene().getWindow();
         stage.close();
     }
