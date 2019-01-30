@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-public class CorrelateDialogController extends Controller implements Initializable {
+public class CorrelateDialogController extends AbstractDataSharingController<RDFXMLGenerator> implements Initializable {
     @FXML Button addManualCorrBtn, addHeaderBtn, commitBtn, cancelBtn;
     @FXML ListView<String> csvHeaderList;
     @FXML ListView<String> csvTtlCorrelationList;
@@ -63,26 +63,6 @@ public class CorrelateDialogController extends Controller implements Initializab
         }));
     }
 
-    void setGenerator(RDFXMLGenerator generator){
-        rdfxmlGenerator = generator;
-        correlations = rdfxmlGenerator.getCorrelations();
-        ArrayList<String> correlationStrings = correlations
-                .stream()
-                .map(Correlation::toString)
-                .collect(Collectors.toCollection(ArrayList::new));
-
-        csvTtlCorrelationList.setItems(FXCollections.observableArrayList(correlationStrings));
-
-        uncorrelatedCsvHeaders = rdfxmlGenerator.getUncorrelated().getKey();
-        csvHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedCsvHeaders));
-        uncorrelatedTtlClasses = generator.getUncorrelated().getValue();
-        uncorrelatedTtlClassNames = uncorrelatedTtlClasses
-                .stream()
-                .map(Vertex::getName)
-                .collect(Collectors.toCollection(ArrayList::new));
-        ttlHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedTtlClassNames));
-    }
-
     @FXML void addManualCorrelationAction() {
         String selectedCsvHeader = csvHeaderList.getSelectionModel().getSelectedItem();
         int index = Integer.parseInt(selectedCsvHeader.split(" ")[0]);
@@ -121,7 +101,6 @@ public class CorrelateDialogController extends Controller implements Initializab
     @FXML void commitCorrelationBtn() {
         rdfxmlGenerator.setCorrelations(correlations);
         rdfxmlGenerator.setUncorrelated(null);
-        super.rdfxmlGenerator = rdfxmlGenerator;
         Stage stage = (Stage) commitBtn.getScene().getWindow();
         stage.close();
     }
@@ -129,5 +108,35 @@ public class CorrelateDialogController extends Controller implements Initializab
     @FXML void cancelCorrelationBtn() {
         Stage stage = (Stage) cancelBtn.getScene().getWindow();
         stage.close();
+    }
+
+    @Override
+    public void setData(ArrayList<RDFXMLGenerator> data) {
+        RDFXMLGenerator generator = data.get(0);
+
+        rdfxmlGenerator = generator;
+        correlations = rdfxmlGenerator.getCorrelations();
+        ArrayList<String> correlationStrings = correlations
+                .stream()
+                .map(Correlation::toString)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        csvTtlCorrelationList.setItems(FXCollections.observableArrayList(correlationStrings));
+
+        uncorrelatedCsvHeaders = rdfxmlGenerator.getUncorrelated().getKey();
+        csvHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedCsvHeaders));
+        uncorrelatedTtlClasses = generator.getUncorrelated().getValue();
+        uncorrelatedTtlClassNames = uncorrelatedTtlClasses
+                .stream()
+                .map(Vertex::getName)
+                .collect(Collectors.toCollection(ArrayList::new));
+        ttlHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedTtlClassNames));
+    }
+
+    @Override
+    public ArrayList<RDFXMLGenerator> getData() {
+        ArrayList<RDFXMLGenerator> data = new ArrayList<>();
+        data.add(rdfxmlGenerator);
+        return data;
     }
 }

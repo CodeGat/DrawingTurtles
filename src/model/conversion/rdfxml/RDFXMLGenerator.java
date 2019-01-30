@@ -24,7 +24,11 @@ public class RDFXMLGenerator {
     }
 
     public String generate() {
-        return null;
+        String rdfxml = "";
+
+        //do magic
+
+        return rdfxml;
     }
 
     /**
@@ -39,7 +43,7 @@ public class RDFXMLGenerator {
                 boolean isExactMatch = header.getKey().equals(klass.getName());
                 boolean isCloseMatch = !klass.isIri()
                         && klass.getType() != Vertex.GraphElemType.LITERAL
-                        && header.getKey().equals(klass.getName().split(":", 2)[1]);
+                        && header.getKey().equalsIgnoreCase(klass.getName().split(":", 2)[1]);
 
                 if (isExactMatch || isCloseMatch){
                     csvTtlCorrelations.add(new Correlation(header.getValue(), header.getKey(), klass));

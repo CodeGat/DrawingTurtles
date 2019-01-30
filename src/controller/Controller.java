@@ -10,18 +10,9 @@ import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
 import model.conversion.rdfxml.RDFXMLGenerator;
 import model.graph.Arrow;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import model.conceptual.Edge;
-import model.conceptual.Vertex;
-import model.conceptual.Vertex.OutsideElementException;
 import model.conversion.gat.CanvasBinder;
 import model.conversion.gat.ElementConverter;
 import model.conversion.ttl.Converter;
-import model.graph.Arrow;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.BoundingBox;
@@ -45,7 +36,6 @@ import javafx.stage.FileChooser;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import model.conversion.ttl.*;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -81,7 +71,7 @@ public final class Controller {
 
     private List<CSVRecord> csv;
     private Map<String, Integer> headers;
-    RDFXMLGenerator rdfxmlGenerator;
+    private RDFXMLGenerator rdfxmlGenerator;
 
     /**
      * Method invoked on any key press in the main application.
@@ -174,7 +164,7 @@ public final class Controller {
      *   into elements of a graph. It then binds the visual elements into meaningful java-friendly elements.
      */
     @FXML public void loadGraphAction() {
-        File loadFile = showLoadFileDialog();
+        File loadFile = showLoadFileDialog("Load Graph File");
         if (loadFile != null){
             drawPane.getChildren().clear();
             prefixes.clear();
@@ -564,9 +554,9 @@ public final class Controller {
      * Creates a load file dialog, which prompts the user to load from a specific file.
      * @return the file that will be loaded from.
      */
-    private File showLoadFileDialog(){
+    private File showLoadFileDialog(String title){
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Load Graph File");
+        fileChooser.setTitle(title);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         return fileChooser.showOpenDialog(root.getScene().getWindow());
@@ -649,21 +639,8 @@ public final class Controller {
     }
 
     private void showManualCorrelationDialog(RDFXMLGenerator generator){
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/correlateDialog.fxml"));
-            Parent parent = loader.load();
-            CorrelateDialogController controller = loader.getController();
-            controller.setGenerator(generator);
-
-            Scene scene = new Scene(parent);
-            Stage stage = new Stage();
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setTitle("Create Manual Correlations");
-            stage.setScene(scene);
-            stage.setResizable(false);
-            stage.showAndWait();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        ArrayList<RDFXMLGenerator> data = new ArrayList<>();
+        data.add(generator);
+        showWindow("/view/correlateDialog.fxml", "Set Manual Correlations", data);
     }
 }
