@@ -57,7 +57,8 @@ public final class Controller {
     @FXML protected BorderPane root;
     @FXML protected Pane drawPane;
     @FXML protected ScrollPane scrollPane;
-    @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, rdfXmlBtn, instrBtn, optionsBtn;
+    @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, rdfXmlBtn,
+            instrBtn, optionsBtn;
     @FXML protected Label  statusLbl;
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
@@ -141,12 +142,12 @@ public final class Controller {
     @FXML public void saveGraphAction() {
         File saveFile = showSaveFileDialog("graph.gat", "Save Graph As", null);
         if (saveFile != null){
-            String filetext = ElementConverter.traverseCanvas(
+            ElementConverter converter = new ElementConverter(
                     drawPane.getWidth(),
                     drawPane.getHeight(),
-                    classes,
-                    properties
+                    classes, properties
             );
+            String filetext = converter.traverseCanvas();
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(filetext);
@@ -613,15 +614,18 @@ public final class Controller {
         rdfxmlGenerator.attemptCorrelationOfHeaders();
 
         LOGGER.info("BEFORE Correlation:\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
-                "\nUncorrelated: " + rdfxmlGenerator.getUncorrelated().toString());
+                "\nUncorrelated: " + rdfxmlGenerator.uncorrelatedToString());
 
-        if (rdfxmlGenerator.getUncorrelated() != null) showManualCorrelationDialog(rdfxmlGenerator);
-        if (rdfxmlGenerator.getUncorrelated() != null){
+        if (rdfxmlGenerator.getUncorrelated() != null && rdfxmlGenerator.getUncorrelated().getKey().size() != 0)
+            showManualCorrelationDialog(rdfxmlGenerator);
+        if (rdfxmlGenerator.getUncorrelated() != null && rdfxmlGenerator.getUncorrelated().getKey().size() != 0){
             LOGGER.info("Cancelled Manual Correlations. ");
             return;
         }
 
-        LOGGER.info("AFTER Correlation:\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString());
+        LOGGER.info("AFTER Correlation:" +
+                "\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
+                "\nUncorrelated (assumed constant): " + rdfxmlGenerator.uncorrelatedClassesToString());
 
         rdfxml = rdfxmlGenerator.generate();
         File saveFile = showSaveFileDialog("rdf.rdf", "Save RDF/XML Document", null);

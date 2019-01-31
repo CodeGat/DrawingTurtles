@@ -9,6 +9,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 import model.conceptual.Vertex;
 import model.conversion.rdfxml.Correlation;
 import model.conversion.rdfxml.RDFXMLGenerator;
@@ -30,7 +31,6 @@ public class CorrelateDialogController extends AbstractDataSharingController<RDF
 
     private BooleanProperty isCsvListEmpty = new SimpleBooleanProperty(false);
     private BooleanProperty isTtlListEmpty = new SimpleBooleanProperty(false);
-    private BooleanBinding  isBothListsEmpty = isCsvListEmpty.and(isTtlListEmpty);
 
     private ArrayList<Correlation> correlations = new ArrayList<>();
     private ArrayList<String> uncorrelatedCsvHeaders;
@@ -45,7 +45,7 @@ public class CorrelateDialogController extends AbstractDataSharingController<RDF
             else addManualCorrBtn.setDisable(true);
         });
 
-        isBothListsEmpty.addListener(((observable, oldV, newV) -> {
+        isCsvListEmpty.addListener(((observable, oldV, newV) -> {
             if (observable.getValue().booleanValue()) commitBtn.setDisable(false);
             else commitBtn.setDisable(true);
         }));
@@ -100,7 +100,7 @@ public class CorrelateDialogController extends AbstractDataSharingController<RDF
 
     @FXML void commitCorrelationBtn() {
         rdfxmlGenerator.setCorrelations(correlations);
-        rdfxmlGenerator.setUncorrelated(null);
+        rdfxmlGenerator.setUncorrelated(new Pair<>(uncorrelatedCsvHeaders, uncorrelatedTtlClasses));
         Stage stage = (Stage) commitBtn.getScene().getWindow();
         stage.close();
     }

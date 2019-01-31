@@ -36,9 +36,10 @@ public class ElementConverter {
      * @return a bespoke string serialization of the children of the canvas (the elements of the graph).
      */
     public String traverseCanvas() {
-        return "G" + w + "x" + h +
-                traverseProperties() +
-                traverseClasses();
+        String propertyStr = traverseProperties();
+        String classStr = traverseClasses();
+
+        return "G" + w + "x" + h + classStr + propertyStr;
     }
 
     /**

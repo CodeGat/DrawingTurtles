@@ -75,4 +75,19 @@ public class RDFXMLGenerator {
     public void setUncorrelated(Pair<ArrayList<String>, ArrayList<Vertex>> uncorrelated) {
         this.csvTtlUncorrelated = uncorrelated;
     }
+
+    public String uncorrelatedClassesToString(){
+        StringBuilder result = new StringBuilder();
+        csvTtlUncorrelated.getValue().forEach(cls -> result.append(cls.getName()).append(" "));
+        return result.toString();
+    }
+
+    public String uncorrelatedToString(){
+        StringBuilder result = new StringBuilder("[");
+        csvTtlUncorrelated.getKey().forEach(header -> result.append(header).append(" "));
+        result.append("] and [");
+        csvTtlUncorrelated.getValue().forEach(cls -> result.append(cls.getName()).append(" "));
+        result.append("]");
+        return result.toString();
+    }
 }
