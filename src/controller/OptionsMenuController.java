@@ -14,12 +14,13 @@ public class OptionsMenuController extends AbstractDataSharingController<Boolean
     @FXML Button cancelBtn, commitBtn;
     @FXML CheckBox collectionsCbx, blankCbx, ontologyCbx;
 
-    private ArrayList<Boolean> commit_config = new ArrayList<>();
+    private ArrayList<Boolean> commit_config;
 
     /**
      * Commits the changes to the base Controller.
      */
     @FXML void commitConfigBtn() {
+        commit_config = new ArrayList<>();
         commit_config.add(collectionsCbx.isSelected());
         commit_config.add(blankCbx.isSelected());
         commit_config.add(ontologyCbx.isSelected());
