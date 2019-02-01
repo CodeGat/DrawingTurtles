@@ -118,13 +118,16 @@ public class CanvasBinder {
      */
     private void bindClass(String cls) {
         String[] clsElements = cls.split("=");
-        String[] clsInfo     = clsElements[0].substring(1).split("\\|");
-        String   clsName     = clsElements[1];
-        double   x = Double.valueOf(clsInfo[0]);
-        double   y = Double.valueOf(clsInfo[1]);
-        double   rx = Double.valueOf(clsInfo[2]);
-        double   ry = Double.valueOf(clsInfo[3]);
-        Color    col = Color.web(clsInfo[4]);
+        String[] clsShape    = clsElements[0].substring(1).split("\\|");
+        String[] clsInfo     = clsElements[1].split("\\\\\\|", -1);
+        String   clsName     = clsInfo[0];
+        String   rdfsLabel   = clsInfo[1];
+        String   rdfsComment = clsInfo[2];
+        double   x = Double.valueOf(clsShape[0]);
+        double   y = Double.valueOf(clsShape[1]);
+        double   rx = Double.valueOf(clsShape[2]);
+        double   ry = Double.valueOf(clsShape[3]);
+        Color    col = Color.web(clsShape[4]);
 
         resizeEdgeOfCanvas(x, y);
 
@@ -146,7 +149,9 @@ public class CanvasBinder {
         compiledElements.add(compiledCls);
 
         try {
-            classes.add(new Vertex(compiledCls));
+            if (!rdfsLabel.equals("") || !rdfsComment.equals(""))
+                classes.add(new Vertex(compiledCls, rdfsLabel, rdfsComment));
+            else classes.add(new Vertex(compiledCls));
         } catch (Vertex.OutsideElementException e) {
             e.printStackTrace();
         }

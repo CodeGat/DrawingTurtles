@@ -50,20 +50,12 @@ public class ElementConverter {
         StringBuilder result = new StringBuilder();
 
         for (Edge e : properties) {
-            if (e.isHidden()){
-                result.append("[");
-                String hiddenProp = "I" + e.getSubject().getName() + "|" + e.getName() + "|" + e.getObject().getName();
-                result.append(hiddenProp);
-                result.append("]");
-                classes.remove(e.getObject());
-            } else {
-                result.append("[");
-                Arrow a = (Arrow) e.getContainer().getChildren().get(0);
-                String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
-                String shapeName = "=" + e.getName();
-                result.append(shapeInfo).append(shapeName);
-                result.append("]");
-            }
+            result.append("[");
+            Arrow a = (Arrow) e.getContainer().getChildren().get(0);
+            String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
+            String shapeName = "=" + e.getName();
+            result.append(shapeInfo).append(shapeName);
+            result.append("]");
         }
 
         return result.toString();
@@ -91,7 +83,9 @@ public class ElementConverter {
                 String shapeInfo = "R" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
                         r.getWidth() + "|" + r.getHeight() + "|" + r.getFill().toString();
                 String shapeName = "=" + v.getName();
-                result.append(shapeInfo).append(shapeName);
+                String rdfsLabel = v.getRdfsLabel() != null ? "\\|" + v.getRdfsLabel() : "\\|";
+                String rdfsComment = v.getRdfsComment() != null ? "\\|" + v.getRdfsComment() : "\\|";
+                result.append(shapeInfo).append(shapeName).append(rdfsLabel).append(rdfsComment);
             }
             result.append("]");
         }
