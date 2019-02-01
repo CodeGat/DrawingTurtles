@@ -95,9 +95,7 @@ public class CanvasBinder {
         compiledLit.setLayoutX(x);
         compiledLit.setLayoutY(y);
 
-        Rectangle rect = new Rectangle();
-        rect.setWidth(w);
-        rect.setHeight(h);
+        Rectangle rect = new Rectangle(w, h);
         rect.setFill(col);
         rect.setStroke(Color.BLACK);
 
@@ -135,11 +133,7 @@ public class CanvasBinder {
         compiledCls.setLayoutX(x);
         compiledCls.setLayoutY(y);
 
-        Ellipse ellipse = new Ellipse();
-        ellipse.setCenterX(x);
-        ellipse.setCenterY(y);
-        ellipse.setRadiusX(rx);
-        ellipse.setRadiusY(ry);
+        Ellipse ellipse = new Ellipse(x, y, rx, ry);
         ellipse.setFill(col);
         ellipse.setStroke(Color.BLACK);
 

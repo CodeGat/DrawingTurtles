@@ -451,19 +451,13 @@ public final class Controller {
         double textWidth = elementName.getBoundsInLocal().getWidth();
 
         if (isClass){
-            Ellipse elementType = new Ellipse();
-            elementType.setCenterX(x);
-            elementType.setCenterY(y);
-            elementType.setRadiusX(textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5);
-            elementType.setRadiusY(37.5);
+            Ellipse elementType = new Ellipse(x, y, textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5, 37.5);
             elementType.setFill(Color.web("f4f4f4"));
             elementType.setStroke(Color.BLACK);
             compiledElement.getChildren().addAll(elementType, elementName);
 
         } else {
-            Rectangle elementType = new Rectangle();
-            elementType.setHeight(75);
-            elementType.setWidth(textWidth > 125 ? textWidth + 15 : 125);
+            Rectangle elementType = new Rectangle(textWidth > 125 ? textWidth + 15 : 125, 75);
             elementType.setFill(Color.web("f4f4f4"));
             elementType.setStroke(Color.BLACK);
             compiledElement.getChildren().addAll(elementType, elementName);
