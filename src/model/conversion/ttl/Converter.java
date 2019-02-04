@@ -9,10 +9,10 @@ import java.util.*;
  * Class that is responsible for the conversion of a visual model.graph into a .ttl string.
  */
 public class Converter {
-    private static ArrayList<String>  prefixes;
-    private static ArrayList<Vertex>  classes;
-    private static ArrayList<Edge>    properties;
-    private static ArrayList<Boolean> config;
+    private static Map<String, String> prefixes;
+    private static ArrayList<Vertex>   classes;
+    private static ArrayList<Edge>     properties;
+    private static ArrayList<Boolean>  config;
 
     private static boolean isOntology;
 
@@ -27,7 +27,7 @@ public class Converter {
      * @return a String representation of the graph as Turtle RDF syntax.
      */
     public static String convertGraphToTtlString(
-            ArrayList<String> prefixes,
+            Map<String, String> prefixes,
             ArrayList<Vertex> classes,
             ArrayList<Edge> properties,
             ArrayList<Boolean> config) {
@@ -79,7 +79,7 @@ public class Converter {
 
     /**
      * Conversion of prefixes into .ttl prefixes.
-     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList, ArrayList)}.
+     * Helper of {@link #convertGraphToTtlString(Map, ArrayList, ArrayList, ArrayList)}.
      * @return the converted prefixes.
      */
     private static String convertPrefixes() {
@@ -88,10 +88,8 @@ public class Converter {
         prefixStrs.append("@prefix rdfs : <http://www.w3.org/2000/01/rdf-schema#> .\n");
         if (isOntology) prefixStrs.append("@prefix owl : <http://www.w3.org/2002/07/owl#> .\n");
 
-        for (String prefix : prefixes){
-            String[] splitPrefix = prefix.split(" : ", 2);
-            String   prefixStr = "@prefix " + splitPrefix[0] + " : <" + splitPrefix[1] + "> .\n";
-
+        for (Map.Entry<String, String> prefix : prefixes.entrySet()){
+            String   prefixStr = "@prefix " + prefix.getKey() + " : <" + prefix.getValue() + "> .\n";
             prefixStrs.append(prefixStr);
         }
 
@@ -100,7 +98,7 @@ public class Converter {
 
     /**
      * Conversion of visual properties into .ttl representation.
-     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList, ArrayList)}.
+     * Helper of {@link #convertGraphToTtlString(Map, ArrayList, ArrayList, ArrayList)}.
      * @return the properties as a valid .tll string.
      */
     private static String convertGProperties() {

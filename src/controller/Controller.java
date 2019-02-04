@@ -62,7 +62,7 @@ public final class Controller {
     @FXML protected Label  statusLbl;
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
-    private ArrayList<String> prefixes = new ArrayList<>();
+    private Map<String, String> prefixes = new HashMap<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
@@ -131,8 +131,12 @@ public final class Controller {
      * Shows the Prefixes menu, updating the prefixes if they have been modified in the menu.
      */
     @FXML void showPrefixMenuAction() {
-        ArrayList<String> updatedPrefixes = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", prefixes);
-        if (updatedPrefixes != null) prefixes = updatedPrefixes;
+        ArrayList<Map<String, String>> data = new ArrayList<>();
+        data.add(prefixes);
+
+        ArrayList<Map<String, String>> updatedData = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", data);
+
+        if (updatedData != null) prefixes = updatedData.get(0);
     }
 
     /**

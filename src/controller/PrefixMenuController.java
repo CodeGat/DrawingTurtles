@@ -20,15 +20,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Controller for the Prefix Menu.
  */
-public class PrefixMenuController extends AbstractDataSharingController<String> implements Initializable {
+public class PrefixMenuController extends AbstractDataSharingController<Map<String, String>> implements Initializable {
 
     private static final Logger LOGGER = Logger.getLogger(PrefixMenuController.class.getName());
 
@@ -38,8 +40,8 @@ public class PrefixMenuController extends AbstractDataSharingController<String> 
 
     private final BooleanProperty isItemSelected = new SimpleBooleanProperty(false);
 
-    private ArrayList<String> commit_prefixes;
-    private ArrayList<String> prefixes;
+    private Map<String, String> commit_prefixes;
+    private Map<String, String> prefixes;
 
 
     /**
@@ -71,7 +73,11 @@ public class PrefixMenuController extends AbstractDataSharingController<String> 
 
         for (String prefix : newPrefixes){
             if (prefix.matches("[a-z]* : .*")) {
-                prefixes.add(prefix);
+                String[] prefixParts = prefix.split(" : ");
+                String   acronym = prefixParts[0];
+                String   expansion = prefixParts[1];
+
+                prefixes.put(acronym, expansion);
                 prefixList.getItems().add(prefix);
 
             } else showPrefixMalformedAlert(prefix);
@@ -106,8 +112,10 @@ public class PrefixMenuController extends AbstractDataSharingController<String> 
         );
         if (saveFile != null && prefixes.size() != 0) {
             StringBuilder prefixesToSave = new StringBuilder();
-            for (String prefix : prefixes)
-                prefixesToSave.append(prefix).append("\n");
+            for (Map.Entry<String, String> prefix : prefixes.entrySet()) {
+                String prefixStr = prefix.getKey() + " : " + prefix.getValue();
+                prefixesToSave.append(prefixStr).append("\n");
+            }
             prefixesToSave.deleteCharAt(prefixesToSave.length() - 1);
 
             try {
@@ -133,9 +141,13 @@ public class PrefixMenuController extends AbstractDataSharingController<String> 
 
                 if (reader.read(rawPrefixes) == 0) LOGGER.warning("Nothing in prefix file. ");
                 String[] strPrefixes = new String(rawPrefixes).trim().split("\\n");
-                for (String strPrefix : strPrefixes) if (!prefixes.contains(strPrefix)) {
-                    prefixes.add(strPrefix);
-                    prefixList.getItems().add(strPrefix);
+                for (String strPrefix : strPrefixes) {
+                    String[] prefixParts = strPrefix.split(" : ");
+
+                    if (!prefixes.containsKey(prefixParts[0])) {
+                        prefixes.put(prefixParts[0], prefixParts[1]);
+                        prefixList.getItems().add(strPrefix);
+                    }
                 }
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Loading prefixes failed: ", e);
@@ -218,13 +230,21 @@ public class PrefixMenuController extends AbstractDataSharingController<String> 
     }
 
     @Override
-    public void setData(ArrayList<String> data) {
-        prefixes = data;
-        prefixList.setItems(FXCollections.observableArrayList(prefixes));
+    public void setData(ArrayList<Map<String, String>> data) {
+        prefixes = data.get(0);
+        ArrayList<String> prefixesAsList = prefixes
+                .entrySet()
+                .stream()
+                .map(p -> p.getKey() + " : " + p.getValue())
+                .collect(Collectors.toCollection(ArrayList::new));
+        prefixList.setItems(FXCollections.observableArrayList(prefixesAsList));
     }
 
     @Override
-    public ArrayList<String> getData() {
-        return commit_prefixes;
+    public ArrayList<Map<String, String>> getData() {
+        ArrayList<Map<String, String>> data = new ArrayList<>();
+        data.add(commit_prefixes);
+
+        return data;
     }
 }

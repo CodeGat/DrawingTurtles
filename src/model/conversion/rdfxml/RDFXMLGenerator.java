@@ -14,7 +14,7 @@ public class RDFXMLGenerator {
     private Map<String, Integer> headers;
     private List<CSVRecord> csv;
     private ArrayList<Vertex> classes;
-    private ArrayList<String> prefixes;
+    private Map<String, String> prefixes;
     private ArrayList<Correlation> csvTtlCorrelations = new ArrayList<>();
     private Pair<ArrayList<String>, ArrayList<Vertex>> csvTtlUncorrelated;
 
@@ -22,7 +22,7 @@ public class RDFXMLGenerator {
             Map<String, Integer> headers,
             List<CSVRecord> csv,
             ArrayList<Vertex> classes,
-            ArrayList<String> prefixes){
+            Map<String, String> prefixes){
         this.headers = headers;
         this.csv = csv;
         this.classes = classes;
