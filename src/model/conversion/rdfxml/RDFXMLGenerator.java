@@ -42,7 +42,7 @@ public class RDFXMLGenerator {
             for (Vertex klass : classes){
                 boolean isExactMatch = header.getKey().equals(klass.getName());
                 boolean isCloseMatch = !klass.isIri()
-                        && klass.getType() != Vertex.GraphElemType.LITERAL
+                        && klass.getType() == Vertex.GraphElemType.CLASS
                         && header.getKey().equalsIgnoreCase(klass.getName().split(":", 2)[1]);
 
                 if (isExactMatch || isCloseMatch){
