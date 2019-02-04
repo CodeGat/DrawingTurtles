@@ -609,7 +609,7 @@ public final class Controller {
 
     @FXML protected void rdfXmlGenAction() {
         String rdfxml;
-        rdfxmlGenerator = new RDFXMLGenerator(headers, csv, classes);
+        rdfxmlGenerator = new RDFXMLGenerator(headers, csv, classes, prefixes);
         rdfxmlGenerator.attemptCorrelationOfHeaders();
 
         LOGGER.info("BEFORE Correlation:\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +

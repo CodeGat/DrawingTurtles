@@ -14,21 +14,42 @@ public class RDFXMLGenerator {
     private Map<String, Integer> headers;
     private List<CSVRecord> csv;
     private ArrayList<Vertex> classes;
+    private ArrayList<String> prefixes;
     private ArrayList<Correlation> csvTtlCorrelations = new ArrayList<>();
     private Pair<ArrayList<String>, ArrayList<Vertex>> csvTtlUncorrelated;
 
-    public RDFXMLGenerator(Map<String, Integer> headers, List<CSVRecord> csv, ArrayList<Vertex> classes){
+    public RDFXMLGenerator(
+            Map<String, Integer> headers,
+            List<CSVRecord> csv,
+            ArrayList<Vertex> classes,
+            ArrayList<String> prefixes){
         this.headers = headers;
         this.csv = csv;
         this.classes = classes;
+        this.prefixes = prefixes;
     }
 
     public String generate() {
         String rdfxml = "";
+        List<Vertex> ttlClasses =
+                classes
+                .stream()
+                .filter(c -> c.getType() == Vertex.GraphElemType.CLASS)
+                .collect(Collectors.toList());
 
         //do magic
+        for (Vertex klass : ttlClasses){
+            String rdfxmlElement = generate(klass.getName());
+        }
 
         return rdfxml;
+    }
+
+    // TODO: 4/02/2019 Change prefixes from arraylist<String> to Map<String, String>
+    private String generate(String name){
+        String prefixName = name.split(":")[0];
+
+        return null;
     }
 
     /**
