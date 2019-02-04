@@ -1,19 +1,23 @@
 package model.conversion.rdfxml;
 
+import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import javafx.util.Pair;
 import org.apache.commons.csv.CSVRecord;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 public class RDFXMLGenerator {
+    public class PrefixMissingException extends Exception {
+        PrefixMissingException(String msg){ super(msg); }
+    }
+
     private Map<String, Integer> headers;
     private List<CSVRecord> csv;
     private ArrayList<Vertex> classes;
+    private ArrayList<Edge> predicates;
     private Map<String, String> prefixes;
     private ArrayList<Correlation> csvTtlCorrelations = new ArrayList<>();
     private Pair<ArrayList<String>, ArrayList<Vertex>> csvTtlUncorrelated;
@@ -22,11 +26,13 @@ public class RDFXMLGenerator {
             Map<String, Integer> headers,
             List<CSVRecord> csv,
             ArrayList<Vertex> classes,
+            ArrayList<Edge> predicates,
             Map<String, String> prefixes){
         this.headers = headers;
         this.csv = csv;
         this.classes = classes;
         this.prefixes = prefixes;
+        this.predicates = predicates;
     }
 
     public String generate() {
@@ -39,17 +45,33 @@ public class RDFXMLGenerator {
 
         //do magic
         for (Vertex klass : ttlClasses){
-            String rdfxmlElement = generate(klass.getName());
+            String subject = "";
+            try {
+                subject = generateLongformURI(klass.getName());
+            } catch (PrefixMissingException e) {
+                e.printStackTrace();
+            }
+            System.out.println(subject);
         }
 
         return rdfxml;
     }
 
-    // TODO: 4/02/2019 Change prefixes from arraylist<String> to Map<String, String>
-    private String generate(String name){
-        String prefixName = name.split(":")[0];
+    private String generateLongformURI(String name) throws PrefixMissingException {
+        String[] nameParts = name.split(":");
+        String   namePrefix = nameParts[0];
+        String   nameURI = nameParts[1];
 
-        return null;
+        Entry<String, String> matchingPrefix =
+                prefixes.entrySet()
+                        .stream()
+                        .filter(p -> p.getKey().equals(namePrefix))
+                        .findFirst()
+                        .orElse(null);
+
+        if (matchingPrefix == null)
+            throw new PrefixMissingException("Failed to find matching prefix '" + namePrefix + "' in prefixes.");
+        else return "<" + matchingPrefix.getValue() + nameURI + ">";
     }
 
     /**
@@ -59,7 +81,7 @@ public class RDFXMLGenerator {
         ArrayList<Vertex> uncorrelatedClasses = new ArrayList<>(classes);
         Map<String, Integer> uncorrelatedHeaders = new HashMap<>(headers);
 
-        for (Map.Entry<String, Integer> header : headers.entrySet()){
+        for (Entry<String, Integer> header : headers.entrySet()){
             for (Vertex klass : classes){
                 boolean isExactMatch = header.getKey().equals(klass.getName());
                 boolean isCloseMatch = !klass.isIri()

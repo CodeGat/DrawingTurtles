@@ -72,7 +72,6 @@ public final class Controller {
 
     private List<CSVRecord> csv;
     private Map<String, Integer> headers;
-    private RDFXMLGenerator rdfxmlGenerator;
 
     /**
      * Method invoked on any key press in the main application.
@@ -613,7 +612,7 @@ public final class Controller {
 
     @FXML protected void rdfXmlGenAction() {
         String rdfxml;
-        rdfxmlGenerator = new RDFXMLGenerator(headers, csv, classes, prefixes);
+        RDFXMLGenerator rdfxmlGenerator = new RDFXMLGenerator(headers, csv, classes, properties, prefixes);
         rdfxmlGenerator.attemptCorrelationOfHeaders();
 
         LOGGER.info("BEFORE Correlation:\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
