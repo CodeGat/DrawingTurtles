@@ -3,13 +3,14 @@ package controller;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.shape.StrokeType;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
-import model.conversion.gat.CanvasBinder;
-import model.conversion.gat.ElementConverter;
+import model.conversion.gat.FromGatConverter;
+import model.conversion.gat.ToGatConverter;
 import model.conversion.ttl.Converter;
 import model.graph.Arrow;
 import javafx.embed.swing.SwingFXUtils;
@@ -138,7 +139,7 @@ public final class Controller {
                 null
         );
         if (saveFile != null){
-            String filetext = ElementConverter.traverseCanvas(
+            String filetext = ToGatConverter.traverseCanvas(
                     drawPane.getWidth(),
                     drawPane.getHeight(),
                     classes,
@@ -174,7 +175,7 @@ public final class Controller {
                     statusLbl.setText("Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
                 }
-                CanvasBinder binder = new CanvasBinder(new String(rawGraph));
+                FromGatConverter binder = new FromGatConverter(new String(rawGraph));
                 binder.bindGraph();
                 classes.addAll(binder.getClasses());
                 properties.addAll(binder.getProperties());
@@ -416,9 +417,10 @@ public final class Controller {
         boolean isClass;
 
         // from https://www.w3.org/TR/turtle/ definition of a literal.
-        String regex = "\".*\".*" +
+        String globalLiteralRegex = "\".*\".*" +
                 "|[+\\-]?[0-9]+(\\.[0-9]+)?" +
                 "|([+\\-]?[0-9]+\\.[0-9]+|[+\\-]?\\.[0-9]+|[+\\-]?[0-9])E[+\\-]?[0-9]+";
+        String instanceLiteralRegex = "[^\"](.* .*)*[^\"]";
 
         resizeEdgeOfCanvas(x, y);
 
@@ -431,7 +433,7 @@ public final class Controller {
         else if (elementName.getText().equals("")){
             isClass = true;
             elementName = new Text("_:" + Vertex.getNextBlankNodeName());
-        } else isClass = !elementName.getText().matches(regex);
+        } else isClass = !elementName.getText().matches(globalLiteralRegex + "|" + instanceLiteralRegex);
 
         double textWidth = elementName.getBoundsInLocal().getWidth();
 
@@ -447,10 +449,14 @@ public final class Controller {
 
         } else {
             Rectangle elementType = new Rectangle();
+            String name = elementName.getText();
+
             elementType.setHeight(75);
             elementType.setWidth(textWidth > 125 ? textWidth + 15 : 125);
             elementType.setFill(Color.web("f4f4f4"));
             elementType.setStroke(Color.BLACK);
+            if (name.matches(instanceLiteralRegex) && !name.matches(globalLiteralRegex))
+                elementType.getStrokeDashArray().addAll(10d, 10d);
             compiledElement.getChildren().addAll(elementType, elementName);
         }
 

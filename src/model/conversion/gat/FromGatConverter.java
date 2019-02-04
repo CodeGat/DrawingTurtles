@@ -24,11 +24,11 @@ import java.util.logging.Logger;
 /**
  * Class for turning a loaded .gat file into a graph.
  */
-public class CanvasBinder {
-    private static final Logger LOGGER = Logger.getLogger(CanvasBinder.class.getName());
+public class FromGatConverter {
+    private static final Logger LOGGER = Logger.getLogger(FromGatConverter.class.getName());
 
     private class PropertyElemMissingException extends Exception {
-        PropertyElemMissingException() { super(); }
+        PropertyElemMissingException(String msg) { super(msg); }
     }
 
     private ArrayList<Vertex> classes = new ArrayList<>();
@@ -38,7 +38,7 @@ public class CanvasBinder {
     private double canvasWidth, canvasHeight;
     private String gat;
 
-    public CanvasBinder(String gat){
+    public FromGatConverter(String gat){
         this.gat = gat;
     }
 
@@ -52,8 +52,8 @@ public class CanvasBinder {
 
         try {
             for (String element : elements) {
-                if (element.charAt(0) == 'R') bindLiteral(element);
-                else if (element.charAt(0) == 'E') bindClass(element);
+                if (element.charAt(0) == 'L') bindLiteral(element);
+                else if (element.charAt(0) == 'C') bindClass(element);
                 else if (element.charAt(0) == 'A') bindProperty(element);
                 else if (element.charAt(0) == 'G') bindCanvas(element);
             }
@@ -87,7 +87,8 @@ public class CanvasBinder {
         double   y = Double.valueOf(litInfo[1]);
         double   w = Double.valueOf(litInfo[2]);
         double   h = Double.valueOf(litInfo[3]);
-        Color col = Color.web(litInfo[4]);
+        Color    col = Color.web(litInfo[4]);
+        String   litType = litInfo[5];
 
         resizeEdgeOfCanvas(x, y);
 
@@ -95,11 +96,10 @@ public class CanvasBinder {
         compiledLit.setLayoutX(x);
         compiledLit.setLayoutY(y);
 
-        Rectangle rect = new Rectangle();
-        rect.setWidth(w);
-        rect.setHeight(h);
-        rect.setFill(col);
+        Rectangle rect = new Rectangle(w, h, col);
         rect.setStroke(Color.BLACK);
+
+        if (litType.equals("i")) rect.getStrokeDashArray().addAll(10d, 10d);
 
         Text name = new Text(litName);
 
@@ -132,11 +132,7 @@ public class CanvasBinder {
         compiledCls.setLayoutX(x);
         compiledCls.setLayoutY(y);
 
-        Ellipse ellipse = new Ellipse();
-        ellipse.setCenterX(x);
-        ellipse.setCenterY(y);
-        ellipse.setRadiusX(rx);
-        ellipse.setRadiusY(ry);
+        Ellipse ellipse = new Ellipse(x, y, rx, ry);
         ellipse.setFill(col);
         ellipse.setStroke(Color.BLACK);
 
@@ -189,7 +185,7 @@ public class CanvasBinder {
             sub.addOutgoingEdge(edge);
             obj.addIncomingEdge(edge);
             properties.add(edge);
-        } else throw new PropertyElemMissingException();
+        } else throw new PropertyElemMissingException((sub == null ? "sub" : " obj") + " missing from property " + name.getText());
     }
 
     /**

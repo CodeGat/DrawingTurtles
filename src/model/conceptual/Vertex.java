@@ -17,7 +17,7 @@ import java.util.Arrays;
 public class Vertex {
 
     public enum GraphElemType {
-        CLASS, LITERAL
+        CLASS, GLOBAL_LITERAL, INSTANCE_LITERAL
     }
 
     public class OutsideElementException extends Exception {
@@ -57,7 +57,10 @@ public class Vertex {
             isBlankNode = true;
         } else isBlankNode = false;
 
-        this.type = (container.getChildren().get(0) instanceof Ellipse ? GraphElemType.CLASS : GraphElemType.LITERAL);
+        if (container.getChildren().get(0) instanceof Ellipse) this.type = GraphElemType.CLASS;
+        else if (this.name.matches("[^\"](.* .*)*[^\"]")) this.type = GraphElemType.INSTANCE_LITERAL;
+        else this.type = GraphElemType.GLOBAL_LITERAL;
+
         incomingEdges = new ArrayList<>();
         outgoingEdges = new ArrayList<>();
     }
@@ -73,7 +76,7 @@ public class Vertex {
      * @param y the y value of the users click.
      */
     public void setSnapTo(double subX, double subY, double x, double y){
-        if (this.type == GraphElemType.LITERAL) {
+        if (this.type == GraphElemType.GLOBAL_LITERAL || this.type == GraphElemType.INSTANCE_LITERAL) {
             Bounds bounds = container.getBoundsInParent();
             double distMinX = Math.abs(bounds.getMinX() - x);
             double distMaxX = Math.abs(bounds.getMaxX() - x);
@@ -215,7 +218,7 @@ public class Vertex {
      * @return the tightest bounds for the GraphClass.
      */
     public Bounds getBounds(){
-        if (type == GraphElemType.LITERAL){
+        if (type == GraphElemType.GLOBAL_LITERAL || type == GraphElemType.INSTANCE_LITERAL){
             return container.getBoundsInParent();
         } else {
             Ellipse e = (Ellipse) container.getChildrenUnmodifiable().get(0);
