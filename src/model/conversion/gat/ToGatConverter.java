@@ -11,7 +11,7 @@ import java.util.ArrayList;
 /**
  * Class responsible for converting a graph into a .gat file.
  */
-public class ElementConverter {
+public class ToGatConverter {
     /**
      * Traverses the graph through the children of the canvas (the drawPane), in order of creation, and gives the
      *    canvas size.
@@ -59,18 +59,19 @@ public class ElementConverter {
             result.append("[");
             if (v.getType() == Vertex.GraphElemType.CLASS){
                 Ellipse e = (Ellipse) v.getContainer().getChildren().get(0);
-                String shapeInfo = "E"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
+                String shapeInfo = "C"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
                         e.getRadiusY() + "|" + e.getFill().toString();
                 String shapeName = "=" + v.getName();
                 String rdfsLabel = v.getRdfsLabel() != null ? "\\|" + v.getRdfsLabel() : "\\|";
                 String rdfsComment = v.getRdfsComment() != null ? "\\|" + v.getRdfsComment() : "\\|";
                 result.append(shapeInfo).append(shapeName).append(rdfsLabel).append(rdfsComment);
-            } else if (v.getType() == Vertex.GraphElemType.LITERAL){
+            } else {
                 Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
-                String shapeInfo = "R" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
+                String shapeInfo = "L" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
                         r.getWidth() + "|" + r.getHeight() + "|" + r.getFill().toString();
+                String literalType = "|" + (r.getStrokeDashArray().size() != 0 ? "i" : "g");
                 String shapeName = "=" + v.getName();
-                result.append(shapeInfo).append(shapeName);
+                result.append(shapeInfo).append(literalType).append(shapeName);
             }
             result.append("]");
         }

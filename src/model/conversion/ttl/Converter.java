@@ -48,7 +48,9 @@ public class Converter {
     }
 
     /**
-     * Get potential problems that the user may want to rectify, for example blank node names.
+     * Get potential problems that the user may want to rectify.
+     * Checks include: possible renaming of blank node names, and notifying the user of instance-level literal
+     *    placeholders.
      * @return the list of fixes.
      */
     private static String getFixes() {
@@ -56,8 +58,18 @@ public class Converter {
         final int fixStringInitLength = fixString.length();
 
         if (Vertex.getBlankNodeNames().size() > 0){
-            fixString.append("# Don't forget to rename generic blank node names, namely: ");
+            fixString.append("# Don't forget to rename generic blank node names, namely: \n# ");
             Vertex.getBlankNodeNames().forEach(n -> fixString.append(n).append(", "));
+            fixString.delete(fixString.length() - 2, fixString.length());
+            fixString.append(".\n\n");
+        }
+
+        if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
+            fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
+                    "d during RDFXML creation: \n# ");
+            classes.stream()
+                    .filter(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)
+                    .forEach(c -> fixString.append(c.getName()).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
             fixString.append(".\n\n");
         }
@@ -289,6 +301,7 @@ public class Converter {
                 objectStr += tabs + "]";
             } else objectStr = "[" + predicateObjectList + "]";
         }
+        else if (object.getType() == Vertex.GraphElemType.INSTANCE_LITERAL) objectStr = "\"" + objectStr + "\"";
         else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
 
         return objectStr;
