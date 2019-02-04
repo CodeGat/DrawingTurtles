@@ -73,8 +73,6 @@ public class Vertex {
             isIri = false;
         }
 
-        this.isIri = this.name.matches("http:.*|mailto:.*");
-
         if (container.getChildren().get(0) instanceof Ellipse) this.type = GraphElemType.CLASS;
         else if (this.name.matches("[^\"](.* .*)*[^\"]")) this.type = GraphElemType.INSTANCE_LITERAL;
         else this.type = GraphElemType.GLOBAL_LITERAL;

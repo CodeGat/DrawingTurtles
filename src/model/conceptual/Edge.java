@@ -30,7 +30,7 @@ public class Edge {
         if (this.name.matches("http:.*|mailto:.*")){
             isIri = true;
             this.name = "<" + this.name + ">";
-        }
+        } else isIri = false;
     }
 
     public String getName() { return name; }

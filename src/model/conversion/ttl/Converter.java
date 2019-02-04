@@ -4,6 +4,8 @@ import model.conceptual.Edge;
 import model.conceptual.Vertex;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Class that is responsible for the conversion of a visual model.graph into a .ttl string.
@@ -57,13 +59,16 @@ public class Converter {
         StringBuilder fixString = new StringBuilder("# Potential issues found: \n");
         final int fixStringInitLength = fixString.length();
 
+        // checking for blank node names, reminding the user to rename them from basic characters.
         if (Vertex.getBlankNodeNames().size() > 0){
             fixString.append("# Don't forget to rename generic blank node names, namely: \n# ");
             Vertex.getBlankNodeNames().forEach(n -> fixString.append(n).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
-            fixString.append(".\n\n");
+            fixString.append(".\n");
         }
 
+        // reminding the user that instance literals will be replaced by their corresponding instance level data when
+        //    converted to RDFXML.
         if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
             fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
                     "d during RDFXML creation: \n# ");
@@ -71,7 +76,40 @@ public class Converter {
                     .filter(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)
                     .forEach(c -> fixString.append(c.getName()).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
-            fixString.append(".\n\n");
+            fixString.append(".\n");
+        }
+
+        //
+        Stream<String> ttlClassPrefixesStream = classes.stream()
+                .filter(c -> c.getType() == Vertex.GraphElemType.CLASS && !c.isIri())
+                .map(c -> c.getName().split(":")[0]);
+        Stream<String> ttlPropPrefixesStream = properties.stream()
+                .filter(p -> !p.isIri())
+                .map(p -> p.getName().split(":")[0]);
+        Set<String> ttlPrefixSet = Stream
+                .concat(ttlClassPrefixesStream, ttlPropPrefixesStream)
+                .collect(Collectors.toCollection(HashSet::new));
+        Set<String> addedPrefixesSet = prefixes.keySet();
+
+        if (!addedPrefixesSet.equals(ttlClassPrefixesStream)){
+            Set<String> ttlPrefixSetTmp = new HashSet<>(ttlPrefixSet);
+            Set<String> addedPrefixesSetTmp = new HashSet<>(addedPrefixesSet);
+            ttlPrefixSetTmp.removeAll(addedPrefixesSet);
+            addedPrefixesSetTmp.removeAll(ttlPrefixSet);
+
+            if (ttlPrefixSetTmp.size() > 0) {
+                fixString.append("# The following prefixes are defined in the graph but not in the prefixes menu (RDF" +
+                        "XML creation will not work):\n#   ");
+                ttlPrefixSetTmp.forEach(p -> fixString.append(p).append(", "));
+                fixString.delete(fixString.length() - 2, fixString.length());
+                fixString.append(".\n");
+            }if (addedPrefixesSetTmp.size() > 0){
+                fixString.append("# The following prefixes are defined in the prefixes menu but remain unused in the " +
+                        "graph:\n#   ");
+                addedPrefixesSetTmp.forEach(p -> fixString.append(p).append(", "));
+                fixString.delete(fixString.length() - 2, fixString.length());
+                fixString.append(".\n");
+            }
         }
 
         return fixString.length() > fixStringInitLength ? fixString.toString() : "";
