@@ -89,7 +89,7 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
      */
     @FXML void removePrefixAction() {
         String prefix = prefixList.getSelectionModel().getSelectedItem();
-        prefixes.remove(prefix);
+        prefixes.remove(prefix.split(" : ")[0]);
         prefixList.getItems().remove(prefix);
         prefixList.getSelectionModel().clearSelection();
     }
