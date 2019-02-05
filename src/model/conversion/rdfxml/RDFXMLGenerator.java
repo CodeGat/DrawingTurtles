@@ -9,6 +9,11 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import static model.conceptual.Vertex.GraphElemType.*;
+
+/**
+ * Responsible for the generation of RDFXML, as well as correlating .csv headers and their .ttl counterparts.
+ */
 public class RDFXMLGenerator {
     public class PrefixMissingException extends Exception {
         PrefixMissingException(String msg){ super(msg); }
@@ -20,6 +25,7 @@ public class RDFXMLGenerator {
     private Map<String, String> prefixes;
     private ArrayList<Correlation> csvTtlCorrelations = new ArrayList<>();
     private Pair<ArrayList<String>, ArrayList<Vertex>> csvTtlUncorrelated;
+    private List<Vertex> ttlClasses;
 
     public RDFXMLGenerator(
             Map<String, Integer> headers,
@@ -32,20 +38,26 @@ public class RDFXMLGenerator {
         this.prefixes = prefixes;
     }
 
+    /**
+     * Accessible method for generating rdfxml given a .csv and the graph. Recordwise generation.
+     * @return String representation of rdfxml.
+     */
     public String generate() {
         StringBuilder rdfxml = new StringBuilder();
+        ttlClasses = classes.stream().filter(c -> c.getType() == CLASS).collect(Collectors.toList());
+
         csv.forEach(record -> rdfxml.append(generateRdfxmlOf(record)));
 
         return rdfxml.toString();
     }
 
+    /**
+     * Constructs the rdfxml of the particular record.
+     * @param record the record used to populate the resulting rdfxml's instance-level data.
+     * @return the generated rdfxml as a String.
+     */
     private String generateRdfxmlOf(CSVRecord record) {
         StringBuilder rdfxmlRecord = new StringBuilder();
-        List<Vertex> ttlClasses =
-                classes
-                .stream()
-                .filter(c -> c.getType() == Vertex.GraphElemType.CLASS)
-                .collect(Collectors.toList());
 
         for (Vertex klass : ttlClasses){
             StringBuilder rdfxmlTriples = new StringBuilder();
@@ -67,10 +79,16 @@ public class RDFXMLGenerator {
         return rdfxmlRecord.toString();
     }
 
+    /**
+     * Create the expansion of the graph node into a well-formed URI or Literal.
+     * @param klass the Vertex to be expanded.
+     * @param record the data to populate the Vertices instance-level fields.
+     * @return the rdfxml form of the given Vertex as a String.
+     */
     private String generateLongformURI(Vertex klass, CSVRecord record) {
-        if (klass.getType() == Vertex.GraphElemType.GLOBAL_LITERAL)
+        if (klass.getType() == GLOBAL_LITERAL)
             return klass.getName();
-        else if (klass.getType() == Vertex.GraphElemType.CLASS) {
+        else if (klass.getType() == CLASS) {
             String   name = klass.getName();
             String[] nameParts = name.split(":");
             String   prefixAcronym = nameParts[0];
@@ -84,28 +102,38 @@ public class RDFXMLGenerator {
                 return null;
             }
 
-            Correlation matchedCorrelation = generateLongformClass(klass);
-            String longformURI;
-            if (matchedCorrelation != null) longformURI = record.get(matchedCorrelation.getIndex());
-            else longformURI = nameURI;
+            String instanceData = getInstanceLevelData(klass, record);
 
-            return "<" + longformPrefix + longformURI + ">";
-        } else if (klass.getType() == Vertex.GraphElemType.INSTANCE_LITERAL){
-            Correlation matchedCorrelation = generateLongformClass(klass);
-            if (matchedCorrelation != null)
-                return "\"" + record.get(matchedCorrelation.getIndex()) + "\"";
+            if (instanceData != null) return "<" + longformPrefix + instanceData + ">";
+            else return "<" + longformPrefix + nameURI + ">";
+        } else if (klass.getType() == INSTANCE_LITERAL){
+            return "\"" + getInstanceLevelData(klass, record) + "\"";
         }
         return null;
     }
 
-    private Correlation generateLongformClass(Vertex klass) {
-        return csvTtlCorrelations
+    /**
+     * Generate the instance-level data of a given Vertex by finding the correlation between the Vertex and the
+     *    record headers.
+     * @param klass the Vertex we are populating.
+     * @param record the .csv record we are using to populate instance-level data.
+     * @return the String representation of the instance data.
+     */
+    private String getInstanceLevelData(Vertex klass, CSVRecord record) {
+        Correlation matchedCorrelation = csvTtlCorrelations
                 .stream()
                 .filter(c -> c.getTtlClass().getName().equals(klass.getName()))
                 .findFirst()
                 .orElse(null);
+
+        return matchedCorrelation != null ? record.get(matchedCorrelation.getIndex()) : null;
     }
 
+    /**
+     * Create the expansion of a graph property into a well-formed URI.
+     * @param edge the Edge we are expanding.
+     * @return the String form of the expanded Edge.
+     */
     private String generateLongformURI(Edge edge) {
         String name = edge.getName();
         String[] nameParts = name.split(":");
@@ -120,6 +148,12 @@ public class RDFXMLGenerator {
         }
     }
 
+    /**
+     * Creates the expanded prefix URI.
+     * @param acronym the short form of the prefix.
+     * @return the expanded version of the associated acronym.
+     * @throws PrefixMissingException if there was no such acronym defined in the 'Prefixes Menu.'
+     */
     private String generateLongformPrefix(String acronym) throws PrefixMissingException {
         Entry<String, String> matchingPrefix =
                 prefixes.entrySet()
@@ -144,7 +178,7 @@ public class RDFXMLGenerator {
             for (Vertex klass : classes){
                 boolean isExactMatch = header.getKey().equals(klass.getName());
                 boolean isCloseMatch = !klass.isIri()
-                        && klass.getType() == Vertex.GraphElemType.CLASS
+                        && klass.getType() == CLASS
                         && header.getKey().equalsIgnoreCase(klass.getName().split(":", 2)[1]);
 
                 if (isExactMatch || isCloseMatch){
@@ -166,14 +200,14 @@ public class RDFXMLGenerator {
         }
     }
 
+    /**
+     * Accessors and toStrings
+     */
     public ArrayList<Correlation> getCorrelations() { return csvTtlCorrelations; }
-
     public Pair<ArrayList<String>, ArrayList<Vertex>> getUncorrelated() { return csvTtlUncorrelated; }
-
     public void setCorrelations(ArrayList<Correlation> correlations) {
         this.csvTtlCorrelations = correlations;
     }
-
     public void setUncorrelated(Pair<ArrayList<String>, ArrayList<Vertex>> uncorrelated) {
         this.csvTtlUncorrelated = uncorrelated;
     }

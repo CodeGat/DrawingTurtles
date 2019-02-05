@@ -2,6 +2,9 @@ package model.conversion.rdfxml;
 
 import model.conceptual.Vertex;
 
+/**
+ * The link between a .csv header and an associated graph class.
+ */
 public class Correlation {
     private Integer index;
     private String csvHeader;
