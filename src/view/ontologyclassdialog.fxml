@@ -3,23 +3,26 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 
-<?import javafx.scene.control.TextArea?>
-<BorderPane prefHeight="400.0" prefWidth="429.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.OntologyClassDialogController">
+<BorderPane prefHeight="450.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.OntologyClassDialogController">
     <center>
         <GridPane hgap="10" prefWidth="213.0" vgap="10">
             <padding><Insets left="10" right="10" top="10" /></padding>
             <Label text="Class Name: " GridPane.columnIndex="0" GridPane.rowIndex="0" />
             <TextField fx:id="nameTfd" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-            <Label text="rdfs:label: " GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <Label text="class rdfs:label: " GridPane.columnIndex="0" GridPane.rowIndex="1" />
             <TextField fx:id="labelTfd" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Label alignment="TOP_LEFT" GridPane.valignment="TOP" text="rdfs:comment: " GridPane.columnIndex="0" GridPane.rowIndex="2" />
-            <TextArea fx:id="commentTxa" wrapText="true" prefHeight="253.0" prefWidth="300.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Label alignment="TOP_LEFT" text="class rdfs:comment: " GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.valignment="TOP" />
+            <TextArea fx:id="commentTxa" prefHeight="253.0" prefWidth="335.0" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Separator GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="3" />
+            <Label prefHeight="99.0" prefWidth="479.0" text="The rdfs:label/rdfs:comment in this dialog are constant literals relating to the class, not the instance. Instance level labels must be created manually." wrapText="true" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="4" />
         </GridPane>
     </center>
     <bottom>

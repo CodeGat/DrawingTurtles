@@ -3,7 +3,6 @@ package controller;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.shape.StrokeType;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.conceptual.Edge;
@@ -11,8 +10,9 @@ import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
 import model.conversion.gat.FromGatConverter;
 import model.conversion.gat.ToGatConverter;
-import model.conversion.ttl.Converter;
+import model.conversion.rdfxml.RDFXMLGenerator;
 import model.graph.Arrow;
+import model.conversion.ttl.Converter;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.BoundingBox;
@@ -33,6 +33,9 @@ import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -40,9 +43,8 @@ import java.awt.image.RenderedImage;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,17 +57,21 @@ public final class Controller {
     @FXML protected BorderPane root;
     @FXML protected Pane drawPane;
     @FXML protected ScrollPane scrollPane;
-    @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, instrBtn, optionsBtn;
+    @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, rdfXmlBtn,
+            instrBtn, optionsBtn;
     @FXML protected Label  statusLbl;
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
-    private ArrayList<String> prefixes = new ArrayList<>();
+    private Map<String, String> prefixes = new HashMap<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
     private Arrow arrow;
     private Vertex subject;
     private boolean srcClick = true;
+
+    private List<CSVRecord> csv;
+    private Map<String, Integer> headers;
 
     /**
      * Method invoked on any key press in the main application.
@@ -124,8 +130,12 @@ public final class Controller {
      * Shows the Prefixes menu, updating the prefixes if they have been modified in the menu.
      */
     @FXML void showPrefixMenuAction() {
-        ArrayList<String> updatedPrefixes = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", prefixes);
-        if (updatedPrefixes != null) prefixes = updatedPrefixes;
+        ArrayList<Map<String, String>> data = new ArrayList<>();
+        data.add(prefixes);
+
+        ArrayList<Map<String, String>> updatedData = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", data);
+
+        if (updatedData != null) prefixes = updatedData.get(0);
     }
 
     /**
@@ -135,12 +145,12 @@ public final class Controller {
     @FXML public void saveGraphAction() {
         File saveFile = showSaveFileDialog("graph.gat", "Save Graph As", null);
         if (saveFile != null){
-            String filetext = ToGatConverter.traverseCanvas(
+            ToGatConverter converter = new ToGatConverter(
                     drawPane.getWidth(),
                     drawPane.getHeight(),
-                    classes,
-                    properties
+                    classes, properties
             );
+            String filetext = converter.traverseCanvas();
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(filetext);
@@ -158,7 +168,7 @@ public final class Controller {
      *   into elements of a graph. It then binds the visual elements into meaningful java-friendly elements.
      */
     @FXML public void loadGraphAction() {
-        File loadFile = showLoadFileDialog();
+        File loadFile = showLoadFileDialog("Load Graph File");
         if (loadFile != null){
             drawPane.getChildren().clear();
             prefixes.clear();
@@ -166,7 +176,7 @@ public final class Controller {
             properties.clear();
 
             try (FileReader reader = new FileReader(loadFile)){
-                char[] rawGraph = new char[10000];
+                char[] rawGraph = new char[10000]; //needs to be arbitrary
                 if (reader.read(rawGraph) == 0 ) {
                     statusLbl.setText("Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
@@ -445,21 +455,15 @@ public final class Controller {
         double textWidth = elementName.getBoundsInLocal().getWidth();
 
         if (isClass){
-            Ellipse elementType = new Ellipse();
-            elementType.setCenterX(x);
-            elementType.setCenterY(y);
-            elementType.setRadiusX(textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5);
-            elementType.setRadiusY(37.5);
+            Ellipse elementType = new Ellipse(x, y, textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5, 37.5);
             elementType.setFill(Color.web("f4f4f4"));
             elementType.setStroke(Color.BLACK);
             compiledElement.getChildren().addAll(elementType, elementName);
 
         } else {
-            Rectangle elementType = new Rectangle();
+            Rectangle elementType = new Rectangle(textWidth > 125 ? textWidth + 15 : 125, 75);
             String name = elementName.getText();
 
-            elementType.setHeight(75);
-            elementType.setWidth(textWidth > 125 ? textWidth + 15 : 125);
             elementType.setFill(Color.web("f4f4f4"));
             elementType.setStroke(Color.BLACK);
             if (name.matches(instanceLiteralRegex) && !name.matches(globalLiteralRegex))
@@ -553,9 +557,9 @@ public final class Controller {
      * Creates a load file dialog, which prompts the user to load from a specific file.
      * @return the file that will be loaded from.
      */
-    private File showLoadFileDialog(){
+    private File showLoadFileDialog(String title){
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Load Graph File");
+        fileChooser.setTitle(title);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         return fileChooser.showOpenDialog(root.getScene().getWindow());
@@ -587,5 +591,64 @@ public final class Controller {
     private void showOptionsDialog() {
         ArrayList<Boolean> updatedConfig = showWindow("/view/optionsmenu.fxml", "Options for the Current Project", config);
         if (updatedConfig != null) config = updatedConfig;
+    }
+
+    @FXML protected void ingestCsvAction(){
+        File loadFile = showLoadFileDialog("Load .csv for RDF/XML generation");
+        if (loadFile != null){
+            csv = null;
+            headers = null;
+            try (Reader reader = new BufferedReader(new FileReader(loadFile))){
+                CSVParser parser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
+                headers = parser.getHeaderMap();
+                csv = parser.getRecords();
+                statusLbl.setText(".csv ingested. Yum.");
+                LOGGER.info("Ingested " + loadFile.getName() + ".\nFound csv headers: " + headers);
+                rdfXmlBtn.setDisable(false);
+                parser.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @FXML protected void rdfXmlGenAction() {
+        String rdfxml;
+        RDFXMLGenerator rdfxmlGenerator = new RDFXMLGenerator(headers, csv, classes, prefixes);
+        rdfxmlGenerator.attemptCorrelationOfHeaders();
+
+        LOGGER.info("BEFORE Correlation:\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
+                "\nUncorrelated: " + rdfxmlGenerator.uncorrelatedToString());
+
+        if (rdfxmlGenerator.getUncorrelated() != null && rdfxmlGenerator.getUncorrelated().getKey().size() != 0)
+            showManualCorrelationDialog(rdfxmlGenerator);
+        if (rdfxmlGenerator.getUncorrelated() != null && rdfxmlGenerator.getUncorrelated().getKey().size() != 0){
+            LOGGER.info("Cancelled Manual Correlations. ");
+            return;
+        }
+
+        LOGGER.info("AFTER Correlation:" +
+                "\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
+                "\nUncorrelated (assumed constant): " + rdfxmlGenerator.uncorrelatedClassesToString());
+
+        rdfxml = rdfxmlGenerator.generate();
+        File saveFile = showSaveFileDialog("rdf.rdf", "Save RDF/XML Document", null);
+        if (saveFile != null){
+            try {
+                FileWriter writer = new FileWriter(saveFile);
+                writer.write(rdfxml);
+                writer.flush();
+                writer.close();
+                statusLbl.setText("RDF/XML saved.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void showManualCorrelationDialog(RDFXMLGenerator generator){
+        ArrayList<RDFXMLGenerator> data = new ArrayList<>();
+        data.add(generator);
+        showWindow("/view/correlateDialog.fxml", "Set Manual Correlations", data);
     }
 }

@@ -4,15 +4,17 @@ import model.conceptual.Edge;
 import model.conceptual.Vertex;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
- * Class that is responsible for the conversion of a visual graph into a .ttl string.
+ * Class that is responsible for the conversion of a visual model.graph into a .ttl string.
  */
 public class Converter {
-    private static ArrayList<String>  prefixes;
-    private static ArrayList<Vertex>  classes;
-    private static ArrayList<Edge>    properties;
-    private static ArrayList<Boolean> config;
+    private static Map<String, String> prefixes;
+    private static ArrayList<Vertex>   classes;
+    private static ArrayList<Edge>     properties;
+    private static ArrayList<Boolean>  config;
 
     private static boolean isOntology;
 
@@ -27,7 +29,7 @@ public class Converter {
      * @return a String representation of the graph as Turtle RDF syntax.
      */
     public static String convertGraphToTtlString(
-            ArrayList<String> prefixes,
+            Map<String, String> prefixes,
             ArrayList<Vertex> classes,
             ArrayList<Edge> properties,
             ArrayList<Boolean> config) {
@@ -57,11 +59,57 @@ public class Converter {
         StringBuilder fixString = new StringBuilder("# Potential issues found: \n");
         final int fixStringInitLength = fixString.length();
 
+        // checking for blank node names, reminding the user to rename them from basic characters.
         if (Vertex.getBlankNodeNames().size() > 0){
             fixString.append("# Don't forget to rename generic blank node names, namely: \n# ");
             Vertex.getBlankNodeNames().forEach(n -> fixString.append(n).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
-            fixString.append(".\n\n");
+            fixString.append(".\n");
+        }
+
+        // reminding the user that instance literals will be replaced by their corresponding instance level data when
+        //    converted to RDFXML.
+        if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
+            fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
+                    "d during RDFXML creation: \n# ");
+            classes.stream()
+                    .filter(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)
+                    .forEach(c -> fixString.append(c.getName()).append(", "));
+            fixString.delete(fixString.length() - 2, fixString.length());
+            fixString.append(".\n");
+        }
+
+        //
+        Stream<String> ttlClassPrefixesStream = classes.stream()
+                .filter(c -> c.getType() == Vertex.GraphElemType.CLASS && !c.isIri())
+                .map(c -> c.getName().split(":")[0]);
+        Stream<String> ttlPropPrefixesStream = properties.stream()
+                .filter(p -> !p.isIri())
+                .map(p -> p.getName().split(":")[0]);
+        Set<String> ttlPrefixSet = Stream
+                .concat(ttlClassPrefixesStream, ttlPropPrefixesStream)
+                .collect(Collectors.toCollection(HashSet::new));
+        Set<String> addedPrefixesSet = prefixes.keySet();
+
+        if (!addedPrefixesSet.equals(ttlPrefixSet)){
+            Set<String> ttlPrefixSetTmp = new HashSet<>(ttlPrefixSet);
+            Set<String> addedPrefixesSetTmp = new HashSet<>(addedPrefixesSet);
+            ttlPrefixSetTmp.removeAll(addedPrefixesSet);
+            addedPrefixesSetTmp.removeAll(ttlPrefixSet);
+
+            if (ttlPrefixSetTmp.size() > 0) {
+                fixString.append("# The following prefixes are defined in the graph but not in the prefixes menu (RDF" +
+                        "XML creation will not work):\n#   ");
+                ttlPrefixSetTmp.forEach(p -> fixString.append(p).append(", "));
+                fixString.delete(fixString.length() - 2, fixString.length());
+                fixString.append(".\n");
+            }if (addedPrefixesSetTmp.size() > 0){
+                fixString.append("# The following prefixes are defined in the prefixes menu but remain unused in the " +
+                        "graph:\n#   ");
+                addedPrefixesSetTmp.forEach(p -> fixString.append(p).append(", "));
+                fixString.delete(fixString.length() - 2, fixString.length());
+                fixString.append(".\n");
+            }
         }
 
         if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
@@ -79,7 +127,7 @@ public class Converter {
 
     /**
      * Conversion of prefixes into .ttl prefixes.
-     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList, ArrayList)}.
+     * Helper of {@link #convertGraphToTtlString(Map, ArrayList, ArrayList, ArrayList)}.
      * @return the converted prefixes.
      */
     private static String convertPrefixes() {
@@ -88,10 +136,8 @@ public class Converter {
         prefixStrs.append("@prefix rdfs : <http://www.w3.org/2000/01/rdf-schema#> .\n");
         if (isOntology) prefixStrs.append("@prefix owl : <http://www.w3.org/2002/07/owl#> .\n");
 
-        for (String prefix : prefixes){
-            String[] splitPrefix = prefix.split(" : ", 2);
-            String   prefixStr = "@prefix " + splitPrefix[0] + " : <" + splitPrefix[1] + "> .\n";
-
+        for (Map.Entry<String, String> prefix : prefixes.entrySet()){
+            String   prefixStr = "@prefix " + prefix.getKey() + " : <" + prefix.getValue() + "> .\n";
             prefixStrs.append(prefixStr);
         }
 
@@ -100,7 +146,7 @@ public class Converter {
 
     /**
      * Conversion of visual properties into .ttl representation.
-     * Helper of {@link #convertGraphToTtlString(ArrayList, ArrayList, ArrayList, ArrayList)}.
+     * Helper of {@link #convertGraphToTtlString(Map, ArrayList, ArrayList, ArrayList)}.
      * @return the properties as a valid .tll string.
      */
     private static String convertGProperties() {
@@ -117,10 +163,6 @@ public class Converter {
             String prop = property.getName();
             String obj = property.getObject().getName();
             String sub = property.getSubject().getName();
-
-            prop = prop.contains("http:") ? "<"+prop+">" : prop;
-            obj = obj.matches("http:.*|mailto:.*") ? "<"+obj+">" : obj;
-            sub = sub.matches("http:.*|mailto:.*") ? "<"+sub+">" : sub;
 
             String subType = null;
             String objType = null;
@@ -218,7 +260,6 @@ public class Converter {
             String objectListStr;
             ArrayList<Vertex> objectList = e.getValue();
 
-            propName      = propName.matches("http:.*|mailto:.*") ? "<"+propName+">" : propName;
             objectListStr = convertObjectList(objectList);
 
             if (first) first = false;

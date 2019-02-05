@@ -17,7 +17,10 @@
             <Button fx:id="loadGraphBtn" maxWidth="Infinity" onMouseClicked="#loadGraphAction" text="Load Graph"/>
             <Button fx:id="exportTllBtn" maxWidth="Infinity" onMouseClicked="#exportTtlAction" text="Export as .ttl"/>
             <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png"/>
-            <Separator />
+            <Separator/>
+            <Button fx:id="eatCsvBtn" maxWidth="Infinity" onMouseClicked="#ingestCsvAction" text="Ingest .csv"/>
+            <Button fx:id="rdfXmlBtn" maxWidth="Infinity" disable="true" onMouseClicked="#rdfXmlGenAction" text="Generate RDF/XML"/>
+            <Separator/>
             <Button fx:id="instrBtn" maxWidth="Infinity" onMouseClicked="#showInstructionsAction" text="Instructions"/>
             <Button fx:id="optionsBtn" maxWidth="Infinity" onMouseClicked="#showOptionsAction" text="Options"/>
         </ToolBar>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.AnchorPane?>
+
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Separator?>
+
+<AnchorPane maxHeight="600.0" maxWidth="800.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CorrelateDialogController">
+    <GridPane hgap="5" vgap="5">
+        <Text GridPane.rowIndex="0" GridPane.columnIndex="0" text="Uncorrelated .csv Attributes"/>
+        <Text GridPane.rowIndex="0" GridPane.columnIndex="1" text="Uncorrelated .ttl Classes"/>
+        <ListView fx:id="csvHeaderList" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <ListView fx:id="ttlHeaderList" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        <ToolBar orientation="VERTICAL" GridPane.rowIndex="0" GridPane.columnIndex="2" GridPane.rowSpan="4">
+            <Button fx:id="addManualCorrBtn" maxWidth="Infinity" disable="true" onMouseClicked="#addManualCorrelationAction" text="Add Correlation"/>
+            <Button fx:id="addHeaderBtn" maxWidth="Infinity" disable="true" onMouseClicked="#addHeaderAction" text="Add .csv Attribute"/>
+            <Separator/>
+            <Button fx:id="commitBtn" maxWidth="Infinity" disable="true" onMouseClicked="#commitCorrelationBtn" text="Commit Correlations"/>
+            <Button fx:id="cancelBtn" maxWidth="Infinity" onMouseClicked="#cancelCorrelationBtn" text="Cancel Correlations"/>
+            <Separator/>
+        </ToolBar>
+        <Text GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="2" text="Manually Correlated Attributes and Classes"/>
+        <ListView fx:id="csvTtlCorrelationList" GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+    </GridPane>
+</AnchorPane>

@@ -12,27 +12,40 @@ import java.util.ArrayList;
  * Class responsible for converting a graph into a .gat file.
  */
 public class ToGatConverter {
+    private double w, h;
+    private ArrayList<Vertex> classes;
+    private ArrayList<Edge> properties;
     /**
-     * Traverses the graph through the children of the canvas (the drawPane), in order of creation, and gives the
-     *    canvas size.
+     * Constructor of the ElementConverter.
      * @param w width of the canvas.
      * @param h height of the canvas.
      * @param classes the Vertices we are converting to a .gat file.
      * @param properties the Edges we are converting to a .gat file.
+     */
+    public ToGatConverter(double w, double h, ArrayList<Vertex> classes, ArrayList<Edge> properties) {
+        this.w = w;
+        this.h = h;
+        this.classes = classes;
+        this.properties = properties;
+    }
+
+    /**
+     * Traverses the graph through the children of the canvas (the drawPane), in order of creation, and gives the
+     *    canvas size.
      * @return a bespoke string serialization of the children of the canvas (the elements of the graph).
      */
-    public static String traverseCanvas(double w, double h, ArrayList<Vertex> classes, ArrayList<Edge> properties) {
-        return "G" + w + "x" + h +
-                traverseClasses(classes) +
-                traverseProperties(properties);
+    public String traverseCanvas() {
+        String propertyStr = traverseProperties();
+        String classStr = traverseClasses();
+
+        return "G" + w + "x" + h + classStr + propertyStr;
     }
 
     /**
      * Converts properties to the .gat structure.
-     * @param properties the properties to be converted.
      * @return the String .gat representation of the properties.
      */
-    private static String traverseProperties(ArrayList<Edge> properties) {
+    private String traverseProperties() {
         StringBuilder result = new StringBuilder();
 
         for (Edge e : properties) {
@@ -49,10 +62,9 @@ public class ToGatConverter {
 
     /**
      * Converts classes to the .gat structure.
-     * @param classes the classes to be converted.
      * @return the String .gat representation of the properties.
      */
-    private static String traverseClasses(ArrayList<Vertex> classes) {
+    private String traverseClasses() {
         StringBuilder result = new StringBuilder();
 
         for (Vertex v : classes) {
@@ -71,7 +83,9 @@ public class ToGatConverter {
                         r.getWidth() + "|" + r.getHeight() + "|" + r.getFill().toString();
                 String literalType = "|" + (r.getStrokeDashArray().size() != 0 ? "i" : "g");
                 String shapeName = "=" + v.getName();
-                result.append(shapeInfo).append(literalType).append(shapeName);
+                String rdfsLabel = v.getRdfsLabel() != null ? "\\|" + v.getRdfsLabel() : "\\|";
+                String rdfsComment = v.getRdfsComment() != null ? "\\|" + v.getRdfsComment() : "\\|";
+                result.append(shapeInfo).append(literalType).append(shapeName).append(rdfsLabel).append(rdfsComment);
             }
             result.append("]");
         }
