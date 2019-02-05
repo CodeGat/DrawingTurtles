@@ -596,6 +596,8 @@ public final class Controller {
     @FXML protected void ingestCsvAction(){
         File loadFile = showLoadFileDialog("Load .csv for RDF/XML generation");
         if (loadFile != null){
+            csv = null;
+            headers = null;
             try (Reader reader = new BufferedReader(new FileReader(loadFile))){
                 CSVParser parser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
                 headers = parser.getHeaderMap();
