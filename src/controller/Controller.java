@@ -76,6 +76,8 @@ public final class Controller implements Initializable {
     private List<CSVRecord> csv;
     private Map<String, Integer> headers;
 
+    static String lastDirectory;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         prefixes.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
@@ -183,6 +185,7 @@ public final class Controller implements Initializable {
                 new FileChooser.ExtensionFilter("Graph Accessor Type file (*.gat)", "*.gat")
         );
         if (loadFile != null){
+            lastDirectory = loadFile.getParent();
             drawPane.getChildren().clear();
             prefixes.clear();
             classes.clear();
@@ -557,11 +560,12 @@ public final class Controller implements Initializable {
      * @return the file the user has chosen to save to, or null otherwise.
      */
     private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
+        File directory = new File(lastDirectory != null ? lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
         fileChooser.setTitle(windowTitle);
-        fileChooser.getExtensionFilters().add(extFilter);
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        if (extFilter != null) fileChooser.getExtensionFilters().add(extFilter);
+        fileChooser.setInitialDirectory(directory);
 
         return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
@@ -571,9 +575,10 @@ public final class Controller implements Initializable {
      * @return the file that will be loaded from.
      */
     private File showLoadFileDialog(String title, FileChooser.ExtensionFilter extFilter){
+        File directory = new File(lastDirectory != null ? lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.setInitialDirectory(directory);
         fileChooser.getExtensionFilters().add(extFilter);
 
         return fileChooser.showOpenDialog(root.getScene().getWindow());
