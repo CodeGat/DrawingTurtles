@@ -63,6 +63,16 @@ public class RDFXMLGenerator {
             StringBuilder rdfxmlTriples = new StringBuilder();
             String rdfxmlTriple;
             final String subject = generateLongformURI(klass, record);
+            if (klass.getRdfsLabel() != null){
+                rdfxmlTriple =
+                        "<" + subject + "> <http://www.w3.org/2000/01/rdf-schema#label> \"" + klass.getRdfsLabel() + "\"";
+                rdfxmlTriples.append(rdfxmlTriple);
+            }
+            if (klass.getRdfsComment() != null){
+                rdfxmlTriple =
+                        "<" + subject + "> <http://www.w3.org/2000/01/rdf-schema#comment> \"" + klass.getRdfsComment() + "\"";
+                rdfxmlTriples.append(rdfxmlTriple);
+            }
 
             for (Edge edge : klass.getOutgoingEdges()){
                 String predicate = generateLongformURI(edge);
