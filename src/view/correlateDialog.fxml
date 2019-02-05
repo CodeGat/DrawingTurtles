@@ -17,7 +17,7 @@
         <ListView fx:id="ttlHeaderList" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
         <ToolBar orientation="VERTICAL" GridPane.rowIndex="0" GridPane.columnIndex="2" GridPane.rowSpan="4">
             <Button fx:id="addManualCorrBtn" maxWidth="Infinity" disable="true" onMouseClicked="#addManualCorrelationAction" text="Add Correlation"/>
-            <Button fx:id="addHeaderBtn" maxWidth="Infinity" onMouseClicked="#addHeaderAction" text="Add .csv Attribute"/>
+            <Button fx:id="addHeaderBtn" maxWidth="Infinity" disable="true" onMouseClicked="#addHeaderAction" text="Add .csv Attribute"/>
             <Separator/>
             <Button fx:id="commitBtn" maxWidth="Infinity" disable="true" onMouseClicked="#commitCorrelationBtn" text="Commit Correlations"/>
             <Button fx:id="cancelBtn" maxWidth="Infinity" onMouseClicked="#cancelCorrelationBtn" text="Cancel Correlations"/>
