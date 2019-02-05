@@ -1,6 +1,7 @@
 package controller;
 
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
@@ -43,6 +44,7 @@ import java.awt.image.RenderedImage;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -51,7 +53,7 @@ import java.util.logging.Logger;
 /**
  * The Controller for application.fxml: takes care of actions from the application.
  */
-public final class Controller {
+public final class Controller implements Initializable {
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
     @FXML protected BorderPane root;
@@ -60,9 +62,10 @@ public final class Controller {
     @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, rdfXmlBtn,
             instrBtn, optionsBtn;
     @FXML protected Label  statusLbl;
+
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
-    private Map<String, String> prefixes = new HashMap<>();
+    private Map<String, String>     prefixes   = new HashMap<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
@@ -72,6 +75,13 @@ public final class Controller {
 
     private List<CSVRecord> csv;
     private Map<String, Integer> headers;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        prefixes.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+        prefixes.put("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
+        prefixes.put("owl", "http://www.w3.org/2002/07/owl#");
+    }
 
     /**
      * Method invoked on any key press in the main application.
@@ -168,7 +178,10 @@ public final class Controller {
      *   into elements of a graph. It then binds the visual elements into meaningful java-friendly elements.
      */
     @FXML public void loadGraphAction() {
-        File loadFile = showLoadFileDialog("Load Graph File");
+        File loadFile = showLoadFileDialog(
+                "Load Graph File",
+                new FileChooser.ExtensionFilter("Graph Accessor Type file (*.gat)", "*.gat")
+        );
         if (loadFile != null){
             drawPane.getChildren().clear();
             prefixes.clear();
@@ -547,7 +560,7 @@ public final class Controller {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
         fileChooser.setTitle(windowTitle);
-        fileChooser.setSelectedExtensionFilter(extFilter);
+        fileChooser.getExtensionFilters().add(extFilter);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         return fileChooser.showSaveDialog(root.getScene().getWindow());
@@ -557,10 +570,11 @@ public final class Controller {
      * Creates a load file dialog, which prompts the user to load from a specific file.
      * @return the file that will be loaded from.
      */
-    private File showLoadFileDialog(String title){
+    private File showLoadFileDialog(String title, FileChooser.ExtensionFilter extFilter){
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.getExtensionFilters().add(extFilter);
 
         return fileChooser.showOpenDialog(root.getScene().getWindow());
     }
@@ -594,7 +608,10 @@ public final class Controller {
     }
 
     @FXML protected void ingestCsvAction(){
-        File loadFile = showLoadFileDialog("Load .csv for RDF/XML generation");
+        File loadFile = showLoadFileDialog(
+                "Load .csv for RDF/XML generation",
+                new FileChooser.ExtensionFilter("Comma Separated Values (*.csv)", "*.csv")
+        );
         if (loadFile != null){
             csv = null;
             headers = null;
