@@ -17,7 +17,6 @@ public class RDFXMLGenerator {
     private Map<String, Integer> headers;
     private List<CSVRecord> csv;
     private ArrayList<Vertex> classes;
-    private ArrayList<Edge> predicates;
     private Map<String, String> prefixes;
     private ArrayList<Correlation> csvTtlCorrelations = new ArrayList<>();
     private Pair<ArrayList<String>, ArrayList<Vertex>> csvTtlUncorrelated;
@@ -26,52 +25,112 @@ public class RDFXMLGenerator {
             Map<String, Integer> headers,
             List<CSVRecord> csv,
             ArrayList<Vertex> classes,
-            ArrayList<Edge> predicates,
             Map<String, String> prefixes){
         this.headers = headers;
         this.csv = csv;
         this.classes = classes;
         this.prefixes = prefixes;
-        this.predicates = predicates;
     }
 
     public String generate() {
-        String rdfxml = "";
+        StringBuilder rdfxml = new StringBuilder();
+        csv.forEach(record -> rdfxml.append(generateRdfxmlOf(record)));
+
+        return rdfxml.toString();
+    }
+
+    private String generateRdfxmlOf(CSVRecord record) {
+        StringBuilder rdfxmlRecord = new StringBuilder();
         List<Vertex> ttlClasses =
                 classes
                 .stream()
                 .filter(c -> c.getType() == Vertex.GraphElemType.CLASS)
                 .collect(Collectors.toList());
 
-        //do magic
         for (Vertex klass : ttlClasses){
-            String subject = "";
-            try {
-                subject = generateLongformURI(klass.getName());
-            } catch (PrefixMissingException e) {
-                e.printStackTrace();
+            StringBuilder rdfxmlTriples = new StringBuilder();
+            String rdfxmlTriple;
+            final String subject = generateLongformURI(klass, record);
+
+            for (Edge edge : klass.getOutgoingEdges()){
+                String predicate = generateLongformURI(edge);
+                String object    = generateLongformURI(edge.getObject(), record);
+
+                rdfxmlTriple = subject + " " + predicate + " " + object + "\n";
+                rdfxmlTriples.append(rdfxmlTriple);
             }
-            System.out.println(subject);
+
+            rdfxmlRecord.append(rdfxmlTriples.toString());
+            System.out.println(rdfxmlTriples.toString());
         }
 
-        return rdfxml;
+        return rdfxmlRecord.toString();
     }
 
-    private String generateLongformURI(String name) throws PrefixMissingException {
-        String[] nameParts = name.split(":");
-        String   namePrefix = nameParts[0];
-        String   nameURI = nameParts[1];
+    private String generateLongformURI(Vertex klass, CSVRecord record) {
+        if (klass.getType() == Vertex.GraphElemType.GLOBAL_LITERAL)
+            return klass.getName();
+        else if (klass.getType() == Vertex.GraphElemType.CLASS) {
+            String   name = klass.getName();
+            String[] nameParts = name.split(":");
+            String   prefixAcronym = nameParts[0];
+            String   nameURI = nameParts[1];
 
+            String longformPrefix;
+            try {
+                longformPrefix = generateLongformPrefix(prefixAcronym);
+            } catch (PrefixMissingException e) {
+                e.printStackTrace();
+                return null;
+            }
+
+            Correlation matchedCorrelation = generateLongformClass(klass);
+            String longformURI;
+            if (matchedCorrelation != null) longformURI = record.get(matchedCorrelation.getIndex());
+            else longformURI = nameURI;
+
+            return "<" + longformPrefix + longformURI + ">";
+        } else if (klass.getType() == Vertex.GraphElemType.INSTANCE_LITERAL){
+            Correlation matchedCorrelation = generateLongformClass(klass);
+            if (matchedCorrelation != null)
+                return "\"" + record.get(matchedCorrelation.getIndex()) + "\"";
+        }
+        return null;
+    }
+
+    private Correlation generateLongformClass(Vertex klass) {
+        return csvTtlCorrelations
+                .stream()
+                .filter(c -> c.getTtlClass().getName().equals(klass.getName()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String generateLongformURI(Edge edge) {
+        String name = edge.getName();
+        String[] nameParts = name.split(":");
+        String prefixAcronym = nameParts[0];
+        String nameURI = nameParts[1];
+
+        try {
+            return "<" + generateLongformPrefix(prefixAcronym) + nameURI + ">";
+        } catch (PrefixMissingException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private String generateLongformPrefix(String acronym) throws PrefixMissingException {
         Entry<String, String> matchingPrefix =
                 prefixes.entrySet()
                         .stream()
-                        .filter(p -> p.getKey().equals(namePrefix))
+                        .filter(p -> p.getKey().equals(acronym))
                         .findFirst()
                         .orElse(null);
 
         if (matchingPrefix == null)
-            throw new PrefixMissingException("Failed to find matching prefix '" + namePrefix + "' in prefixes.");
-        else return "<" + matchingPrefix.getValue() + nameURI + ">";
+            throw new PrefixMissingException("Failed to find matching prefix '" + acronym + "' in prefixes.");
+        else return matchingPrefix.getValue();
     }
 
     /**

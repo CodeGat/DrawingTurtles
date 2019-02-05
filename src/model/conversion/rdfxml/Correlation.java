@@ -16,4 +16,7 @@ public class Correlation {
     @Override public String toString(){
         return index + ". " + csvHeader + " <-> " + ttlClass.getName();
     }
+
+    Integer getIndex() { return index; }
+    Vertex  getTtlClass() { return ttlClass; }
 }
