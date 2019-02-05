@@ -73,7 +73,6 @@ public class RDFXMLGenerator {
             }
 
             rdfxmlRecord.append(rdfxmlTriples.toString());
-            System.out.println(rdfxmlTriples.toString());
         }
 
         return rdfxmlRecord.toString();
