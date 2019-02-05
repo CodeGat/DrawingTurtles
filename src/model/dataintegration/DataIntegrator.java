@@ -1,4 +1,4 @@
-package model.conversion.rdfxml;
+package model.dataintegration;
 
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 import static model.conceptual.Vertex.GraphElemType.*;
 
 /**
- * Responsible for the generation of RDFXML, as well as correlating .csv headers and their .ttl counterparts.
+ * Responsible for the generation of instance data, as well as correlating .csv headers and their .ttl counterparts.
  */
-public class RDFXMLGenerator {
+public class DataIntegrator {
     class PrefixMissingException extends Exception {
         PrefixMissingException(String msg){ super(msg); }
     }
@@ -27,7 +27,7 @@ public class RDFXMLGenerator {
     private Pair<ArrayList<String>, ArrayList<Vertex>> csvTtlUncorrelated;
     private List<Vertex> ttlClasses;
 
-    public RDFXMLGenerator(
+    public DataIntegrator(
             Map<String, Integer> headers,
             List<CSVRecord> csv,
             ArrayList<Vertex> classes,
@@ -39,60 +39,60 @@ public class RDFXMLGenerator {
     }
 
     /**
-     * Accessible method for generating rdfxml given a .csv and the graph. Recordwise generation.
-     * @return String representation of rdfxml.
+     * Accessible method for generating instance-level data given a .csv and the graph. Recordwise generation.
+     * @return String representation of the instance-level data.
      */
     public String generate() {
-        StringBuilder rdfxml = new StringBuilder();
+        StringBuilder instanceData = new StringBuilder();
         ttlClasses = classes.stream().filter(c -> c.getType() == CLASS).collect(Collectors.toList());
 
-        csv.forEach(record -> rdfxml.append(generateRdfxmlOf(record)));
+        csv.forEach(record -> instanceData.append(generateInstanceDataOf(record)));
 
-        return rdfxml.toString();
+        return instanceData.toString();
     }
 
     /**
-     * Constructs the rdfxml of the particular record.
-     * @param record the record used to populate the resulting rdfxml's instance-level data.
-     * @return the generated rdfxml as a String.
+     * Constructs the instance-level data of the particular record.
+     * @param record the record used to populate the resulting instance-level data.
+     * @return the generated instance-level data as a String.
      */
-    private String generateRdfxmlOf(CSVRecord record) {
-        StringBuilder rdfxmlRecord = new StringBuilder();
+    private String generateInstanceDataOf(CSVRecord record) {
+        StringBuilder instanceData = new StringBuilder();
 
         for (Vertex klass : ttlClasses){
-            StringBuilder rdfxmlTriples = new StringBuilder();
-            String rdfxmlTriple;
+            StringBuilder instanceTriples = new StringBuilder();
+            String instanceTriple;
             final String subject = generateLongformURI(klass, record);
             if (klass.getRdfsLabel() != null){
-                rdfxmlTriple =
+                instanceTriple =
                         "<" + subject + "> <http://www.w3.org/2000/01/rdf-schema#label> \"" + klass.getRdfsLabel() + "\"";
-                rdfxmlTriples.append(rdfxmlTriple);
+                instanceTriples.append(instanceTriple);
             }
             if (klass.getRdfsComment() != null){
-                rdfxmlTriple =
+                instanceTriple =
                         "<" + subject + "> <http://www.w3.org/2000/01/rdf-schema#comment> \"" + klass.getRdfsComment() + "\"";
-                rdfxmlTriples.append(rdfxmlTriple);
+                instanceTriples.append(instanceTriple);
             }
 
             for (Edge edge : klass.getOutgoingEdges()){
                 String predicate = generateLongformURI(edge);
                 String object    = generateLongformURI(edge.getObject(), record);
 
-                rdfxmlTriple = subject + " " + predicate + " " + object + "\n";
-                rdfxmlTriples.append(rdfxmlTriple);
+                instanceTriple = subject + " " + predicate + " " + object + "\n";
+                instanceTriples.append(instanceTriple);
             }
 
-            rdfxmlRecord.append(rdfxmlTriples.toString());
+            instanceData.append(instanceTriples.toString());
         }
 
-        return rdfxmlRecord.toString();
+        return instanceData.toString();
     }
 
     /**
      * Create the expansion of the graph node into a well-formed URI or Literal.
      * @param klass the Vertex to be expanded.
      * @param record the data to populate the Vertices instance-level fields.
-     * @return the rdfxml form of the given Vertex as a String.
+     * @return the instance data of the given Vertex as a String.
      */
     private String generateLongformURI(Vertex klass, CSVRecord record) {
         if (klass.getType() == GLOBAL_LITERAL)
@@ -115,7 +115,7 @@ public class RDFXMLGenerator {
 
             if (instanceData != null) return "<" + longformPrefix + instanceData + ">";
             else return "<" + longformPrefix + nameURI + ">";
-        } else if (klass.getType() == INSTANCE_LITERAL){
+        } else if (klass.getType() == INSTANCE_LITERAL){ // TODO: 6/02/2019 honor different types
             return "\"" + getInstanceLevelData(klass, record) + "\"";
         }
         return null;

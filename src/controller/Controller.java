@@ -11,7 +11,7 @@ import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
 import model.conversion.gat.FromGatConverter;
 import model.conversion.gat.ToGatConverter;
-import model.conversion.rdfxml.RDFXMLGenerator;
+import model.dataintegration.DataIntegrator;
 import model.graph.Arrow;
 import model.conversion.ttl.Converter;
 import javafx.embed.swing.SwingFXUtils;
@@ -59,7 +59,7 @@ public final class Controller implements Initializable {
     @FXML protected BorderPane root;
     @FXML protected Pane drawPane;
     @FXML protected ScrollPane scrollPane;
-    @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, rdfXmlBtn,
+    @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, instanceBtn,
             instrBtn, optionsBtn;
     @FXML protected Label  statusLbl;
 
@@ -614,7 +614,7 @@ public final class Controller implements Initializable {
 
     @FXML protected void ingestCsvAction(){
         File loadFile = showLoadFileDialog(
-                "Load .csv for RDF/XML generation",
+                "Load .csv for Instance-Level Turtle Generation",
                 new FileChooser.ExtensionFilter("Comma Separated Values (*.csv)", "*.csv")
         );
         if (loadFile != null){
@@ -626,7 +626,7 @@ public final class Controller implements Initializable {
                 csv = parser.getRecords();
                 statusLbl.setText(".csv ingested. Yum.");
                 LOGGER.info("Ingested " + loadFile.getName() + ".\nFound csv headers: " + headers);
-                rdfXmlBtn.setDisable(false);
+                instanceBtn.setDisable(false);
                 parser.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -634,42 +634,46 @@ public final class Controller implements Initializable {
         }
     }
 
-    @FXML protected void rdfXmlGenAction() {
-        String rdfxml;
-        RDFXMLGenerator rdfxmlGenerator = new RDFXMLGenerator(headers, csv, classes, prefixes);
-        rdfxmlGenerator.attemptCorrelationOfHeaders();
+    @FXML protected void instanceGenAction() {
+        String instanceData;
+        DataIntegrator dataIntegrator = new DataIntegrator(headers, csv, classes, prefixes);
+        dataIntegrator.attemptCorrelationOfHeaders();
 
-        LOGGER.info("BEFORE Correlation:\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
-                "\nUncorrelated: " + rdfxmlGenerator.uncorrelatedToString());
+        LOGGER.info("BEFORE Correlation:\nCorrelated: " + dataIntegrator.getCorrelations().toString() +
+                "\nUncorrelated: " + dataIntegrator.uncorrelatedToString());
 
-        if (rdfxmlGenerator.getUncorrelated() != null && rdfxmlGenerator.getUncorrelated().getKey().size() != 0)
-            showManualCorrelationDialog(rdfxmlGenerator);
-        if (rdfxmlGenerator.getUncorrelated() != null && rdfxmlGenerator.getUncorrelated().getKey().size() != 0){
+        if (dataIntegrator.getUncorrelated() != null && dataIntegrator.getUncorrelated().getKey().size() != 0)
+            showManualCorrelationDialog(dataIntegrator);
+        if (dataIntegrator.getUncorrelated() != null && dataIntegrator.getUncorrelated().getKey().size() != 0){
             LOGGER.info("Cancelled Manual Correlations. ");
             return;
         }
 
         LOGGER.info("AFTER Correlation:" +
-                "\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
-                "\nUncorrelated (assumed constant): " + rdfxmlGenerator.uncorrelatedClassesToString());
+                "\nCorrelated: " + dataIntegrator.getCorrelations().toString() +
+                "\nUncorrelated (assumed constant): " + dataIntegrator.uncorrelatedClassesToString());
 
-        rdfxml = rdfxmlGenerator.generate();
-        File saveFile = showSaveFileDialog("rdf.rdf", "Save RDF/XML Document", null);
+        instanceData = dataIntegrator.generate();
+        File saveFile = showSaveFileDialog(
+                "instance.ttl",
+                "Save Instance-Level Turtle Document",
+                new FileChooser.ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
+        );
         if (saveFile != null){
             try {
                 FileWriter writer = new FileWriter(saveFile);
-                writer.write(rdfxml);
+                writer.write(instanceData);
                 writer.flush();
                 writer.close();
-                statusLbl.setText("RDF/XML saved.");
+                statusLbl.setText("Instance-level Turtle saved.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void showManualCorrelationDialog(RDFXMLGenerator generator){
-        ArrayList<RDFXMLGenerator> data = new ArrayList<>();
+    private void showManualCorrelationDialog(DataIntegrator generator){
+        ArrayList<DataIntegrator> data = new ArrayList<>();
         data.add(generator);
         showWindow("/view/correlateDialog.fxml", "Set Manual Correlations", data);
     }

@@ -19,7 +19,7 @@
             <Button fx:id="exportPngBtn" maxWidth="Infinity" onMouseClicked="#exportPngAction" text="Export as .png"/>
             <Separator/>
             <Button fx:id="eatCsvBtn" maxWidth="Infinity" onMouseClicked="#ingestCsvAction" text="Ingest .csv"/>
-            <Button fx:id="rdfXmlBtn" maxWidth="Infinity" disable="true" onMouseClicked="#rdfXmlGenAction" text="Generate RDF/XML"/>
+            <Button fx:id="instanceBtn" maxWidth="Infinity" disable="true" onMouseClicked="#instanceGenAction" text="Generate Instance Data"/>
             <Separator/>
             <Button fx:id="instrBtn" maxWidth="Infinity" onMouseClicked="#showInstructionsAction" text="Instructions"/>
             <Button fx:id="optionsBtn" maxWidth="Infinity" onMouseClicked="#showOptionsAction" text="Options"/>
