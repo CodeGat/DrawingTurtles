@@ -69,7 +69,7 @@ public class ToGatConverter {
 
         for (Vertex v : classes) {
             result.append("[");
-            if (v.getType() == Vertex.GraphElemType.CLASS){
+            if (v.getElementType() == Vertex.GraphElemType.CLASS){
                 Ellipse e = (Ellipse) v.getContainer().getChildren().get(0);
                 String shapeInfo = "C"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
                         e.getRadiusY() + "|" + e.getFill().toString();

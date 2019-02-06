@@ -69,11 +69,11 @@ public class Converter {
 
         // reminding the user that instance literals will be replaced by their corresponding instance level data when
         //    converted to RDFXML.
-        if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
+        if (classes.stream().anyMatch(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
             fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
                     "d during RDFXML creation: \n# ");
             classes.stream()
-                    .filter(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)
+                    .filter(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)
                     .forEach(c -> fixString.append(c.getName()).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
             fixString.append(".\n");
@@ -81,7 +81,7 @@ public class Converter {
 
         //
         Stream<String> ttlClassPrefixesStream = classes.stream()
-                .filter(c -> c.getType() == Vertex.GraphElemType.CLASS && !c.isIri())
+                .filter(c -> c.getElementType() == Vertex.GraphElemType.CLASS && !c.isIri())
                 .map(c -> c.getName().split(":")[0]);
         Stream<String> ttlPropPrefixesStream = properties.stream()
                 .filter(p -> !p.isIri())
@@ -103,7 +103,8 @@ public class Converter {
                 ttlPrefixSetTmp.forEach(p -> fixString.append(p).append(", "));
                 fixString.delete(fixString.length() - 2, fixString.length());
                 fixString.append(".\n");
-            }if (addedPrefixesSetTmp.size() > 0){
+            }
+            if (addedPrefixesSetTmp.size() > 0){
                 fixString.append("# The following prefixes are defined in the prefixes menu but remain unused in the " +
                         "graph:\n#   ");
                 addedPrefixesSetTmp.forEach(p -> fixString.append(p).append(", "));
@@ -112,11 +113,11 @@ public class Converter {
             }
         }
 
-        if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
+        if (classes.stream().anyMatch(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
             fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
                     "d during RDFXML creation: \n# ");
             classes.stream()
-                    .filter(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)
+                    .filter(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)
                     .forEach(c -> fixString.append(c.getName()).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
             fixString.append(".\n\n");
@@ -202,7 +203,7 @@ public class Converter {
         for (Vertex graphClass : classes) {
             isBlanknode = config.get(1) && graphClass.isBlank();
 
-            if (graphClass.getType() == Vertex.GraphElemType.CLASS && !isBlanknode)
+            if (graphClass.getElementType() == Vertex.GraphElemType.CLASS && !isBlanknode)
                 classStrs.append(convertTriple(graphClass));
         }
 
@@ -339,7 +340,7 @@ public class Converter {
                 objectStr += tabs + "]";
             } else objectStr = "[" + predicateObjectList + "]";
         }
-        else if (object.getType() == Vertex.GraphElemType.INSTANCE_LITERAL) objectStr = "\"" + objectStr + "\"";
+        else if (object.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL) objectStr = "\"" + objectStr + "\"";
         else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
 
         return objectStr;

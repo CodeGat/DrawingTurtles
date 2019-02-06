@@ -44,7 +44,7 @@ public class DataIntegrator {
      */
     public String generate() {
         StringBuilder instanceData = new StringBuilder();
-        ttlClasses = classes.stream().filter(c -> c.getType() == CLASS).collect(Collectors.toList());
+        ttlClasses = classes.stream().filter(c -> c.getElementType() == CLASS).collect(Collectors.toList());
 
         csv.forEach(record -> instanceData.append(generateInstanceDataOf(record)));
 
@@ -95,9 +95,9 @@ public class DataIntegrator {
      * @return the instance data of the given Vertex as a String.
      */
     private String generateLongformURI(Vertex klass, CSVRecord record) {
-        if (klass.getType() == GLOBAL_LITERAL)
+        if (klass.getElementType() == GLOBAL_LITERAL)
             return klass.getName();
-        else if (klass.getType() == CLASS) {
+        else if (klass.getElementType() == CLASS) {
             String   name = klass.getName();
             String[] nameParts = name.split(":");
             String   prefixAcronym = nameParts[0];
@@ -115,7 +115,7 @@ public class DataIntegrator {
 
             if (instanceData != null) return "<" + longformPrefix + instanceData + ">";
             else return "<" + longformPrefix + nameURI + ">";
-        } else if (klass.getType() == INSTANCE_LITERAL){ // TODO: 6/02/2019 honor different types
+        } else if (klass.getElementType() == INSTANCE_LITERAL){ // TODO: 6/02/2019 honor different types
             return "\"" + getInstanceLevelData(klass, record) + "\"";
         }
         return null;
@@ -187,7 +187,7 @@ public class DataIntegrator {
             for (Vertex klass : classes){
                 boolean isExactMatch = header.getKey().equals(klass.getName());
                 boolean isCloseMatch = !klass.isIri()
-                        && klass.getType() == CLASS
+                        && klass.getElementType() == CLASS
                         && header.getKey().equalsIgnoreCase(klass.getName().split(":", 2)[1]);
 
                 if (isExactMatch || isCloseMatch){

@@ -29,7 +29,8 @@ public class Vertex {
     private static char nextBlankNodeName = (char) 96;
     private static final ArrayList<Character> blankNodeNames = new ArrayList<>();
 
-    private GraphElemType type;
+    private GraphElemType elementType;
+    private String dataType;
     private String name;
     private StackPane container;
     private double x, y;
@@ -44,6 +45,11 @@ public class Vertex {
         this(element);
         this.rdfsLabel = rdfsLabel;
         this.rdfsComment = rdfsComment;
+    }
+
+    public Vertex(EventTarget element, String dataType) throws OutsideElementException {
+        this(element);
+        this.dataType = dataType;
     }
 
     /**
@@ -73,9 +79,9 @@ public class Vertex {
             isIri = false;
         }
 
-        if (container.getChildren().get(0) instanceof Ellipse) this.type = GraphElemType.CLASS;
-        else if (this.name.matches("[^\"](.* .*)*[^\"]")) this.type = GraphElemType.INSTANCE_LITERAL;
-        else this.type = GraphElemType.GLOBAL_LITERAL;
+        if (container.getChildren().get(0) instanceof Ellipse) this.elementType = GraphElemType.CLASS;
+        else if (this.name.matches("[^\"](.* .*)*[^\"]")) this.elementType = GraphElemType.INSTANCE_LITERAL;
+        else this.elementType = GraphElemType.GLOBAL_LITERAL;
 
         incomingEdges = new ArrayList<>();
         outgoingEdges = new ArrayList<>();
@@ -92,7 +98,7 @@ public class Vertex {
      * @param y the y value of the users click.
      */
     public void setSnapTo(double subX, double subY, double x, double y){
-        if (this.type == GraphElemType.GLOBAL_LITERAL || this.type == GraphElemType.INSTANCE_LITERAL) {
+        if (this.elementType == GraphElemType.GLOBAL_LITERAL || this.elementType == GraphElemType.INSTANCE_LITERAL) {
             Bounds bounds = container.getBoundsInParent();
             double distMinX = Math.abs(bounds.getMinX() - x);
             double distMaxX = Math.abs(bounds.getMaxX() - x);
@@ -234,7 +240,7 @@ public class Vertex {
      * @return the tightest bounds for the GraphClass.
      */
     public Bounds getBounds(){
-        if (type == GraphElemType.GLOBAL_LITERAL || type == GraphElemType.INSTANCE_LITERAL){
+        if (elementType == GraphElemType.GLOBAL_LITERAL || elementType == GraphElemType.INSTANCE_LITERAL){
             return container.getBoundsInParent();
         } else {
             Ellipse e = (Ellipse) container.getChildrenUnmodifiable().get(0);
@@ -270,7 +276,7 @@ public class Vertex {
 
     public String getName() { return name; }
 
-    public GraphElemType getType() { return type; }
+    public GraphElemType getElementType() { return elementType; }
 
     public StackPane getContainer() { return container; }
 
@@ -298,5 +304,9 @@ public class Vertex {
 
     public String getRdfsComment() {
         return rdfsComment;
+    }
+
+    public String getDataType() {
+        return this.elementType == GraphElemType.CLASS ? null : dataType;
     }
 }
