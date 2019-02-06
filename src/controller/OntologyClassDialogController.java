@@ -44,7 +44,6 @@ public class OntologyClassDialogController extends AbstractDataSharingController
             if (newValue.matches(classRegex)){
                 isClasslike.setValue(true);
                 isLiterallike.setValue(false);
-                System.out.println("CLASS: " + newValue);
             } else if (newValue.matches(literalRegex)){
                 isClasslike.setValue(false);
                 isLiterallike.setValue(true);
@@ -57,11 +56,9 @@ public class OntologyClassDialogController extends AbstractDataSharingController
                     final String[] otherParts = newValue.split("\\^\\^");
                     typeTfd.setText(otherParts.length > 1 ? otherParts[1] : "");
                 } else typeTfd.setText("");
-                System.out.println("LITERAL String: " + newValue);
             } else {
                 isClasslike.setValue(false);
                 isLiterallike.setValue(false);
-                System.out.println(newValue);
             }
         }));
 

@@ -376,8 +376,8 @@ public final class Controller implements Initializable {
         compiledProperty.setLayoutX(subject.getX() < obj.getX() ? subject.getX() : obj.getX());
         compiledProperty.setLayoutY(subject.getY() < obj.getY() ? subject.getY() : obj.getY());
 
-        Text propertyName0 = showNameElementDialog();
-        if (propertyName0 == null){
+        ArrayList<String> propertyInfo = showNameElementDialog();
+        if (propertyInfo == null || propertyInfo.size() == 0){
             drawPane.getChildren().remove(arrow);
             statusLbl.setText("Property creation cancelled. ");
             subject = null;
@@ -386,7 +386,7 @@ public final class Controller implements Initializable {
             return;
         }
 
-        Label propertyName = new Label(propertyName0.getText());
+        Label propertyName = new Label(propertyInfo.get(0));
         propertyName.setBackground(new Background(new BackgroundFill(
                 Color.web("F4F4F4"),
                 CornerRadii.EMPTY,
@@ -453,17 +453,9 @@ public final class Controller implements Initializable {
         compiledElement.setLayoutX(x);
         compiledElement.setLayoutY(y);
 
-        Text elementName;
-        ArrayList<String> ontologyClassInfo =  new ArrayList<>();
-
-        if (isOntology) {
-            ontologyClassInfo = showNameOntologyClassDialog();
-            if (ontologyClassInfo == null) return;
-            elementName = new Text(ontologyClassInfo.get(0));
-        } else {
-            elementName = showNameElementDialog();
-            if (elementName == null) return;
-        }
+        ArrayList<String> classInfo = isOntology ? showNameOntologyClassDialog() : showNameElementDialog();
+        if (classInfo == null || classInfo.size() == 0) return;
+        Text elementName = new Text(classInfo.get(0));
 
         if (elementName.getText().equals("")){
             isClass = true;
@@ -477,7 +469,6 @@ public final class Controller implements Initializable {
             elementType.setFill(Color.web("f4f4f4"));
             elementType.setStroke(Color.BLACK);
             compiledElement.getChildren().addAll(elementType, elementName);
-
         } else {
             Rectangle elementType = new Rectangle(textWidth > 125 ? textWidth + 15 : 125, 75);
             String name = elementName.getText();
@@ -492,11 +483,11 @@ public final class Controller implements Initializable {
         drawPane.getChildren().add(compiledElement);
         try {
             if (isOntology && isClass) {
-                String rdfslabel = ontologyClassInfo.get(2);
-                String rdfscomment = ontologyClassInfo.get(3);
+                String rdfslabel = classInfo.get(2);
+                String rdfscomment = classInfo.get(3);
                 classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment));
             } else if (isOntology){
-                String dataType = ontologyClassInfo.get(1);
+                String dataType = classInfo.get(1);
                 classes.add(new Vertex(compiledElement, dataType));
             } else classes.add(new Vertex(compiledElement));
         } catch (OutsideElementException e) {
@@ -543,17 +534,11 @@ public final class Controller implements Initializable {
     }
 
     /**
-     * Creates a dialog that accepts a name of an element.
-     * @return the name inputted or null otherwise.
+     * Show the basic dialog for creating a new element.
+     * @return the ArrayList containing the name and type of the given element, if applicable.
      */
-    private Text showNameElementDialog() {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setGraphic(null);
-        dialog.setTitle("Add Ontology Element");
-        dialog.setHeaderText("Can be set as defined in Turtle Syntax");
-
-        Optional<String> optDialogResult = dialog.showAndWait();
-        return optDialogResult.map(Text::new).orElse(null);
+    private ArrayList<String> showNameElementDialog() {
+        return showWindow("/view/newClassDialog.fxml", "Add new Graph Element", null);
     }
 
     /**
@@ -597,12 +582,12 @@ public final class Controller implements Initializable {
         instrAlert.setHeaderText(null);
         instrAlert.setContentText(
                 "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
-                        " add to the canvas, then click somewhere on the canvas. Add a name (even in .ttl synta" +
-                        "x!) and the item will be created in that position. \nIn regards to the Property button, you " +
-                        "must click on a valid (already existing) element in the graph as the subject, and then anoth" +
-                        "er as the object. If you click on something that is not a Class or Literal, you will need to" +
-                        " click the subject-object pair again.\nFeel free to add elements near the edge of the graph," +
-                        " it automatically resizes! "
+                        " add to the canvas, then click somewhere on the canvas. Add a name (even in .ttl syntax!) an" +
+                        "d the item will be created in that position. \nIn regards to the Property button, you must c" +
+                        "lick on a valid (already existing) element in the graph as the subject, and then another as " +
+                        "the object. If you click on something that is not a Class or Literal, you will need toclick " +
+                        "the subject-object pair again.\nFeel free to add elements near the edge of the graph, it aut" +
+                        "omatically resizes! "
         );
 
         instrAlert.showAndWait();
