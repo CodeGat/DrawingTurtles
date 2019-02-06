@@ -440,10 +440,12 @@ public final class Controller implements Initializable {
         boolean isClass;
 
         // from https://www.w3.org/TR/turtle/ definition of a literal.
-        String globalLiteralRegex = "\".*\".*" +
-                "|[+\\-]?[0-9]+(\\.[0-9]+)?" +
-                "|([+\\-]?[0-9]+\\.[0-9]+|[+\\-]?\\.[0-9]+|[+\\-]?[0-9])E[+\\-]?[0-9]+";
-        String instanceLiteralRegex = "[^\"](.* .*)*[^\"]";
+        String globalLiteralRegex = "\".*\"(\\^\\^.*|@.*)?" + // unspecified / String
+                "|true|false" + // boolean
+                "|[+\\-]?\\d+" + //integer
+                "|[+\\-]?\\d*\\.\\d+" + // decimal
+                "|([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+"; // double
+        String instanceLiteralRegex = "(?<!\")(.* .*)*(?<!\")";
 
         resizeEdgeOfCanvas(x, y);
 
@@ -489,12 +491,14 @@ public final class Controller implements Initializable {
 
         drawPane.getChildren().add(compiledElement);
         try {
-            if (isOntology) {
-                String rdfslabel = ontologyClassInfo.get(1);
-                String rdfscomment = ontologyClassInfo.get(2);
+            if (isOntology && isClass) {
+                String rdfslabel = ontologyClassInfo.get(2);
+                String rdfscomment = ontologyClassInfo.get(3);
                 classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment));
-            }
-            else classes.add(new Vertex(compiledElement));
+            } else if (isOntology){
+                String dataType = ontologyClassInfo.get(1);
+                classes.add(new Vertex(compiledElement, dataType));
+            } else classes.add(new Vertex(compiledElement));
         } catch (OutsideElementException e) {
             e.printStackTrace();
         }
