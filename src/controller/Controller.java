@@ -199,16 +199,21 @@ public final class Controller implements Initializable {
                 }
                 FromGatConverter binder = new FromGatConverter(new String(rawGraph));
                 binder.bindGraph();
-                classes.addAll(binder.getClasses());
-                properties.addAll(binder.getProperties());
-                drawPane.setPrefSize(binder.getCanvasWidth(), binder.getCanvasHeight());
-                drawPane.getChildren().addAll(binder.getCompiledElements());
-                for (StackPane compiledProperty : binder.getCompiledProperties()){
-                    drawPane.getChildren().add(compiledProperty);
-                    compiledProperty.toBack();
+                if (binder.isSuccessful()){
+                    classes.addAll(binder.getClasses());
+                    properties.addAll(binder.getProperties());
+                    drawPane.setPrefSize(binder.getCanvasWidth(), binder.getCanvasHeight());
+                    drawPane.getChildren().addAll(binder.getCompiledElements());
+                    for (StackPane compiledProperty : binder.getCompiledProperties()){
+                        drawPane.getChildren().add(compiledProperty);
+                        compiledProperty.toBack();
+                    }
+                    statusLbl.setText("Graph load successful.");
+                } else {
+                    statusLbl.setText("Graph load failed: Properties did not bind correctly.");
                 }
-                statusLbl.setText("Graph load successful.");
             } catch (IOException e) {
+                statusLbl.setText("Graph load failed: IOException occurred while reading the graph from file. ");
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
             }
         } else statusLbl.setText("Graph load cancelled.");

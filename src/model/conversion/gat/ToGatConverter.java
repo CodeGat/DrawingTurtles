@@ -43,6 +43,7 @@ public class ToGatConverter {
 
     /**
      * Converts properties to the .gat structure.
+     * Of form: [Asx|sy|ex|ey=name]
      * @return the String .gat representation of the properties.
      */
     private String traverseProperties() {
@@ -62,6 +63,8 @@ public class ToGatConverter {
 
     /**
      * Converts classes to the .gat structure.
+     * For classes, of form:  [CcenterX\|centerY\|radiusX\|radiusY\|fill\|name\|label\|comment]
+     * For literals, of form: [LlayoutX\|layoutY\|width\|height\|fill\|instanceorglobal\|name\|datatype]
      * @return the String .gat representation of the properties.
      */
     private String traverseClasses() {
@@ -71,21 +74,20 @@ public class ToGatConverter {
             result.append("[");
             if (v.getElementType() == Vertex.GraphElemType.CLASS){
                 Ellipse e = (Ellipse) v.getContainer().getChildren().get(0);
-                String shapeInfo = "C"+ e.getCenterX() + "|" + e.getCenterY() + "|" + e.getRadiusX() + "|" +
-                        e.getRadiusY() + "|" + e.getFill().toString();
-                String shapeName = "=" + v.getName();
-                String rdfsLabel = v.getRdfsLabel() != null ? "\\|" + v.getRdfsLabel() : "\\|";
-                String rdfsComment = v.getRdfsComment() != null ? "\\|" + v.getRdfsComment() : "\\|";
+                String shapeInfo = "C"+ e.getCenterX() + "\\|" + e.getCenterY() + "\\|" + e.getRadiusX() + "\\|" +
+                        e.getRadiusY() + "\\|" + e.getFill().toString();
+                String shapeName = "\\|" + v.getName();
+                String rdfsLabel = "\\|" + (v.getRdfsLabel() != null ? v.getRdfsLabel() : "");
+                String rdfsComment = "\\|" + (v.getRdfsComment() != null ? v.getRdfsComment() : "");
                 result.append(shapeInfo).append(shapeName).append(rdfsLabel).append(rdfsComment);
             } else {
                 Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
-                String shapeInfo = "L" + r.getParent().getLayoutX() + "|" + r.getParent().getLayoutY() + "|" +
-                        r.getWidth() + "|" + r.getHeight() + "|" + r.getFill().toString();
-                String literalType = "|" + (r.getStrokeDashArray().size() != 0 ? "i" : "g");
-                String shapeName = "=" + v.getName();
-                String rdfsLabel = v.getRdfsLabel() != null ? "\\|" + v.getRdfsLabel() : "\\|";
-                String rdfsComment = v.getRdfsComment() != null ? "\\|" + v.getRdfsComment() : "\\|";
-                result.append(shapeInfo).append(literalType).append(shapeName).append(rdfsLabel).append(rdfsComment);
+                String shapeInfo = "L" + r.getParent().getLayoutX() + "\\|" + r.getParent().getLayoutY() + "\\|" +
+                        r.getWidth() + "\\|" + r.getHeight() + "\\|" + r.getFill().toString();
+                String elemType = "\\|" + (r.getStrokeDashArray().size() != 0 ? "i" : "g");
+                String name = "\\|" + v.getName();
+                String dataType = "\\|" + (v.getDataType() != null ? v.getDataType() : "");
+                result.append(shapeInfo).append(elemType).append(name).append(dataType);
             }
             result.append("]");
         }

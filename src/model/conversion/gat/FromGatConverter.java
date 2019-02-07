@@ -37,6 +37,7 @@ public class FromGatConverter {
     private ArrayList<StackPane> compiledProperties = new ArrayList<>();
     private double canvasWidth, canvasHeight;
     private String gat;
+    private boolean bindComplete = true;
 
     public FromGatConverter(String gat){
         this.gat = gat;
@@ -59,6 +60,7 @@ public class FromGatConverter {
             }
         } catch (PropertyElemMissingException e){
             LOGGER.log(Level.WARNING, "Property missing: ", e);
+            bindComplete = false;
         }
     }
 
@@ -80,15 +82,15 @@ public class FromGatConverter {
      * @param lit the .gat String serialization of a Literal.
      */
     private void bindLiteral(String lit) {
-        String[] litElements = lit.split("=");
-        String[] litInfo = litElements[0].substring(1).split("\\|");
-        String   litName = litElements[1].split("\\\\\\|")[0];
-        double   x = Double.valueOf(litInfo[0]);
-        double   y = Double.valueOf(litInfo[1]);
-        double   w = Double.valueOf(litInfo[2]);
-        double   h = Double.valueOf(litInfo[3]);
-        Color    col = Color.web(litInfo[4]);
-        String   litType = litInfo[5];
+        String[] litElements = lit.split("\\\\\\|", -1);
+        double x = Double.valueOf(litElements[0].substring(1));
+        double y = Double.valueOf(litElements[1]);
+        double w = Double.valueOf(litElements[2]);
+        double h = Double.valueOf(litElements[3]);
+        Color  c = Color.web(litElements[4]);
+        String etype = litElements[5];
+        Text   name  = new Text(litElements[6]);
+        String dtype = litElements[7];
 
         resizeEdgeOfCanvas(x, y);
 
@@ -96,17 +98,16 @@ public class FromGatConverter {
         compiledLit.setLayoutX(x);
         compiledLit.setLayoutY(y);
 
-        Rectangle rect = new Rectangle(w, h, col);
+        Rectangle rect = new Rectangle(w, h, c);
         rect.setStroke(Color.BLACK);
 
-        if (litType.equals("i")) rect.getStrokeDashArray().addAll(10d, 10d);
-
-        Text name = new Text(litName);
+        if (etype.equals("i")) rect.getStrokeDashArray().addAll(10d, 10d);
 
         compiledLit.getChildren().addAll(rect, name);
         compiledElements.add(compiledLit);
         try {
-            classes.add(new Vertex(compiledLit));
+            if (!dtype.equals("")) classes.add(new Vertex(compiledLit, dtype));
+            else classes.add(new Vertex(compiledLit));
         } catch (Vertex.OutsideElementException e) {
             e.printStackTrace();
         }
@@ -117,17 +118,15 @@ public class FromGatConverter {
      * @param cls the .gat String serialization of a Class.
      */
     private void bindClass(String cls) {
-        String[] clsElements = cls.split("=");
-        String[] clsShape    = clsElements[0].substring(1).split("\\|");
-        String[] clsInfo     = clsElements[1].split("\\\\\\|", -1);
-        String   clsName     = clsInfo[0];
-        String   rdfsLabel   = clsInfo[1];
-        String   rdfsComment = clsInfo[2];
-        double   x = Double.valueOf(clsShape[0]);
-        double   y = Double.valueOf(clsShape[1]);
-        double   rx = Double.valueOf(clsShape[2]);
-        double   ry = Double.valueOf(clsShape[3]);
-        Color    col = Color.web(clsShape[4]);
+        String[] clsElements = cls.split("\\\\\\|", -1);
+        double x = Double.valueOf(clsElements[0].substring(1));
+        double y = Double.valueOf(clsElements[1]);
+        double rx = Double.valueOf(clsElements[2]);
+        double ry = Double.valueOf(clsElements[3]);
+        Color  c  = Color.web(clsElements[4]);
+        Text   name = new Text(clsElements[5]);
+        String label = clsElements[6];
+        String comment = clsElements[7];
 
         resizeEdgeOfCanvas(x, y);
 
@@ -136,17 +135,15 @@ public class FromGatConverter {
         compiledCls.setLayoutY(y);
 
         Ellipse ellipse = new Ellipse(x, y, rx, ry);
-        ellipse.setFill(col);
+        ellipse.setFill(c);
         ellipse.setStroke(Color.BLACK);
-
-        Text name = new Text(clsName);
 
         compiledCls.getChildren().addAll(ellipse, name);
         compiledElements.add(compiledCls);
 
         try {
-            if (!rdfsLabel.equals("") || !rdfsComment.equals(""))
-                classes.add(new Vertex(compiledCls, rdfsLabel, rdfsComment));
+            if (!label.equals("") || !comment.equals(""))
+                classes.add(new Vertex(compiledCls, label, comment));
             else classes.add(new Vertex(compiledCls));
         } catch (Vertex.OutsideElementException e) {
             e.printStackTrace();
@@ -190,7 +187,7 @@ public class FromGatConverter {
             sub.addOutgoingEdge(edge);
             obj.addIncomingEdge(edge);
             properties.add(edge);
-        } else throw new PropertyElemMissingException((sub == null ? "sub" : " obj") + " missing from property " + name.getText());
+            } else throw new PropertyElemMissingException((sub == null ? "sub" : " obj") + " missing from property " + name.getText());
     }
 
     /**
@@ -230,6 +227,7 @@ public class FromGatConverter {
     /**
      * Accessor methods.
      */
+    public boolean isSuccessful() { return bindComplete; }
     public double getCanvasHeight() { return canvasHeight; }
     public double getCanvasWidth() { return canvasWidth; }
     public ArrayList<Vertex> getClasses() { return classes; }
