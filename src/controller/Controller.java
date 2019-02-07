@@ -147,7 +147,7 @@ public final class Controller implements Initializable {
 
         ArrayList<Map<String, String>> updatedData = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", data);
 
-        if (updatedData != null) prefixes = updatedData.get(0);
+        if (updatedData != null && updatedData.get(0) != null) prefixes = updatedData.get(0);
     }
 
     /**
