@@ -199,22 +199,23 @@ public final class Controller implements Initializable {
                 }
                 FromGatConverter binder = new FromGatConverter(new String(rawGraph));
                 binder.bindGraph();
-                if (binder.isSuccessful()){
-                    classes.addAll(binder.getClasses());
-                    properties.addAll(binder.getProperties());
-                    drawPane.setPrefSize(binder.getCanvasWidth(), binder.getCanvasHeight());
-                    drawPane.getChildren().addAll(binder.getCompiledElements());
-                    for (StackPane compiledProperty : binder.getCompiledProperties()){
-                        drawPane.getChildren().add(compiledProperty);
-                        compiledProperty.toBack();
-                    }
-                    statusLbl.setText("Graph load successful.");
-                } else {
-                    statusLbl.setText("Graph load failed: Properties did not bind correctly.");
+
+                classes.addAll(binder.getClasses());
+                properties.addAll(binder.getProperties());
+                drawPane.setPrefSize(binder.getCanvasWidth(), binder.getCanvasHeight());
+                drawPane.getChildren().addAll(binder.getCompiledElements());
+                for (StackPane compiledProperty : binder.getCompiledProperties()){
+                    drawPane.getChildren().add(compiledProperty);
+                    compiledProperty.toBack();
                 }
+                statusLbl.setText("Graph load successful.");
             } catch (IOException e) {
                 statusLbl.setText("Graph load failed: IOException occurred while reading the graph from file. ");
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
+            } catch (FromGatConverter.PropertyElemMissingException e) {
+                statusLbl.setText("Graph load failed: " + e.getMissingElement() + " is missing from " +
+                        e.getPropertyName() + ". Try adding the arrow again. ");
+                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
         } else statusLbl.setText("Graph load cancelled.");
     }
@@ -649,7 +650,15 @@ public final class Controller implements Initializable {
                 "\nCorrelated: " + dataIntegrator.getCorrelations().toString() +
                 "\nUncorrelated (assumed constant): " + dataIntegrator.uncorrelatedClassesToString());
 
-        instanceData = dataIntegrator.generate();
+        try {
+            instanceData = dataIntegrator.generate();
+        } catch (DataIntegrator.PrefixMissingException e) {
+            statusLbl.setText("Data Integration failed: '" + e.getMissing() + "' is referenced in graph but not " +
+                    "defined in the Prefixes Menu. ");
+            LOGGER.log(Level.SEVERE, "Integration failed: ", e);
+            return;
+        }
+
         File saveFile = showSaveFileDialog(
                 "instance.ttl",
                 "Save Instance-Level Turtle Document",

@@ -18,17 +18,22 @@ import model.graph.Arrow;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Class for turning a loaded .gat file into a graph.
  */
 public class FromGatConverter {
-    private static final Logger LOGGER = Logger.getLogger(FromGatConverter.class.getName());
+    public class PropertyElemMissingException extends Exception {
+        private String elementMissing, propertyName;
 
-    private class PropertyElemMissingException extends Exception {
-        PropertyElemMissingException(String msg) { super(msg); }
+        PropertyElemMissingException(String elementMissing, String propertyName) {
+            super(elementMissing + " missing from " + propertyName);
+            this.elementMissing = elementMissing;
+            this.propertyName = propertyName;
+        }
+
+        public String getMissingElement() { return elementMissing; }
+        public String getPropertyName() { return propertyName; }
     }
 
     private ArrayList<Vertex> classes = new ArrayList<>();
@@ -37,7 +42,6 @@ public class FromGatConverter {
     private ArrayList<StackPane> compiledProperties = new ArrayList<>();
     private double canvasWidth, canvasHeight;
     private String gat;
-    private boolean bindComplete = true;
 
     public FromGatConverter(String gat){
         this.gat = gat;
@@ -46,21 +50,16 @@ public class FromGatConverter {
     /**
      * Splits the output of the .gat file into it's respective elements and attempts to bind them.
      */
-    public void bindGraph() {
+    public void bindGraph() throws PropertyElemMissingException {
         String[] elements = Arrays.stream(gat.split("]\\[|\\[|]"))
                 .filter(s -> !s.equals(""))
                 .toArray(String[]::new);
 
-        try {
-            for (String element : elements) {
-                if (element.charAt(0) == 'L') bindLiteral(element);
-                else if (element.charAt(0) == 'C') bindClass(element);
-                else if (element.charAt(0) == 'A') bindProperty(element);
-                else if (element.charAt(0) == 'G') bindCanvas(element);
-            }
-        } catch (PropertyElemMissingException e){
-            LOGGER.log(Level.WARNING, "Property missing: ", e);
-            bindComplete = false;
+        for (String element : elements) {
+            if (element.charAt(0) == 'L') bindLiteral(element);
+            else if (element.charAt(0) == 'C') bindClass(element);
+            else if (element.charAt(0) == 'A') bindProperty(element);
+            else if (element.charAt(0) == 'G') bindCanvas(element);
         }
     }
 
@@ -187,7 +186,7 @@ public class FromGatConverter {
             sub.addOutgoingEdge(edge);
             obj.addIncomingEdge(edge);
             properties.add(edge);
-            } else throw new PropertyElemMissingException((sub == null ? "sub" : " obj") + " missing from property " + name.getText());
+        } else throw new PropertyElemMissingException((sub == null ? "subject" : "object"), name.getText());
     }
 
     /**
@@ -227,7 +226,6 @@ public class FromGatConverter {
     /**
      * Accessor methods.
      */
-    public boolean isSuccessful() { return bindComplete; }
     public double getCanvasHeight() { return canvasHeight; }
     public double getCanvasWidth() { return canvasWidth; }
     public ArrayList<Vertex> getClasses() { return classes; }

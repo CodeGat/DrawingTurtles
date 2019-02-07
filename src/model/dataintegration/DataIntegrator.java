@@ -15,8 +15,15 @@ import static model.conceptual.Vertex.GraphElemType.*;
  * Responsible for the generation of instance data, as well as correlating .csv headers and their .ttl counterparts.
  */
 public class DataIntegrator {
-    class PrefixMissingException extends Exception {
-        PrefixMissingException(String msg){ super(msg); }
+    public class PrefixMissingException extends Exception {
+        private String missing;
+
+        PrefixMissingException(String msg, String missing){
+            super(msg);
+            this.missing = missing;
+        }
+
+        public String getMissing(){ return missing; }
     }
 
     private Map<String, Integer> headers;
@@ -42,11 +49,12 @@ public class DataIntegrator {
      * Accessible method for generating instance-level data given a .csv and the graph. Recordwise generation.
      * @return String representation of the instance-level data.
      */
-    public String generate() {
+    public String generate() throws PrefixMissingException {
         StringBuilder instanceData = new StringBuilder();
         ttlClasses = classes.stream().filter(c -> c.getElementType() == CLASS).collect(Collectors.toList());
 
-        csv.forEach(record -> instanceData.append(generateInstanceDataOf(record)));
+        for (CSVRecord record : csv)
+            instanceData.append(generateInstanceDataOf(record));
 
         return instanceData.toString();
     }
@@ -56,7 +64,7 @@ public class DataIntegrator {
      * @param record the record used to populate the resulting instance-level data.
      * @return the generated instance-level data as a String.
      */
-    private String generateInstanceDataOf(CSVRecord record) {
+    private String generateInstanceDataOf(CSVRecord record) throws PrefixMissingException {
         StringBuilder instanceData = new StringBuilder();
 
         for (Vertex klass : ttlClasses){
@@ -65,12 +73,12 @@ public class DataIntegrator {
             final String subject = generateLongformURI(klass, record);
             if (klass.getRdfsLabel() != null){
                 instanceTriple =
-                        "<" + subject + "> <http://www.w3.org/2000/01/rdf-schema#label> \"" + klass.getRdfsLabel() + "\"";
+                        subject + " <http://www.w3.org/2000/01/rdf-schema#label> \"" + klass.getRdfsLabel() + "\"\n";
                 instanceTriples.append(instanceTriple);
             }
             if (klass.getRdfsComment() != null){
                 instanceTriple =
-                        "<" + subject + "> <http://www.w3.org/2000/01/rdf-schema#comment> \"" + klass.getRdfsComment() + "\"";
+                        subject + " <http://www.w3.org/2000/01/rdf-schema#comment> \"" + klass.getRdfsComment() + "\"\n";
                 instanceTriples.append(instanceTriple);
             }
 
@@ -94,7 +102,7 @@ public class DataIntegrator {
      * @param record the data to populate the Vertices instance-level fields.
      * @return the instance data of the given Vertex as a String.
      */
-    private String generateLongformURI(Vertex klass, CSVRecord record) {
+    private String generateLongformURI(Vertex klass, CSVRecord record) throws PrefixMissingException {
         if (klass.getElementType() == GLOBAL_LITERAL)
             return klass.getName();
         else if (klass.getElementType() == CLASS) {
@@ -103,20 +111,14 @@ public class DataIntegrator {
             String   prefixAcronym = nameParts[0];
             String   nameURI = nameParts[1];
 
-            String longformPrefix;
-            try {
-                longformPrefix = generateLongformPrefix(prefixAcronym);
-            } catch (PrefixMissingException e) {
-                e.printStackTrace();
-                return null;
-            }
+            String longformPrefix = generateLongformPrefix(prefixAcronym);
 
             String instanceData = getInstanceLevelData(klass, record);
 
             if (instanceData != null) return "<" + longformPrefix + instanceData + ">";
             else return "<" + longformPrefix + nameURI + ">";
-        } else if (klass.getElementType() == INSTANCE_LITERAL){ // TODO: 6/02/2019 honor different types
-            return "\"" + getInstanceLevelData(klass, record) + "\"";
+        } else if (klass.getElementType() == INSTANCE_LITERAL){
+            return "\"" + getInstanceLevelData(klass, record) + "\"^^" + klass.getDataType();
         }
         return null;
     }
@@ -143,18 +145,13 @@ public class DataIntegrator {
      * @param edge the Edge we are expanding.
      * @return the String form of the expanded Edge.
      */
-    private String generateLongformURI(Edge edge) {
+    private String generateLongformURI(Edge edge) throws PrefixMissingException {
         String name = edge.getName();
         String[] nameParts = name.split(":");
         String prefixAcronym = nameParts[0];
         String nameURI = nameParts[1];
 
-        try {
-            return "<" + generateLongformPrefix(prefixAcronym) + nameURI + ">";
-        } catch (PrefixMissingException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return "<" + generateLongformPrefix(prefixAcronym) + nameURI + ">";
     }
 
     /**
@@ -172,7 +169,7 @@ public class DataIntegrator {
                         .orElse(null);
 
         if (matchingPrefix == null)
-            throw new PrefixMissingException("Failed to find matching prefix '" + acronym + "' in prefixes.");
+            throw new PrefixMissingException("Failed to find matching prefix '" + acronym + "' in prefixes.", acronym);
         else return matchingPrefix.getValue();
     }
 
