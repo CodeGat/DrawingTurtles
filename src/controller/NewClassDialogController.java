@@ -15,7 +15,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
-public class NewClassDialog extends AbstractDataSharingController<String> implements Initializable {
+public class NewClassDialogController extends AbstractDataSharingController<String> implements Initializable {
     private final BooleanProperty isClasslike = new SimpleBooleanProperty(false);
     private final BooleanProperty isLiterallike = new SimpleBooleanProperty(false);
 

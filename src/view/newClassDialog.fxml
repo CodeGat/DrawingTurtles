@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.text.Text?>
 
-<BorderPane prefHeight="133.0" prefWidth="396.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" onKeyPressed="#keyPressedAction" fx:controller="controller.NewClassDialog">
+<BorderPane prefHeight="133.0" prefWidth="396.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" onKeyPressed="#keyPressedAction" fx:controller="controller.NewClassDialogController">
     <center>
         <GridPane vgap="10">
             <padding><Insets bottom="10" left="10" right="10" top="10" /></padding>
