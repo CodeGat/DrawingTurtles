@@ -231,7 +231,6 @@ public final class Controller implements Initializable {
         if (loadFile != null){
             lastDirectory = loadFile.getParent();
             drawPane.getChildren().clear();
-            prefixes.clear();
             classes.clear();
             properties.clear();
 
