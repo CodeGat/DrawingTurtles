@@ -499,7 +499,7 @@ public final class Controller implements Initializable {
                 "|[+\\-]?\\d+" + //integer
                 "|[+\\-]?\\d*\\.\\d+" + // decimal
                 "|([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+"; // double
-        String instanceLiteralRegex = "(?<!\")(.* .*)*(?<!\")";
+        String instanceLiteralRegex = "(?<!\")[^:]*(?!\")";
 
         resizeEdgeOfCanvas(x, y);
 

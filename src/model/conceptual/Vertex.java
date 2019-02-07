@@ -33,7 +33,7 @@ public class Vertex {
             "|[+\\-]?\\d+" + //integer
             "|[+\\-]?\\d*\\.\\d+" + // decimal
             "|([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+"; // double;
-    private static final String instanceLiteralRegex = "(?<!\")(.* .*)*(?<!\")";
+    private static final String instanceLiteralRegex = "(?<!\")[^:](?!\")";
 
     private GraphElemType elementType;
     private String dataType;

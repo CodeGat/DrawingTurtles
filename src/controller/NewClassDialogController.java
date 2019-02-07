@@ -31,7 +31,7 @@ public class NewClassDialogController extends AbstractDataSharingController<Stri
             final String stringLitRegex = "\".+\"";
             final String otherLitRegex = "\".+\"\\^\\^.*";
             final String langLitRegex = "\".+\"@.*";
-            final String instanceLitRegex = "(?<!\")(.* .*)*(?<!\")";
+            final String instanceLitRegex = "(?<!\")[^:]*(?!\")";
             final String booleanLitRegex = "true|false";
             final String integerLitRegex = "[+\\-]?\\d+";
             final String decimalLitRegex = "[+\\-]?\\d*\\.\\d+";

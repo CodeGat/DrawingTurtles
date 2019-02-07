@@ -68,10 +68,10 @@ public class Converter {
         }
 
         // reminding the user that instance literals will be replaced by their corresponding instance level data when
-        //    converted to RDFXML.
+        //    converted to instance-level .ttl.
         if (classes.stream().anyMatch(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
             fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
-                    "d during RDFXML creation: \n# ");
+                    "d during instance-level .ttl creation: \n# ");
             classes.stream()
                     .filter(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)
                     .forEach(c -> fixString.append(c.getName()).append(", "));
@@ -98,8 +98,8 @@ public class Converter {
             addedPrefixesSetTmp.removeAll(ttlPrefixSet);
 
             if (ttlPrefixSetTmp.size() > 0) {
-                fixString.append("# The following prefixes are defined in the graph but not in the prefixes menu (RDF" +
-                        "XML creation will not work):\n#   ");
+                fixString.append("# The following prefixes are defined in the graph but not in the prefixes menu (ins" +
+                        "tance-level .ttl creation will not work):\n#   ");
                 ttlPrefixSetTmp.forEach(p -> fixString.append(p).append(", "));
                 fixString.delete(fixString.length() - 2, fixString.length());
                 fixString.append(".\n");
@@ -111,16 +111,6 @@ public class Converter {
                 fixString.delete(fixString.length() - 2, fixString.length());
                 fixString.append(".\n\n");
             }
-        }
-
-        if (classes.stream().anyMatch(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
-            fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
-                    "d during RDFXML creation: \n# ");
-            classes.stream()
-                    .filter(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)
-                    .forEach(c -> fixString.append(c.getName()).append(", "));
-            fixString.delete(fixString.length() - 2, fixString.length());
-            fixString.append(".\n\n");
         }
 
         return fixString.length() > fixStringInitLength ? fixString.toString() : "";
