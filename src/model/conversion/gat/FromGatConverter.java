@@ -203,7 +203,7 @@ public class FromGatConverter {
     private Vertex findClassUnder(double x, double y) {
         for (Vertex klass : classes) {
             Bounds classBounds = klass.getBounds();
-            Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
+            Bounds pointBounds = new BoundingBox(x-2, y-2, 4, 4);
 
             if (classBounds.intersects(pointBounds)) return klass;
         }
