@@ -103,7 +103,7 @@ public class DataIntegrator {
      * @return the instance data of the given Vertex as a String.
      */
     private String generateLongformURI(Vertex klass, CSVRecord record) throws PrefixMissingException {
-        if (klass.getElementType() == GLOBAL_LITERAL)
+        if (klass.getElementType() == GLOBAL_LITERAL || klass.isBlank())
             return klass.getName();
         else if (klass.getElementType() == CLASS) {
             String   name = klass.getName();
