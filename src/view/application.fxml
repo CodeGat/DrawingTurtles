@@ -4,6 +4,9 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.text.Text?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.image.ImageView?>
+
 <BorderPane fx:id="root"
             xmlns="http://javafx.com/javafx/8.0.172-ea"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -23,6 +26,24 @@
             <Separator/>
             <Button fx:id="instrBtn" maxWidth="Infinity" onMouseClicked="#showInstructionsAction" text="Instructions"/>
             <Button fx:id="optionsBtn" maxWidth="Infinity" onMouseClicked="#showOptionsAction" text="Options"/>
+            <Separator/>
+            <Text text="Workflows: "/>
+            <Text text="Turtle: "/>
+            <GridPane hgap="5" vgap="5">
+                <ImageView fx:id="ttlPrefImv" GridPane.columnIndex="0" GridPane.rowIndex="0" fitWidth="15" fitHeight="15"/>
+                <Text text="prefixes checked" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                <ImageView fx:id="ttlGraphImv" GridPane.columnIndex="0" GridPane.rowIndex="1" fitWidth="15" fitHeight="15"/>
+                <Text text="graph created" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+            </GridPane>
+            <Text text="Instance-Level Turtle:"/>
+            <GridPane hgap="5" vgap="5">
+                <ImageView fx:id="instPrefImv" GridPane.columnIndex="0" GridPane.rowIndex="0" fitWidth="15" fitHeight="15"/>
+                <Text text="prefixes checked" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                <ImageView fx:id="instGraphImv" GridPane.columnIndex="0" GridPane.rowIndex="1" fitWidth="15" fitHeight="15"/>
+                <Text text="graph created" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                <ImageView fx:id="instCsvImv" GridPane.columnIndex="0" GridPane.rowIndex="2" fitWidth="15" fitHeight="15"/>
+                <Text text=".csv ingested" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+            </GridPane>
         </ToolBar>
     </left>
     <top>

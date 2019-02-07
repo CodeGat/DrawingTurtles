@@ -1,9 +1,13 @@
 package controller;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.conceptual.Edge;
@@ -61,6 +65,7 @@ public final class Controller implements Initializable {
     @FXML protected ScrollPane scrollPane;
     @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, instanceBtn,
             instrBtn, optionsBtn;
+    @FXML ImageView ttlPrefImv, ttlGraphImv, instPrefImv, instGraphImv, instCsvImv;
     @FXML protected Label  statusLbl;
 
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
@@ -78,11 +83,47 @@ public final class Controller implements Initializable {
 
     static String lastDirectory;
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    private BooleanProperty prefixesInspected = new SimpleBooleanProperty(false);
+    private BooleanProperty graphCreated = new SimpleBooleanProperty(false);
+    private BooleanProperty csvIngested = new SimpleBooleanProperty(false);
+
+    @Override public void initialize(URL location, ResourceBundle resources) {
+        Image cross = new Image("/view/images/cross.png");
+        Image tick  = new Image("/view/images/tick.png");
+        ttlPrefImv.setImage(cross);
+        ttlGraphImv.setImage(cross);
+        instPrefImv.setImage(cross);
+        instGraphImv.setImage(cross);
+        instCsvImv.setImage(cross);
+
         prefixes.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
         prefixes.put("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
         prefixes.put("owl", "http://www.w3.org/2002/07/owl#");
+
+        prefixesInspected.addListener(((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()){
+                ttlPrefImv.setImage(tick);
+                instPrefImv.setImage(tick);
+            } else {
+                ttlPrefImv.setImage(cross);
+                instPrefImv.setImage(cross);
+            }
+        }));
+
+        graphCreated.addListener((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()){
+                ttlGraphImv.setImage(tick);
+                instGraphImv.setImage(tick);
+            } else {
+                ttlGraphImv.setImage(cross);
+                instGraphImv.setImage(cross);
+            }
+        });
+
+        csvIngested.addListener(((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()) instCsvImv.setImage(tick);
+            else instCsvImv.setImage(cross);
+        }));
     }
 
     /**
@@ -148,6 +189,7 @@ public final class Controller implements Initializable {
         ArrayList<Map<String, String>> updatedData = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", data);
 
         if (updatedData != null && updatedData.get(0) != null) prefixes = updatedData.get(0);
+        prefixesInspected.setValue(true);
     }
 
     /**
@@ -208,6 +250,8 @@ public final class Controller implements Initializable {
                     drawPane.getChildren().add(compiledProperty);
                     compiledProperty.toBack();
                 }
+                graphCreated.setValue(true);
+                prefixesInspected.setValue(false);
                 statusLbl.setText("Graph load successful.");
             } catch (IOException e) {
                 statusLbl.setText("Graph load failed: IOException occurred while reading the graph from file. ");
@@ -323,6 +367,8 @@ public final class Controller implements Initializable {
             arrow = null;
             srcClick = true;
         }
+        if (classes.size() > 0) graphCreated.setValue(true);
+        else graphCreated.setValue(false);
     }
 
     /**
@@ -625,6 +671,7 @@ public final class Controller implements Initializable {
                 LOGGER.info("Ingested " + loadFile.getName() + ".\nFound csv headers: " + headers);
                 instanceBtn.setDisable(false);
                 parser.close();
+                csvIngested.setValue(true);
             } catch (IOException e) {
                 e.printStackTrace();
             }

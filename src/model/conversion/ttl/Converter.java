@@ -109,7 +109,7 @@ public class Converter {
                         "graph:\n#   ");
                 addedPrefixesSetTmp.forEach(p -> fixString.append(p).append(", "));
                 fixString.delete(fixString.length() - 2, fixString.length());
-                fixString.append(".\n");
+                fixString.append(".\n\n");
             }
         }
 
