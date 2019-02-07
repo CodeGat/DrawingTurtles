@@ -108,18 +108,8 @@ public class Converter {
                         "graph:\n#   ");
                 addedPrefixesSetTmp.forEach(p -> fixString.append(p).append(", "));
                 fixString.delete(fixString.length() - 2, fixString.length());
-                fixString.append(".\n");
+                fixString.append(".\n\n");
             }
-        }
-
-        if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
-            fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
-                    "d during RDFXML creation: \n# ");
-            classes.stream()
-                    .filter(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)
-                    .forEach(c -> fixString.append(c.getName()).append(", "));
-            fixString.delete(fixString.length() - 2, fixString.length());
-            fixString.append(".\n\n");
         }
 
         return fixString.length() > fixStringInitLength ? fixString.toString() : "";
