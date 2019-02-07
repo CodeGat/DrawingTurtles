@@ -199,7 +199,10 @@ public final class Controller implements Initializable {
      *   a user-specified .gat file. That's a Graph Accessor Type format, not just my name...
      */
     @FXML public void saveGraphAction() {
-        File saveFile = showSaveFileDialog("graph.gat", "Save Graph As", null);
+        File saveFile = showSaveFileDialog(
+                "graph.gat",
+                "Save Graph As",
+                new FileChooser.ExtensionFilter("Graph Accessor Type Files (*.gat)", "*.gat"));
         if (saveFile != null){
             ToGatConverter converter = new ToGatConverter(
                     drawPane.getWidth(),
@@ -306,7 +309,7 @@ public final class Controller implements Initializable {
         File saveFile = showSaveFileDialog(
                 "ontology.ttl",
                 "Save Turtle Ontology As",
-                null
+                new FileChooser.ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
         );
         if (saveFile != null){
             String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties, config);
@@ -330,7 +333,7 @@ public final class Controller implements Initializable {
         File saveFile = showSaveFileDialog(
                 "ontology.png",
                 "Save Conceptual Image As",
-                new FileChooser.ExtensionFilter("png files (*.png)", "*.png")
+                new FileChooser.ExtensionFilter("Portable Network Graphic Files (*.png)", "*.png")
         );
         if (saveFile != null){
             try {

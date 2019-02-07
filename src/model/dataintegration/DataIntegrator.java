@@ -107,7 +107,7 @@ public class DataIntegrator {
      * @return the instance data of the given Vertex as a String.
      */
     private String generateLongformURI(Vertex klass, CSVRecord record) throws PrefixMissingException {
-        if (klass.getElementType() == GLOBAL_LITERAL)
+        if (klass.getElementType() == GLOBAL_LITERAL || klass.isIri())
             return klass.getName();
         else if (klass.isBlank())
             return klass.getName() + blankNodePermutation;
@@ -165,12 +165,16 @@ public class DataIntegrator {
      * @return the String form of the expanded Edge.
      */
     private String generateLongformURI(Edge edge) throws PrefixMissingException {
-        String name = edge.getName();
-        String[] nameParts = name.split(":");
-        String prefixAcronym = nameParts[0];
-        String nameURI = nameParts[1];
+        if (edge.isIri()){
+            return edge.getName();
+        } else {
+            String name = edge.getName();
+            String[] nameParts = name.split(":");
+            String prefixAcronym = nameParts[0];
+            String nameURI = nameParts[1];
 
-        return "<" + generateLongformPrefix(prefixAcronym) + nameURI + ">";
+            return "<" + generateLongformPrefix(prefixAcronym) + nameURI + ">";
+        }
     }
 
     /**
