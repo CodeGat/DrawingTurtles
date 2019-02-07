@@ -91,7 +91,7 @@ public class Converter {
                 .collect(Collectors.toCollection(HashSet::new));
         Set<String> addedPrefixesSet = prefixes.keySet();
 
-        if (!addedPrefixesSet.equals(ttlClassPrefixesStream)){
+        if (!addedPrefixesSet.equals(ttlPrefixSet)){
             Set<String> ttlPrefixSetTmp = new HashSet<>(ttlPrefixSet);
             Set<String> addedPrefixesSetTmp = new HashSet<>(addedPrefixesSet);
             ttlPrefixSetTmp.removeAll(addedPrefixesSet);
@@ -110,6 +110,16 @@ public class Converter {
                 fixString.delete(fixString.length() - 2, fixString.length());
                 fixString.append(".\n");
             }
+        }
+
+        if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
+            fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
+                    "d during RDFXML creation: \n# ");
+            classes.stream()
+                    .filter(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)
+                    .forEach(c -> fixString.append(c.getName()).append(", "));
+            fixString.delete(fixString.length() - 2, fixString.length());
+            fixString.append(".\n\n");
         }
 
         return fixString.length() > fixStringInitLength ? fixString.toString() : "";

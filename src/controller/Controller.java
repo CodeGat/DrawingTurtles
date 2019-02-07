@@ -1,8 +1,13 @@
 package controller;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.conceptual.Edge;
@@ -43,6 +48,7 @@ import java.awt.image.RenderedImage;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -51,7 +57,7 @@ import java.util.logging.Logger;
 /**
  * The Controller for application.fxml: takes care of actions from the application.
  */
-public final class Controller {
+public final class Controller implements Initializable {
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
     @FXML protected BorderPane root;
@@ -59,10 +65,11 @@ public final class Controller {
     @FXML protected ScrollPane scrollPane;
     @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, rdfXmlBtn,
             instrBtn, optionsBtn;
+    @FXML ImageView ttlPrefImv, ttlGraphImv, instPrefImv, instGraphImv, instCsvImv;
     @FXML protected Label  statusLbl;
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
-    private Map<String, String> prefixes = new HashMap<>();
+    private Map<String, String>     prefixes   = new HashMap<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
@@ -72,6 +79,45 @@ public final class Controller {
 
     private List<CSVRecord> csv;
     private Map<String, Integer> headers;
+
+    private BooleanProperty prefixesInspected = new SimpleBooleanProperty(false);
+    private BooleanProperty graphCreated = new SimpleBooleanProperty(false);
+    private BooleanProperty csvIngested = new SimpleBooleanProperty(false);
+
+    @Override public void initialize(URL location, ResourceBundle resources) {
+        Image cross = new Image("/view/images/cross.png");
+        Image tick  = new Image("/view/images/tick.png");
+        ttlPrefImv.setImage(cross);
+        ttlGraphImv.setImage(cross);
+        instPrefImv.setImage(cross);
+        instGraphImv.setImage(cross);
+        instCsvImv.setImage(cross);
+
+        prefixesInspected.addListener(((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()){
+                ttlPrefImv.setImage(tick);
+                instPrefImv.setImage(tick);
+            } else {
+                ttlPrefImv.setImage(cross);
+                instPrefImv.setImage(cross);
+            }
+        }));
+
+        graphCreated.addListener((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()){
+                ttlGraphImv.setImage(tick);
+                instGraphImv.setImage(tick);
+            } else {
+                ttlGraphImv.setImage(cross);
+                instGraphImv.setImage(cross);
+            }
+        });
+
+        csvIngested.addListener(((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()) instCsvImv.setImage(tick);
+            else instCsvImv.setImage(cross);
+        }));
+    }
 
     /**
      * Method invoked on any key press in the main application.
@@ -136,6 +182,7 @@ public final class Controller {
         ArrayList<Map<String, String>> updatedData = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", data);
 
         if (updatedData != null) prefixes = updatedData.get(0);
+        prefixesInspected.setValue(true);
     }
 
     /**
@@ -191,6 +238,8 @@ public final class Controller {
                     drawPane.getChildren().add(compiledProperty);
                     compiledProperty.toBack();
                 }
+                graphCreated.setValue(true);
+                prefixesInspected.setValue(false);
                 statusLbl.setText("Graph load successful.");
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
@@ -301,6 +350,8 @@ public final class Controller {
             arrow = null;
             srcClick = true;
         }
+        if (classes.size() > 0) graphCreated.setValue(true);
+        else graphCreated.setValue(false);
     }
 
     /**
@@ -606,6 +657,7 @@ public final class Controller {
                 LOGGER.info("Ingested " + loadFile.getName() + ".\nFound csv headers: " + headers);
                 rdfXmlBtn.setDisable(false);
                 parser.close();
+                csvIngested.setValue(true);
             } catch (IOException e) {
                 e.printStackTrace();
             }

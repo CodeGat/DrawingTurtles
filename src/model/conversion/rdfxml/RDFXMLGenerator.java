@@ -15,7 +15,7 @@ import static model.conceptual.Vertex.GraphElemType.*;
  * Responsible for the generation of RDFXML, as well as correlating .csv headers and their .ttl counterparts.
  */
 public class RDFXMLGenerator {
-    public class PrefixMissingException extends Exception {
+    class PrefixMissingException extends Exception {
         PrefixMissingException(String msg){ super(msg); }
     }
 
