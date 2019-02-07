@@ -34,6 +34,8 @@ public class DataIntegrator {
     private Pair<ArrayList<String>, ArrayList<Vertex>> csvTtlUncorrelated;
     private List<Vertex> ttlClasses;
 
+    private static int blankNodePermutation = 0;
+
     public DataIntegrator(
             Map<String, Integer> headers,
             List<CSVRecord> csv,
@@ -66,6 +68,8 @@ public class DataIntegrator {
      */
     private String generateInstanceDataOf(CSVRecord record) throws PrefixMissingException {
         StringBuilder instanceData = new StringBuilder();
+
+        blankNodePermutation += 1;
 
         for (Vertex klass : ttlClasses){
             StringBuilder instanceTriples = new StringBuilder();
@@ -103,8 +107,10 @@ public class DataIntegrator {
      * @return the instance data of the given Vertex as a String.
      */
     private String generateLongformURI(Vertex klass, CSVRecord record) throws PrefixMissingException {
-        if (klass.getElementType() == GLOBAL_LITERAL || klass.isBlank())
+        if (klass.getElementType() == GLOBAL_LITERAL)
             return klass.getName();
+        else if (klass.isBlank())
+            return klass.getName() + blankNodePermutation;
         else if (klass.getElementType() == CLASS) {
             String   name = klass.getName();
             String[] nameParts = name.split(":");
