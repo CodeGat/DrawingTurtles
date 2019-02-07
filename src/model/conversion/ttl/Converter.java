@@ -339,9 +339,11 @@ public class Converter {
                 dedentTab();
                 objectStr += tabs + "]";
             } else objectStr = "[" + predicateObjectList + "]";
-        }
-        else if (object.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL) objectStr = "\"" + objectStr + "\"";
-        else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
+        } else if (object.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL) {
+            String dataType = object.getDataType();
+            objectStr = "\"" + objectStr + "\"" +
+                    (dataType != null && dataType.length() != 0 ? "^^" + object.getDataType() : "");
+        } else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
 
         return objectStr;
     }

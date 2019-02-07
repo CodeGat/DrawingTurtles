@@ -118,7 +118,9 @@ public class DataIntegrator {
             if (instanceData != null) return "<" + longformPrefix + instanceData + ">";
             else return "<" + longformPrefix + nameURI + ">";
         } else if (klass.getElementType() == INSTANCE_LITERAL){
-            return "\"" + getInstanceLevelData(klass, record) + "\"^^" + klass.getDataType();
+            String dataType = klass.getDataType();
+            return "\"" + getInstanceLevelData(klass, record) + "\"" +
+                    (dataType != null && dataType.length() != 0 ? "^^" + klass.getDataType() : "");
         }
         return null;
     }

@@ -28,6 +28,12 @@ public class Vertex {
 
     private static char nextBlankNodeName = (char) 96;
     private static final ArrayList<Character> blankNodeNames = new ArrayList<>();
+    private static final String globalLiteralRegex = "\".*\"(\\^\\^.*|@.*)?" + // unspecified / String
+            "|true|false" + // boolean
+            "|[+\\-]?\\d+" + //integer
+            "|[+\\-]?\\d*\\.\\d+" + // decimal
+            "|([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+"; // double;
+    private static final String instanceLiteralRegex = "(?<!\")(.* .*)*(?<!\")";
 
     private GraphElemType elementType;
     private String dataType;
@@ -80,8 +86,8 @@ public class Vertex {
         }
 
         if (container.getChildren().get(0) instanceof Ellipse) this.elementType = GraphElemType.CLASS;
-        else if (this.name.matches("[^\"](.* .*)*[^\"]")) this.elementType = GraphElemType.INSTANCE_LITERAL;
-        else this.elementType = GraphElemType.GLOBAL_LITERAL;
+        else if (this.name.matches(globalLiteralRegex)) this.elementType = GraphElemType.GLOBAL_LITERAL;
+        else if (this.name.matches(instanceLiteralRegex)) this.elementType = GraphElemType.INSTANCE_LITERAL;
 
         incomingEdges = new ArrayList<>();
         outgoingEdges = new ArrayList<>();
@@ -307,6 +313,13 @@ public class Vertex {
     }
 
     public String getDataType() {
-        return this.elementType == GraphElemType.CLASS ? null : dataType;
+        if (dataType == null) return null;
+        else if (dataType.matches("http(s)?:.*") && elementType != GraphElemType.CLASS)
+            return "<" + dataType + ">";
+        else if (this.elementType != GraphElemType.CLASS)
+            return dataType;
+
+        System.out.println("data type was not null or a class or an iri, must have been empty string. ");
+        return null;
     }
 }
