@@ -219,7 +219,7 @@ public class Converter {
         String subjectString = convertSubject(subject);
         String predicateObjectString = convertPredicateObjectList(subject);
 
-        if (predicateObjectString.length() == 0 && !isOntology){
+        if (predicateObjectString.length() == 0 && !isOntology && subject.getTypeDefinition() == null) {
             return "";
         } else if (predicateObjectString.length() == 0)
             subjectString = subjectString.substring(0, subjectString.length() - 4);
@@ -354,13 +354,14 @@ public class Converter {
      */
     private static String convertSubject(Vertex klass){
         String subname = klass.getName();
+        subname = subname.matches("http:.*|mailto:.*") ? "<" + subname + ">" : subname;
+        String typeDef;
 
-        if (isOntology) {
-            String typeDef = klass.getTypeDefinition() != null ? klass.getTypeDefinition() : "owl:Class";
+        if (isOntology)
+            typeDef = " a " + (klass.getTypeDefinition() != null ? klass.getTypeDefinition() + " ;" : "owl:Class ;");
+        else typeDef = klass.getTypeDefinition() != null ? " a " + klass.getTypeDefinition() + " ;" : "    ";
 
-            subname = subname.matches("http:.*|mailto:.*") ? "<" + subname + ">" : subname;
-            return subname + " a " + typeDef + " ;\n" + tabs;
-        } else return subname + "    \n" + tabs;
+        return subname + typeDef + "\n" + tabs;
     }
 
     private static void indentTab() { tabs += "\t"; }
