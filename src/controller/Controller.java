@@ -334,10 +334,12 @@ public final class Controller implements Initializable {
 
             for (Edge incEdge : klass.getIncomingEdges()){
                 drawPane.getChildren().remove(incEdge.getContainer());
+                incEdge.getSubject().getOutgoingEdges().remove(incEdge);
                 properties.remove(incEdge);
             }
             for (Edge outEdge : klass.getOutgoingEdges()){
                 drawPane.getChildren().remove(outEdge.getContainer());
+                outEdge.getObject().getIncomingEdges().remove(outEdge);
                 properties.remove(outEdge);
             }
             classes.remove(klass);
