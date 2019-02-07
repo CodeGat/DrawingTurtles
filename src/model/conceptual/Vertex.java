@@ -26,6 +26,10 @@ public class Vertex {
         }
     }
 
+    public class UndefinedElementTypeException extends Exception {
+        UndefinedElementTypeException() { super(); }
+    }
+
     private static char nextBlankNodeName = (char) 96;
     private static final ArrayList<Character> blankNodeNames = new ArrayList<>();
     private static final String globalLiteralRegex = "\".*\"(\\^\\^.*|@.*)?" + // unspecified / String
@@ -33,7 +37,7 @@ public class Vertex {
             "|[+\\-]?\\d+" + //integer
             "|[+\\-]?\\d*\\.\\d+" + // decimal
             "|([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+"; // double;
-    private static final String instanceLiteralRegex = "(?<!\")[^:](?!\")";
+    private static final String instanceLiteralRegex = "(?<!\")[^:]*(?!\")";
 
     private GraphElemType elementType;
     private String dataType;
@@ -47,13 +51,14 @@ public class Vertex {
 
     private String rdfsLabel, rdfsComment;
 
-    public Vertex(EventTarget element, String rdfsLabel, String rdfsComment) throws OutsideElementException {
+    public Vertex(EventTarget element, String rdfsLabel, String rdfsComment)
+            throws OutsideElementException, UndefinedElementTypeException {
         this(element);
         this.rdfsLabel = rdfsLabel;
         this.rdfsComment = rdfsComment;
     }
 
-    public Vertex(EventTarget element, String dataType) throws OutsideElementException {
+    public Vertex(EventTarget element, String dataType) throws OutsideElementException, UndefinedElementTypeException {
         this(element);
         this.dataType = dataType;
     }
@@ -63,7 +68,7 @@ public class Vertex {
      * Allows the property arrow to start or end at the closest edge, making it look more natural.
      * @param element the enclosing container for the shape and text
      */
-    public Vertex(EventTarget element) throws OutsideElementException {
+    public Vertex(EventTarget element) throws OutsideElementException, UndefinedElementTypeException {
         try {
             container = (StackPane) element;
         } catch (ClassCastException e) {
@@ -88,6 +93,7 @@ public class Vertex {
         if (container.getChildren().get(0) instanceof Ellipse) this.elementType = GraphElemType.CLASS;
         else if (this.name.matches(globalLiteralRegex)) this.elementType = GraphElemType.GLOBAL_LITERAL;
         else if (this.name.matches(instanceLiteralRegex)) this.elementType = GraphElemType.INSTANCE_LITERAL;
+        else throw new UndefinedElementTypeException();
 
         incomingEdges = new ArrayList<>();
         outgoingEdges = new ArrayList<>();

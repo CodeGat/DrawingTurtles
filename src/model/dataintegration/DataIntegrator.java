@@ -118,15 +118,26 @@ public class DataIntegrator {
             String   nameURI = nameParts[1];
 
             String longformPrefix = generateLongformPrefix(prefixAcronym);
-
             String instanceData = getInstanceLevelData(klass, record);
 
-            if (instanceData != null) return "<" + longformPrefix + instanceData + ">";
+            if (instanceData != null)
+                return "<" + longformPrefix + instanceData + ">";
             else return "<" + longformPrefix + nameURI + ">";
         } else if (klass.getElementType() == INSTANCE_LITERAL){
-            String dataType = klass.getDataType();
-            return "\"" + getInstanceLevelData(klass, record) + "\"" +
-                    (dataType != null && dataType.length() != 0 ? "^^" + klass.getDataType() : "");
+            String dataType = klass.getDataType() != null ? klass.getDataType() : "";
+
+            switch (dataType){
+                case "xsd:String":
+                case "":
+                    return "\"" + getInstanceLevelData(klass, record) + "\"";
+                case "xsd:Integer":
+                case "xsd:Decimal":
+                case "xsd:Double":
+                case "xsd:Boolean":
+                    return getInstanceLevelData(klass, record);
+                default:
+                    return "\"" + getInstanceLevelData(klass, record) + "\"^^" + dataType;
+            }
         }
         return null;
     }

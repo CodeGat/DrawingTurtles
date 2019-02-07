@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
+import model.conceptual.Vertex.UndefinedElementTypeException;
 import model.conversion.gat.FromGatConverter;
 import model.conversion.gat.ToGatConverter;
 import model.dataintegration.DataIntegrator;
@@ -99,6 +100,7 @@ public final class Controller implements Initializable {
         prefixes.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
         prefixes.put("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
         prefixes.put("owl", "http://www.w3.org/2002/07/owl#");
+        prefixes.put("xsd", "http://www.w3.org/2001/XMLSchema#");
 
         prefixesInspected.addListener(((observable, oldValue, newValue) -> {
             if (observable.getValue().booleanValue()){
@@ -544,7 +546,7 @@ public final class Controller implements Initializable {
                 String dataType = classInfo.get(1);
                 classes.add(new Vertex(compiledElement, dataType));
             } else classes.add(new Vertex(compiledElement));
-        } catch (OutsideElementException e) {
+        } catch (OutsideElementException | UndefinedElementTypeException e) {
             e.printStackTrace();
         }
     }

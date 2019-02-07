@@ -14,6 +14,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
+import model.conceptual.Vertex.OutsideElementException;
+import model.conceptual.Vertex.UndefinedElementTypeException;
 import model.graph.Arrow;
 
 import java.util.ArrayList;
@@ -107,7 +109,7 @@ public class FromGatConverter {
         try {
             if (!dtype.equals("")) classes.add(new Vertex(compiledLit, dtype));
             else classes.add(new Vertex(compiledLit));
-        } catch (Vertex.OutsideElementException e) {
+        } catch (OutsideElementException | UndefinedElementTypeException e) {
             e.printStackTrace();
         }
     }
@@ -144,7 +146,7 @@ public class FromGatConverter {
             if (!label.equals("") || !comment.equals(""))
                 classes.add(new Vertex(compiledCls, label, comment));
             else classes.add(new Vertex(compiledCls));
-        } catch (Vertex.OutsideElementException e) {
+        } catch (OutsideElementException | UndefinedElementTypeException e) {
             e.printStackTrace();
         }
     }
