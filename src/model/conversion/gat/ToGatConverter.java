@@ -43,7 +43,7 @@ public class ToGatConverter {
 
     /**
      * Converts properties to the .gat structure.
-     * Of form: [Asx|sy|ex|ey=name]
+     * Of form: [Asx\|sy\|ex\|ey\|xOff\|name]
      * @return the String .gat representation of the properties.
      */
     private String traverseProperties() {
@@ -52,8 +52,9 @@ public class ToGatConverter {
         for (Edge e : properties) {
             result.append("[");
             Arrow a = (Arrow) e.getContainer().getChildren().get(0);
-            String shapeInfo = "A" + a.getStartX() + "|" + a.getStartY() + "|" + a.getEndX() + "|" + a.getEndY();
-            String shapeName = "=" + e.getName();
+            String shapeInfo = "A" + a.getStartX() + "\\|" + a.getStartY() + "\\|" + a.getEndX() + "\\|" +
+                    a.getEndY() + "\\|" + e.getXOffset();
+            String shapeName = "\\|" + e.getName();
             result.append(shapeInfo).append(shapeName);
             result.append("]");
         }

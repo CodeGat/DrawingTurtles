@@ -156,20 +156,20 @@ public class FromGatConverter {
      * @param prop the .gat String serialization of a Property.
      */
     private void bindProperty(String prop) throws PropertyElemMissingException {
-        String[] propElements = prop.split("=");
-        String[] propInfo     = propElements[0].substring(1).split("\\|");
-        String   propName     = propElements[1];
-        double sx = Double.valueOf(propInfo[0]);
-        double sy = Double.valueOf(propInfo[1]);
-        double ex = Double.valueOf(propInfo[2]);
-        double ey = Double.valueOf(propInfo[3]);
+        String[] propElements = prop.split("\\\\\\|");
+        double sx = Double.valueOf(propElements[0].substring(1));
+        double sy = Double.valueOf(propElements[1]);
+        double ex = Double.valueOf(propElements[2]);
+        double ey = Double.valueOf(propElements[3]);
+        double xoff = Double.valueOf(propElements[4]);
+        String propName = propElements[5];
 
         StackPane compiledProp = new StackPane();
         compiledProp.setLayoutX(sx < ex ? sx : ex);
         compiledProp.setLayoutY(sy < ey ? sy : ey);
 
         Arrow arrow = new Arrow();
-        arrow.setStartX(sx);
+//        arrow.setStartX(sx + xoff);
         arrow.setStartY(sy);
         arrow.setEndX(ex);
         arrow.setEndY(ey);

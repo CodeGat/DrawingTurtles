@@ -15,6 +15,13 @@ public class Edge {
     private final Vertex object;
     private boolean isIri;
 
+    private double xOffset = 0;
+
+    public Edge(StackPane container, Label name, Vertex subject, Vertex object, double xOffset){
+        this(container, name, subject, object);
+        this.xOffset = xOffset;
+    }
+
     /**
      * A simple constructor for the conceptual property.
      * @param name the name of the property.
@@ -60,5 +67,6 @@ public class Edge {
     }
 
     public boolean isIri(){ return isIri; }
+    public double getXOffset() { return xOffset; }
 }
 
