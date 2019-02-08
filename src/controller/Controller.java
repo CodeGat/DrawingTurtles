@@ -1,5 +1,6 @@
 package controller;
 
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
@@ -451,6 +452,12 @@ public final class Controller implements Initializable {
                 Insets.EMPTY
         )));
 
+        double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
+        if (textWidth > arrow.getWidth()) {
+            double overrunOneSide = (textWidth - arrow.getWidth()) / 2;
+            compiledProperty.setLayoutX(compiledProperty.getLayoutX() - overrunOneSide);
+        }
+
         compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
         compiledProperty.toBack();
@@ -521,7 +528,6 @@ public final class Controller implements Initializable {
         } else isClass = !elementName.getText().matches(globalLiteralRegex + "|" + instanceLiteralRegex);
 
         double textWidth = elementName.getBoundsInLocal().getWidth();
-
         if (isClass){
             Ellipse elementType = new Ellipse(x, y, textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5, 37.5);
             elementType.setFill(Color.web("f4f4f4"));

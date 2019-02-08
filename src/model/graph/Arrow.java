@@ -79,6 +79,7 @@ public class Arrow extends Group {
     public double getStartY() { return line.getStartY(); }
     public double getEndX()   { return line.getEndX(); }
     public double getEndY()   { return line.getEndY(); }
+    public double getWidth()  { return Math.abs(line.getEndX() - line.getStartX()); }
 
     private DoubleProperty startXProperty() { return line.startXProperty(); }
     private DoubleProperty startYProperty() { return line.startYProperty(); }
