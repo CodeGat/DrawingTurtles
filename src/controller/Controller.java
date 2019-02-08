@@ -1,6 +1,5 @@
 package controller;
 
-import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
@@ -462,11 +461,7 @@ public final class Controller implements Initializable {
         drawPane.getChildren().add(compiledProperty);
         compiledProperty.toBack();
 
-        Edge edge;
-        if (textWidth > arrow.getWidth()) {
-            double overrunOneSide = (textWidth - arrow.getWidth() / 2);
-            edge = new Edge(compiledProperty, propertyName, subject, object, overrunOneSide);
-        } else edge = new Edge(compiledProperty, propertyName, subject, object);
+        Edge edge = new Edge(compiledProperty, propertyName, subject, object);
 
         properties.add(edge);
         subject.addOutgoingEdge(edge);

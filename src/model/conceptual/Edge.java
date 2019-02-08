@@ -15,12 +15,7 @@ public class Edge {
     private final Vertex object;
     private boolean isIri;
 
-    private double xOffset = 0;
-
-    public Edge(StackPane container, Label name, Vertex subject, Vertex object, double xOffset){
-        this(container, name, subject, object);
-        this.xOffset = xOffset;
-    }
+    private double layoutX;
 
     /**
      * A simple constructor for the conceptual property.
@@ -34,6 +29,7 @@ public class Edge {
         this.name = name.getText();
         this.subject = subject;
         this.object = object;
+        this.layoutX = container.getBoundsInParent().getMinX();
 
         if (this.name.matches("<?https?:.*>?|<?mailto:.*>?")) {
             isIri = true;
@@ -67,6 +63,6 @@ public class Edge {
     }
 
     public boolean isIri(){ return isIri; }
-    public double getXOffset() { return xOffset; }
+    public double getLayoutX() { return layoutX; }
 }
 

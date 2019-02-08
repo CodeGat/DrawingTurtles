@@ -161,15 +161,15 @@ public class FromGatConverter {
         double sy = Double.valueOf(propElements[1]);
         double ex = Double.valueOf(propElements[2]);
         double ey = Double.valueOf(propElements[3]);
-        double xoff = Double.valueOf(propElements[4]);
+        double lx = Double.valueOf(propElements[4]);
         String propName = propElements[5];
 
         StackPane compiledProp = new StackPane();
-        compiledProp.setLayoutX(sx < ex ? sx : ex);
+        compiledProp.setLayoutX(lx);
         compiledProp.setLayoutY(sy < ey ? sy : ey);
 
         Arrow arrow = new Arrow();
-//        arrow.setStartX(sx + xoff);
+        arrow.setStartX(sx);
         arrow.setStartY(sy);
         arrow.setEndX(ex);
         arrow.setEndY(ey);
