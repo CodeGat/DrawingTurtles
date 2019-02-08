@@ -15,6 +15,10 @@ import static model.conceptual.Vertex.GraphElemType.*;
  * Responsible for the generation of instance data, as well as correlating .csv headers and their .ttl counterparts.
  */
 public class DataIntegrator {
+    /**
+     * Exception when there is a prefix defined in the graph, but no expansion (ie. it is not defined in the Prefix
+     *    Menu)
+     */
     public class PrefixMissingException extends Exception {
         private String missing;
 
@@ -34,6 +38,7 @@ public class DataIntegrator {
     private Pair<ArrayList<String>, ArrayList<Vertex>> csvTtlUncorrelated;
     private List<Vertex> ttlClasses;
 
+    // append this int to the end of a blank node so each blank node is contained to it's own record.
     private static int blankNodePermutation = 0;
 
     public DataIntegrator(
@@ -49,6 +54,7 @@ public class DataIntegrator {
 
     /**
      * Accessible method for generating instance-level data given a .csv and the graph. Recordwise generation.
+     * @throws PrefixMissingException if a given prefix does not have an expanded form.
      * @return String representation of the instance-level data.
      */
     public String generate() throws PrefixMissingException {
@@ -64,6 +70,7 @@ public class DataIntegrator {
     /**
      * Constructs the instance-level data of the particular record.
      * @param record the record used to populate the resulting instance-level data.
+     * @throws PrefixMissingException if a given prefix does not have an expanded form.
      * @return the generated instance-level data as a String.
      */
     private String generateInstanceDataOf(CSVRecord record) throws PrefixMissingException {
@@ -92,6 +99,13 @@ public class DataIntegrator {
         return instanceData.toString() + "\n";
     }
 
+    /**
+     * Returns the meta-information of the given klass, such as the rdfs:comment/label, and the type definition.
+     * @param name the expanded, IRI form of the klass name.
+     * @param klass the Vertex to which the meta-information belongs.
+     * @return the expanded meta-information as a String
+     * @throws PrefixMissingException if a given prefix does not have an expanded form.
+     */
     private String getMetaTriples(String name, Vertex klass) throws PrefixMissingException {
         String meta = "";
         if (klass.getTypeDefinition() != null && klass.getTypeDefinition().length() != 0)
@@ -112,6 +126,7 @@ public class DataIntegrator {
      * @param klass the Vertex to be expanded.
      * @param record the data to populate the Vertices instance-level fields.
      * @return the instance data of the given Vertex as a String.
+     * @throws PrefixMissingException if a given prefix does not have an expanded form.
      */
     private String generateLongformURI(Vertex klass, CSVRecord record) throws PrefixMissingException {
         if (klass.getElementType() == GLOBAL_LITERAL || klass.isIri())
@@ -150,6 +165,12 @@ public class DataIntegrator {
         return null;
     }
 
+    /**
+     * Generate the expanded, IRI form of the datatype, if it is not expanded already.
+     * @param type the type to expand
+     * @return the IRI form of the type.
+     * @throws PrefixMissingException if a given prefix does not have an expanded form.
+     */
     private String generateLongformURI(String type) throws PrefixMissingException {
         if (type.matches("<https?://.*") || type.equals("")) return type;
         else {
@@ -179,6 +200,7 @@ public class DataIntegrator {
      * Create the expansion of a graph property into a well-formed URI.
      * @param edge the Edge we are expanding.
      * @return the String form of the expanded Edge.
+     * @throws PrefixMissingException if a given prefix does not have an expanded form.
      */
     private String generateLongformURI(Edge edge) throws PrefixMissingException {
         if (edge.isIri()){
@@ -197,7 +219,7 @@ public class DataIntegrator {
      * Creates the expanded prefix URI.
      * @param acronym the short form of the prefix.
      * @return the expanded version of the associated acronym.
-     * @throws PrefixMissingException if there was no such acronym defined in the 'Prefixes Menu.'
+     * @throws PrefixMissingException if a given prefix does not have an expanded form.
      */
     private String generateLongformPrefix(String acronym) throws PrefixMissingException {
         Entry<String, String> matchingPrefix =
@@ -213,7 +235,7 @@ public class DataIntegrator {
     }
 
     /**
-     * Find either classes or csv headers that do not directly correlate (namely, are equal.
+     * Find either classes or csv headers that do not directly correlate (are not noticably similar).
      */
     public void attemptCorrelationOfHeaders(){
         ArrayList<Vertex> uncorrelatedClasses = new ArrayList<>(classes);
