@@ -17,16 +17,16 @@
             <padding><Insets left="10" right="10" top="10" /></padding>
             <Label text="Element Name: " GridPane.columnIndex="0" GridPane.rowIndex="0" />
             <TextField fx:id="nameTfd" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-            <Separator GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="1"/>
+            <Separator GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="1" />
             <Label text="literal type" GridPane.columnIndex="0" GridPane.rowIndex="2" />
             <TextField fx:id="typeTfd" disable="true" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <Separator GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="3"/>
+            <Separator GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="3" />
             <Label text="class rdfs:label: " GridPane.columnIndex="0" GridPane.rowIndex="4" />
             <TextField fx:id="labelTfd" disable="true" GridPane.columnIndex="1" GridPane.rowIndex="4" />
             <Label alignment="TOP_LEFT" text="class rdfs:comment: " GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.valignment="TOP" />
             <TextArea fx:id="commentTxa" disable="true" prefHeight="253.0" prefWidth="335.0" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="5" />
             <Separator GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="6" />
-            <Label prefHeight="99.0" prefWidth="479.0" text="The rdfs:label/rdfs:comment in this dialog are constant literals relating to the class, not the instance. Instance level labels must be created manually." wrapText="true" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="7" />
+            <Label prefHeight="162.0" prefWidth="479.0" text="The rdfs:label/rdfs:comment in this dialog are constant literals relating to the class, not the instance. Instance level labels must be created manually." wrapText="true" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="7" />
         </GridPane>
     </center>
     <bottom>
