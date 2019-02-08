@@ -48,7 +48,7 @@ public class NewClassDialogController extends AbstractDataSharingController<Stri
             } else if (newValue.matches(literalRegex)){
                 isClasslike.setValue(false);
                 isLiterallike.setValue(true);
-                if (newValue.matches(stringLitRegex + "|" + langLitRegex)) dataTypeLbl.setText("xsd:String");
+                if (newValue.matches(stringLitRegex + "|" + langLitRegex)) dataTypeLbl.setText("xsd:string");
                 else if (newValue.matches(booleanLitRegex)) dataTypeLbl.setText("xsd:boolean");
                 else if (newValue.matches(integerLitRegex)) dataTypeLbl.setText("xsd:integer");
                 else if (newValue.matches(decimalLitRegex)) dataTypeLbl.setText("xsd:decimal");

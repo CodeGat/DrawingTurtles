@@ -47,7 +47,7 @@ public class OntologyClassDialogController extends AbstractDataSharingController
             } else if (newValue.matches(literalRegex)){
                 isClasslike.setValue(false);
                 isLiterallike.setValue(true);
-                if (newValue.matches(stringLitRegex + "|" + langLitRegex)) typeTfd.setText("xsd:String");
+                if (newValue.matches(stringLitRegex + "|" + langLitRegex)) typeTfd.setText("xsd:string");
                 else if (newValue.matches(booleanLitRegex)) typeTfd.setText("xsd:boolean");
                 else if (newValue.matches(integerLitRegex)) typeTfd.setText("xsd:integer");
                 else if (newValue.matches(decimalLitRegex)) typeTfd.setText("xsd:decimal");
