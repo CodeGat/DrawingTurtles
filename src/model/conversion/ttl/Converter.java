@@ -244,7 +244,7 @@ public class Converter {
 
         for (Map.Entry<String, ArrayList<Vertex>> e : commonObjects.entrySet()){
             String predicateObjectListStr = "";
-            String propName = e.getKey();
+            String propName = e.getKey().matches("https?:.*") ? "<" + e.getKey() + ">" : e.getKey();
             String objectListStr;
             ArrayList<Vertex> objectList = e.getValue();
 

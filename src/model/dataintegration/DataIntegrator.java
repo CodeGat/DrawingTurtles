@@ -204,7 +204,7 @@ public class DataIntegrator {
      */
     private String generateLongformURI(Edge edge) throws PrefixMissingException {
         if (edge.isIri()){
-            return edge.getName();
+            return "<" + edge.getName() + ">";
         } else {
             String name = edge.getName();
             String[] nameParts = name.split(":");
