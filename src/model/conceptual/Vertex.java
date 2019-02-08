@@ -26,10 +26,21 @@ public class Vertex {
         }
     }
 
+    public class UndefinedElementTypeException extends Exception {
+        UndefinedElementTypeException() { super(); }
+    }
+
     private static char nextBlankNodeName = (char) 96;
     private static final ArrayList<Character> blankNodeNames = new ArrayList<>();
+    private static final String globalLiteralRegex = "\".*\"(\\^\\^.*|@.*)?" + // unspecified / String
+            "|true|false" + // boolean
+            "|[+\\-]?\\d+" + //integer
+            "|[+\\-]?\\d*\\.\\d+" + // decimal
+            "|([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+"; // double;
+    private static final String instanceLiteralRegex = "(?<!\")[^:]*(?!\")";
 
-    private GraphElemType type;
+    private GraphElemType elementType;
+    private String dataType;
     private String name;
     private StackPane container;
     private double x, y;
@@ -40,10 +51,16 @@ public class Vertex {
 
     private String rdfsLabel, rdfsComment;
 
-    public Vertex(EventTarget element, String rdfsLabel, String rdfsComment) throws OutsideElementException {
+    public Vertex(EventTarget element, String rdfsLabel, String rdfsComment)
+            throws OutsideElementException, UndefinedElementTypeException {
         this(element);
         this.rdfsLabel = rdfsLabel;
         this.rdfsComment = rdfsComment;
+    }
+
+    public Vertex(EventTarget element, String dataType) throws OutsideElementException, UndefinedElementTypeException {
+        this(element);
+        this.dataType = dataType;
     }
 
     /**
@@ -51,7 +68,7 @@ public class Vertex {
      * Allows the property arrow to start or end at the closest edge, making it look more natural.
      * @param element the enclosing container for the shape and text
      */
-    public Vertex(EventTarget element) throws OutsideElementException {
+    public Vertex(EventTarget element) throws OutsideElementException, UndefinedElementTypeException {
         try {
             container = (StackPane) element;
         } catch (ClassCastException e) {
@@ -73,9 +90,10 @@ public class Vertex {
             isIri = false;
         }
 
-        if (container.getChildren().get(0) instanceof Ellipse) this.type = GraphElemType.CLASS;
-        else if (this.name.matches("[^\"](.* .*)*[^\"]")) this.type = GraphElemType.INSTANCE_LITERAL;
-        else this.type = GraphElemType.GLOBAL_LITERAL;
+        if (container.getChildren().get(0) instanceof Ellipse) this.elementType = GraphElemType.CLASS;
+        else if (this.name.matches(globalLiteralRegex)) this.elementType = GraphElemType.GLOBAL_LITERAL;
+        else if (this.name.matches(instanceLiteralRegex)) this.elementType = GraphElemType.INSTANCE_LITERAL;
+        else throw new UndefinedElementTypeException();
 
         incomingEdges = new ArrayList<>();
         outgoingEdges = new ArrayList<>();
@@ -92,7 +110,7 @@ public class Vertex {
      * @param y the y value of the users click.
      */
     public void setSnapTo(double subX, double subY, double x, double y){
-        if (this.type == GraphElemType.GLOBAL_LITERAL || this.type == GraphElemType.INSTANCE_LITERAL) {
+        if (this.elementType == GraphElemType.GLOBAL_LITERAL || this.elementType == GraphElemType.INSTANCE_LITERAL) {
             Bounds bounds = container.getBoundsInParent();
             double distMinX = Math.abs(bounds.getMinX() - x);
             double distMaxX = Math.abs(bounds.getMaxX() - x);
@@ -234,7 +252,7 @@ public class Vertex {
      * @return the tightest bounds for the GraphClass.
      */
     public Bounds getBounds(){
-        if (type == GraphElemType.GLOBAL_LITERAL || type == GraphElemType.INSTANCE_LITERAL){
+        if (elementType == GraphElemType.GLOBAL_LITERAL || elementType == GraphElemType.INSTANCE_LITERAL){
             return container.getBoundsInParent();
         } else {
             Ellipse e = (Ellipse) container.getChildrenUnmodifiable().get(0);
@@ -270,7 +288,7 @@ public class Vertex {
 
     public String getName() { return name; }
 
-    public GraphElemType getType() { return type; }
+    public GraphElemType getElementType() { return elementType; }
 
     public StackPane getContainer() { return container; }
 
@@ -298,5 +316,16 @@ public class Vertex {
 
     public String getRdfsComment() {
         return rdfsComment;
+    }
+
+    public String getDataType() {
+        if (dataType == null) return null;
+        else if (dataType.matches("http(s)?:.*") && elementType != GraphElemType.CLASS)
+            return "<" + dataType + ">";
+        else if (this.elementType != GraphElemType.CLASS)
+            return dataType;
+
+        System.out.println("data type was not null or a class or an iri, must have been empty string. ");
+        return null;
     }
 }

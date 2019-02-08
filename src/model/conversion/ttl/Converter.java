@@ -68,12 +68,12 @@ public class Converter {
         }
 
         // reminding the user that instance literals will be replaced by their corresponding instance level data when
-        //    converted to RDFXML.
-        if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
+        //    converted to instance-level .ttl.
+        if (classes.stream().anyMatch(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
             fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
-                    "d during RDFXML creation: \n# ");
+                    "d during instance-level .ttl creation: \n# ");
             classes.stream()
-                    .filter(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)
+                    .filter(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)
                     .forEach(c -> fixString.append(c.getName()).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
             fixString.append(".\n");
@@ -81,7 +81,7 @@ public class Converter {
 
         //
         Stream<String> ttlClassPrefixesStream = classes.stream()
-                .filter(c -> c.getType() == Vertex.GraphElemType.CLASS && !c.isIri())
+                .filter(c -> c.getElementType() == Vertex.GraphElemType.CLASS && !c.isIri())
                 .map(c -> c.getName().split(":")[0]);
         Stream<String> ttlPropPrefixesStream = properties.stream()
                 .filter(p -> !p.isIri())
@@ -98,28 +98,19 @@ public class Converter {
             addedPrefixesSetTmp.removeAll(ttlPrefixSet);
 
             if (ttlPrefixSetTmp.size() > 0) {
-                fixString.append("# The following prefixes are defined in the graph but not in the prefixes menu (RDF" +
-                        "XML creation will not work):\n#   ");
+                fixString.append("# The following prefixes are defined in the graph but not in the prefixes menu (ins" +
+                        "tance-level .ttl creation will not work):\n#   ");
                 ttlPrefixSetTmp.forEach(p -> fixString.append(p).append(", "));
                 fixString.delete(fixString.length() - 2, fixString.length());
                 fixString.append(".\n");
-            }if (addedPrefixesSetTmp.size() > 0){
+            }
+            if (addedPrefixesSetTmp.size() > 0){
                 fixString.append("# The following prefixes are defined in the prefixes menu but remain unused in the " +
                         "graph:\n#   ");
                 addedPrefixesSetTmp.forEach(p -> fixString.append(p).append(", "));
                 fixString.delete(fixString.length() - 2, fixString.length());
-                fixString.append(".\n");
+                fixString.append(".\n\n");
             }
-        }
-
-        if (classes.stream().anyMatch(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
-            fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
-                    "d during RDFXML creation: \n# ");
-            classes.stream()
-                    .filter(c -> c.getType() == Vertex.GraphElemType.INSTANCE_LITERAL)
-                    .forEach(c -> fixString.append(c.getName()).append(", "));
-            fixString.delete(fixString.length() - 2, fixString.length());
-            fixString.append(".\n\n");
         }
 
         return fixString.length() > fixStringInitLength ? fixString.toString() : "";
@@ -132,9 +123,6 @@ public class Converter {
      */
     private static String convertPrefixes() {
         StringBuilder prefixStrs = new StringBuilder();
-        prefixStrs.append("@prefix rdf : <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n");
-        prefixStrs.append("@prefix rdfs : <http://www.w3.org/2000/01/rdf-schema#> .\n");
-        if (isOntology) prefixStrs.append("@prefix owl : <http://www.w3.org/2002/07/owl#> .\n");
 
         for (Map.Entry<String, String> prefix : prefixes.entrySet()){
             String   prefixStr = "@prefix " + prefix.getKey() + " : <" + prefix.getValue() + "> .\n";
@@ -205,7 +193,7 @@ public class Converter {
         for (Vertex graphClass : classes) {
             isBlanknode = config.get(1) && graphClass.isBlank();
 
-            if (graphClass.getType() == Vertex.GraphElemType.CLASS && !isBlanknode)
+            if (graphClass.getElementType() == Vertex.GraphElemType.CLASS && !isBlanknode)
                 classStrs.append(convertTriple(graphClass));
         }
 
@@ -221,7 +209,7 @@ public class Converter {
         String subjectString = convertSubject(subject);
         String predicateObjectString = convertPredicateObjectList(subject);
 
-        if (predicateObjectString.length() == 0 && !isOntology){
+        if (predicateObjectString.length() == 0 && !isOntology && subject.getTypeDefinition() == null) {
             return "";
         } else if (predicateObjectString.length() == 0)
             subjectString = subjectString.substring(0, subjectString.length() - 4);
@@ -341,9 +329,11 @@ public class Converter {
                 dedentTab();
                 objectStr += tabs + "]";
             } else objectStr = "[" + predicateObjectList + "]";
-        }
-        else if (object.getType() == Vertex.GraphElemType.INSTANCE_LITERAL) objectStr = "\"" + objectStr + "\"";
-        else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
+        } else if (object.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL) {
+            String dataType = object.getDataType();
+            objectStr = "\"" + objectStr + "\"" +
+                    (dataType != null && dataType.length() != 0 ? "^^" + object.getDataType() : "");
+        } else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
 
         return objectStr;
     }
@@ -356,13 +346,14 @@ public class Converter {
      */
     private static String convertSubject(Vertex klass){
         String subname = klass.getName();
+        subname = subname.matches("http:.*|mailto:.*") ? "<" + subname + ">" : subname;
+        String typeDef;
 
-        if (isOntology) {
-            String typeDef = klass.getTypeDefinition() != null ? klass.getTypeDefinition() : "owl:Class";
+        if (isOntology)
+            typeDef = " a " + (klass.getTypeDefinition() != null ? klass.getTypeDefinition() + " ;" : "owl:Class ;");
+        else typeDef = klass.getTypeDefinition() != null ? " a " + klass.getTypeDefinition() + " ;" : "    ";
 
-            subname = subname.matches("http:.*|mailto:.*") ? "<" + subname + ">" : subname;
-            return subname + " a " + typeDef + " ;\n" + tabs;
-        } else return subname + "    \n" + tabs;
+        return subname + typeDef + "\n" + tabs;
     }
 
     private static void indentTab() { tabs += "\t"; }

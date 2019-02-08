@@ -107,10 +107,11 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
      */
     @FXML protected void savePrefixAction() {
         File saveFile = showSaveFileDialog(
-                new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt"),
-                savPrefixBtn.getScene().getWindow()
+                savPrefixBtn.getScene().getWindow(),
+                new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt")
         );
         if (saveFile != null && prefixes.size() != 0) {
+            Controller.lastDirectory = saveFile.getParent();
             StringBuilder prefixesToSave = new StringBuilder();
             for (Map.Entry<String, String> prefix : prefixes.entrySet()) {
                 String prefixStr = prefix.getKey() + " : " + prefix.getValue();
@@ -133,9 +134,12 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
      * On clicking the 'Load Prefix' button, attempts to load prefixes from a user-specified .txt file.
      */
     @FXML protected void loadPrefixAction(){
-        File loadFile = showLoadFileDialog(lodPrefixBtn.getScene().getWindow());
-
+        File loadFile = showLoadFileDialog(
+                lodPrefixBtn.getScene().getWindow(),
+                new FileChooser.ExtensionFilter("Text file (*.txt)", "*.txt")
+        );
         if (loadFile != null){
+            Controller.lastDirectory = loadFile.getParent();
             try (FileReader reader = new FileReader(loadFile)){
                 char[] rawPrefixes = new char[10000];
 
@@ -202,16 +206,18 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
 
     /**
      * Creates a save file dialog, prompting the user to select a file to create and/or save data to.
-     * @param extFilter the list of extension filters, for easy access to specific file types.
      * @param owner the window that owns the dialog.
+     * @param extFilter the list of extension filters, for easy access to specific file types.
      * @return the file the user has chosen to save to, or null otherwise.
      */
-    private File showSaveFileDialog(FileChooser.ExtensionFilter extFilter, Window owner) {
+    private File showSaveFileDialog(Window owner, FileChooser.ExtensionFilter extFilter) {
+        File directory =
+                new File(Controller.lastDirectory != null ? Controller.lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName("prefixes.txt");
         fileChooser.setTitle("Save Prefixes");
-        fileChooser.setSelectedExtensionFilter(extFilter);
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.getExtensionFilters().addAll(extFilter);
+        fileChooser.setInitialDirectory(directory);
 
         return fileChooser.showSaveDialog(owner);
     }
@@ -221,10 +227,13 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
      * @param owner the window that owns the dialog.
      * @return the file that will be loaded from.
      */
-    private File showLoadFileDialog(Window owner){
+    private File showLoadFileDialog(Window owner, FileChooser.ExtensionFilter extFilter){
+        File directory =
+                new File(Controller.lastDirectory != null ? Controller.lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Load Prefixes");
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.setInitialDirectory(directory);
+        fileChooser.getExtensionFilters().add(extFilter);
 
         return fileChooser.showOpenDialog(owner);
     }

@@ -1,4 +1,4 @@
-package model.conversion.rdfxml;
+package model.dataintegration;
 
 import model.conceptual.Vertex;
 

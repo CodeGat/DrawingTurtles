@@ -1,16 +1,22 @@
 package controller;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
+import model.conceptual.Vertex.UndefinedElementTypeException;
 import model.conversion.gat.FromGatConverter;
 import model.conversion.gat.ToGatConverter;
-import model.conversion.rdfxml.RDFXMLGenerator;
+import model.dataintegration.DataIntegrator;
 import model.graph.Arrow;
 import model.conversion.ttl.Converter;
 import javafx.embed.swing.SwingFXUtils;
@@ -43,6 +49,7 @@ import java.awt.image.RenderedImage;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -51,18 +58,20 @@ import java.util.logging.Logger;
 /**
  * The Controller for application.fxml: takes care of actions from the application.
  */
-public final class Controller {
+public final class Controller implements Initializable {
     private static final Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
     @FXML protected BorderPane root;
     @FXML protected Pane drawPane;
     @FXML protected ScrollPane scrollPane;
-    @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, rdfXmlBtn,
+    @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, instanceBtn,
             instrBtn, optionsBtn;
+    @FXML ImageView ttlPrefImv, ttlGraphImv, instPrefImv, instGraphImv, instCsvImv;
     @FXML protected Label  statusLbl;
+
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
-    private Map<String, String> prefixes = new HashMap<>();
+    private Map<String, String>     prefixes   = new HashMap<>();
     private final ArrayList<Edge>   properties = new ArrayList<>();
     private final ArrayList<Vertex> classes    = new ArrayList<>();
 
@@ -72,6 +81,52 @@ public final class Controller {
 
     private List<CSVRecord> csv;
     private Map<String, Integer> headers;
+
+    static String lastDirectory;
+
+    private BooleanProperty prefixesInspected = new SimpleBooleanProperty(false);
+    private BooleanProperty graphCreated = new SimpleBooleanProperty(false);
+    private BooleanProperty csvIngested = new SimpleBooleanProperty(false);
+
+    @Override public void initialize(URL location, ResourceBundle resources) {
+        Image cross = new Image("/view/images/cross.png");
+        Image tick  = new Image("/view/images/tick.png");
+        ttlPrefImv.setImage(cross);
+        ttlGraphImv.setImage(cross);
+        instPrefImv.setImage(cross);
+        instGraphImv.setImage(cross);
+        instCsvImv.setImage(cross);
+
+        prefixes.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+        prefixes.put("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
+        prefixes.put("owl", "http://www.w3.org/2002/07/owl#");
+        prefixes.put("xsd", "http://www.w3.org/2001/XMLSchema#");
+
+        prefixesInspected.addListener(((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()){
+                ttlPrefImv.setImage(tick);
+                instPrefImv.setImage(tick);
+            } else {
+                ttlPrefImv.setImage(cross);
+                instPrefImv.setImage(cross);
+            }
+        }));
+
+        graphCreated.addListener((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()){
+                ttlGraphImv.setImage(tick);
+                instGraphImv.setImage(tick);
+            } else {
+                ttlGraphImv.setImage(cross);
+                instGraphImv.setImage(cross);
+            }
+        });
+
+        csvIngested.addListener(((observable, oldValue, newValue) -> {
+            if (observable.getValue().booleanValue()) instCsvImv.setImage(tick);
+            else instCsvImv.setImage(cross);
+        }));
+    }
 
     /**
      * Method invoked on any key press in the main application.
@@ -135,7 +190,8 @@ public final class Controller {
 
         ArrayList<Map<String, String>> updatedData = showWindow("/view/prefixmenu.fxml", "Prefixes Menu", data);
 
-        if (updatedData != null) prefixes = updatedData.get(0);
+        if (updatedData != null && updatedData.get(0) != null) prefixes = updatedData.get(0);
+        prefixesInspected.setValue(true);
     }
 
     /**
@@ -143,7 +199,10 @@ public final class Controller {
      *   a user-specified .gat file. That's a Graph Accessor Type format, not just my name...
      */
     @FXML public void saveGraphAction() {
-        File saveFile = showSaveFileDialog("graph.gat", "Save Graph As", null);
+        File saveFile = showSaveFileDialog(
+                "graph.gat",
+                "Save Graph As",
+                new FileChooser.ExtensionFilter("Graph Accessor Type Files (*.gat)", "*.gat"));
         if (saveFile != null){
             ToGatConverter converter = new ToGatConverter(
                     drawPane.getWidth(),
@@ -168,10 +227,13 @@ public final class Controller {
      *   into elements of a graph. It then binds the visual elements into meaningful java-friendly elements.
      */
     @FXML public void loadGraphAction() {
-        File loadFile = showLoadFileDialog("Load Graph File");
+        File loadFile = showLoadFileDialog(
+                "Load Graph File",
+                new FileChooser.ExtensionFilter("Graph Accessor Type file (*.gat)", "*.gat")
+        );
         if (loadFile != null){
+            lastDirectory = loadFile.getParent();
             drawPane.getChildren().clear();
-            prefixes.clear();
             classes.clear();
             properties.clear();
 
@@ -183,6 +245,7 @@ public final class Controller {
                 }
                 FromGatConverter binder = new FromGatConverter(new String(rawGraph));
                 binder.bindGraph();
+
                 classes.addAll(binder.getClasses());
                 properties.addAll(binder.getProperties());
                 drawPane.setPrefSize(binder.getCanvasWidth(), binder.getCanvasHeight());
@@ -191,9 +254,16 @@ public final class Controller {
                     drawPane.getChildren().add(compiledProperty);
                     compiledProperty.toBack();
                 }
+                graphCreated.setValue(true);
+                prefixesInspected.setValue(false);
                 statusLbl.setText("Graph load successful.");
             } catch (IOException e) {
+                statusLbl.setText("Graph load failed: IOException occurred while reading the graph from file. ");
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
+            } catch (FromGatConverter.PropertyElemMissingException e) {
+                statusLbl.setText("Graph load failed: " + e.getMissingElement() + " is missing from " +
+                        e.getPropertyName() + ". Try adding the arrow again. ");
+                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
         } else statusLbl.setText("Graph load cancelled.");
     }
@@ -208,7 +278,7 @@ public final class Controller {
     private Vertex findClassUnder(double x, double y) {
         for (Vertex klass : classes) {
             Bounds classBounds = klass.getBounds();
-            Bounds pointBounds = new BoundingBox(x-1, y-1, 2, 2);
+            Bounds pointBounds = new BoundingBox(x-2, y-2, 4, 4);
 
             if (classBounds.intersects(pointBounds)) return klass;
         }
@@ -239,7 +309,7 @@ public final class Controller {
         File saveFile = showSaveFileDialog(
                 "ontology.ttl",
                 "Save Turtle Ontology As",
-                null
+                new FileChooser.ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
         );
         if (saveFile != null){
             String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties, config);
@@ -263,7 +333,7 @@ public final class Controller {
         File saveFile = showSaveFileDialog(
                 "ontology.png",
                 "Save Conceptual Image As",
-                new FileChooser.ExtensionFilter("png files (*.png)", "*.png")
+                new FileChooser.ExtensionFilter("Portable Network Graphic Files (*.png)", "*.png")
         );
         if (saveFile != null){
             try {
@@ -301,6 +371,8 @@ public final class Controller {
             arrow = null;
             srcClick = true;
         }
+        if (classes.size() > 0) graphCreated.setValue(true);
+        else graphCreated.setValue(false);
     }
 
     /**
@@ -318,10 +390,12 @@ public final class Controller {
 
             for (Edge incEdge : klass.getIncomingEdges()){
                 drawPane.getChildren().remove(incEdge.getContainer());
+                incEdge.getSubject().getOutgoingEdges().remove(incEdge);
                 properties.remove(incEdge);
             }
             for (Edge outEdge : klass.getOutgoingEdges()){
                 drawPane.getChildren().remove(outEdge.getContainer());
+                outEdge.getObject().getIncomingEdges().remove(outEdge);
                 properties.remove(outEdge);
             }
             classes.remove(klass);
@@ -360,8 +434,8 @@ public final class Controller {
         compiledProperty.setLayoutX(subject.getX() < obj.getX() ? subject.getX() : obj.getX());
         compiledProperty.setLayoutY(subject.getY() < obj.getY() ? subject.getY() : obj.getY());
 
-        Text propertyName0 = showNameElementDialog();
-        if (propertyName0 == null){
+        ArrayList<String> propertyInfo = showNameElementDialog();
+        if (propertyInfo == null || propertyInfo.size() == 0){
             drawPane.getChildren().remove(arrow);
             statusLbl.setText("Property creation cancelled. ");
             subject = null;
@@ -370,7 +444,7 @@ public final class Controller {
             return;
         }
 
-        Label propertyName = new Label(propertyName0.getText());
+        Label propertyName = new Label(propertyInfo.get(0));
         propertyName.setBackground(new Background(new BackgroundFill(
                 Color.web("F4F4F4"),
                 CornerRadii.EMPTY,
@@ -424,10 +498,12 @@ public final class Controller {
         boolean isClass;
 
         // from https://www.w3.org/TR/turtle/ definition of a literal.
-        String globalLiteralRegex = "\".*\".*" +
-                "|[+\\-]?[0-9]+(\\.[0-9]+)?" +
-                "|([+\\-]?[0-9]+\\.[0-9]+|[+\\-]?\\.[0-9]+|[+\\-]?[0-9])E[+\\-]?[0-9]+";
-        String instanceLiteralRegex = "[^\"](.* .*)*[^\"]";
+        String globalLiteralRegex = "\".*\"(\\^\\^.*|@.*)?" + // unspecified / String
+                "|true|false" + // boolean
+                "|[+\\-]?\\d+" + //integer
+                "|[+\\-]?\\d*\\.\\d+" + // decimal
+                "|([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+"; // double
+        String instanceLiteralRegex = "(?<!\")[^:]*(?!\")";
 
         resizeEdgeOfCanvas(x, y);
 
@@ -435,17 +511,9 @@ public final class Controller {
         compiledElement.setLayoutX(x);
         compiledElement.setLayoutY(y);
 
-        Text elementName;
-        ArrayList<String> ontologyClassInfo =  new ArrayList<>();
-
-        if (isOntology) {
-            ontologyClassInfo = showNameOntologyClassDialog();
-            if (ontologyClassInfo == null) return;
-            elementName = new Text(ontologyClassInfo.get(0));
-        } else {
-            elementName = showNameElementDialog();
-            if (elementName == null) return;
-        }
+        ArrayList<String> classInfo = isOntology ? showNameOntologyClassDialog() : showNameElementDialog();
+        if (classInfo == null || classInfo.size() == 0) return;
+        Text elementName = new Text(classInfo.get(0));
 
         if (elementName.getText().equals("")){
             isClass = true;
@@ -459,7 +527,6 @@ public final class Controller {
             elementType.setFill(Color.web("f4f4f4"));
             elementType.setStroke(Color.BLACK);
             compiledElement.getChildren().addAll(elementType, elementName);
-
         } else {
             Rectangle elementType = new Rectangle(textWidth > 125 ? textWidth + 15 : 125, 75);
             String name = elementName.getText();
@@ -473,13 +540,15 @@ public final class Controller {
 
         drawPane.getChildren().add(compiledElement);
         try {
-            if (isOntology) {
-                String rdfslabel = ontologyClassInfo.get(1);
-                String rdfscomment = ontologyClassInfo.get(2);
+            if (isOntology && isClass) {
+                String rdfslabel = classInfo.get(2);
+                String rdfscomment = classInfo.get(3);
                 classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment));
-            }
-            else classes.add(new Vertex(compiledElement));
-        } catch (OutsideElementException e) {
+            } else if (isOntology){
+                String dataType = classInfo.get(1);
+                classes.add(new Vertex(compiledElement, dataType));
+            } else classes.add(new Vertex(compiledElement));
+        } catch (OutsideElementException | UndefinedElementTypeException e) {
             e.printStackTrace();
         }
     }
@@ -523,17 +592,11 @@ public final class Controller {
     }
 
     /**
-     * Creates a dialog that accepts a name of an element.
-     * @return the name inputted or null otherwise.
+     * Show the basic dialog for creating a new element.
+     * @return the ArrayList containing the name and type of the given element, if applicable.
      */
-    private Text showNameElementDialog() {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setGraphic(null);
-        dialog.setTitle("Add Ontology Element");
-        dialog.setHeaderText("Can be set as defined in Turtle Syntax");
-
-        Optional<String> optDialogResult = dialog.showAndWait();
-        return optDialogResult.map(Text::new).orElse(null);
+    private ArrayList<String> showNameElementDialog() {
+        return showWindow("/view/newClassDialog.fxml", "Add new Graph Element", null);
     }
 
     /**
@@ -544,11 +607,12 @@ public final class Controller {
      * @return the file the user has chosen to save to, or null otherwise.
      */
     private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
+        File directory = new File(lastDirectory != null ? lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
         fileChooser.setTitle(windowTitle);
-        fileChooser.setSelectedExtensionFilter(extFilter);
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        if (extFilter != null) fileChooser.getExtensionFilters().add(extFilter);
+        fileChooser.setInitialDirectory(directory);
 
         return fileChooser.showSaveDialog(root.getScene().getWindow());
     }
@@ -557,10 +621,12 @@ public final class Controller {
      * Creates a load file dialog, which prompts the user to load from a specific file.
      * @return the file that will be loaded from.
      */
-    private File showLoadFileDialog(String title){
+    private File showLoadFileDialog(String title, FileChooser.ExtensionFilter extFilter){
+        File directory = new File(lastDirectory != null ? lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.setInitialDirectory(directory);
+        fileChooser.getExtensionFilters().add(extFilter);
 
         return fileChooser.showOpenDialog(root.getScene().getWindow());
     }
@@ -574,12 +640,12 @@ public final class Controller {
         instrAlert.setHeaderText(null);
         instrAlert.setContentText(
                 "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
-                        " add to the canvas, then click somewhere on the canvas. Add a name (even in .ttl synta" +
-                        "x!) and the item will be created in that position. \nIn regards to the Property button, you " +
-                        "must click on a valid (already existing) element in the graph as the subject, and then anoth" +
-                        "er as the object. If you click on something that is not a Class or Literal, you will need to" +
-                        " click the subject-object pair again.\nFeel free to add elements near the edge of the graph," +
-                        " it automatically resizes! "
+                        " add to the canvas, then click somewhere on the canvas. Add a name (even in .ttl syntax!) an" +
+                        "d the item will be created in that position. \nIn regards to the Property button, you must c" +
+                        "lick on a valid (already existing) element in the graph as the subject, and then another as " +
+                        "the object. If you click on something that is not a Class or Literal, you will need toclick " +
+                        "the subject-object pair again.\nFeel free to add elements near the edge of the graph, it aut" +
+                        "omatically resizes! "
         );
 
         instrAlert.showAndWait();
@@ -594,7 +660,10 @@ public final class Controller {
     }
 
     @FXML protected void ingestCsvAction(){
-        File loadFile = showLoadFileDialog("Load .csv for RDF/XML generation");
+        File loadFile = showLoadFileDialog(
+                "Load .csv for Instance-Level Turtle Generation",
+                new FileChooser.ExtensionFilter("Comma Separated Values (*.csv)", "*.csv")
+        );
         if (loadFile != null){
             csv = null;
             headers = null;
@@ -604,50 +673,63 @@ public final class Controller {
                 csv = parser.getRecords();
                 statusLbl.setText(".csv ingested. Yum.");
                 LOGGER.info("Ingested " + loadFile.getName() + ".\nFound csv headers: " + headers);
-                rdfXmlBtn.setDisable(false);
+                instanceBtn.setDisable(false);
                 parser.close();
+                csvIngested.setValue(true);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    @FXML protected void rdfXmlGenAction() {
-        String rdfxml;
-        RDFXMLGenerator rdfxmlGenerator = new RDFXMLGenerator(headers, csv, classes, prefixes);
-        rdfxmlGenerator.attemptCorrelationOfHeaders();
+    @FXML protected void instanceGenAction() {
+        String instanceData;
+        DataIntegrator dataIntegrator = new DataIntegrator(headers, csv, classes, prefixes);
+        dataIntegrator.attemptCorrelationOfHeaders();
 
-        LOGGER.info("BEFORE Correlation:\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
-                "\nUncorrelated: " + rdfxmlGenerator.uncorrelatedToString());
+        LOGGER.info("BEFORE Correlation:\nCorrelated: " + dataIntegrator.getCorrelations().toString() +
+                "\nUncorrelated: " + dataIntegrator.uncorrelatedToString());
 
-        if (rdfxmlGenerator.getUncorrelated() != null && rdfxmlGenerator.getUncorrelated().getKey().size() != 0)
-            showManualCorrelationDialog(rdfxmlGenerator);
-        if (rdfxmlGenerator.getUncorrelated() != null && rdfxmlGenerator.getUncorrelated().getKey().size() != 0){
+        if (dataIntegrator.getUncorrelated() != null && dataIntegrator.getUncorrelated().getKey().size() != 0)
+            showManualCorrelationDialog(dataIntegrator);
+        if (dataIntegrator.getUncorrelated() != null && dataIntegrator.getUncorrelated().getKey().size() != 0){
             LOGGER.info("Cancelled Manual Correlations. ");
             return;
         }
 
         LOGGER.info("AFTER Correlation:" +
-                "\nCorrelated: " + rdfxmlGenerator.getCorrelations().toString() +
-                "\nUncorrelated (assumed constant): " + rdfxmlGenerator.uncorrelatedClassesToString());
+                "\nCorrelated: " + dataIntegrator.getCorrelations().toString() +
+                "\nUncorrelated (assumed constant): " + dataIntegrator.uncorrelatedClassesToString());
 
-        rdfxml = rdfxmlGenerator.generate();
-        File saveFile = showSaveFileDialog("rdf.rdf", "Save RDF/XML Document", null);
+        try {
+            instanceData = dataIntegrator.generate();
+        } catch (DataIntegrator.PrefixMissingException e) {
+            statusLbl.setText("Data Integration failed: '" + e.getMissing() + "' is referenced in graph but not " +
+                    "defined in the Prefixes Menu. ");
+            LOGGER.log(Level.SEVERE, "Integration failed: ", e);
+            return;
+        }
+
+        File saveFile = showSaveFileDialog(
+                "instance.ttl",
+                "Save Instance-Level Turtle Document",
+                new FileChooser.ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
+        );
         if (saveFile != null){
             try {
                 FileWriter writer = new FileWriter(saveFile);
-                writer.write(rdfxml);
+                writer.write(instanceData);
                 writer.flush();
                 writer.close();
-                statusLbl.setText("RDF/XML saved.");
+                statusLbl.setText("Instance-level Turtle saved.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void showManualCorrelationDialog(RDFXMLGenerator generator){
-        ArrayList<RDFXMLGenerator> data = new ArrayList<>();
+    private void showManualCorrelationDialog(DataIntegrator generator){
+        ArrayList<DataIntegrator> data = new ArrayList<>();
         data.add(generator);
         showWindow("/view/correlateDialog.fxml", "Set Manual Correlations", data);
     }
