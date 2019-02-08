@@ -442,6 +442,7 @@ public final class Controller implements Initializable {
 
             compiledProperty.setLayoutX(subject.getX());
             compiledProperty.setLayoutY(subject.getY());
+            drawPane.getChildren().remove(arrow);
             arrow = null;
         } else {
             object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
