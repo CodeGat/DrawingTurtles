@@ -75,29 +75,36 @@ public class DataIntegrator {
             StringBuilder instanceTriples = new StringBuilder();
             String instanceTriple;
             final String subject = generateLongformURI(klass, record);
-            if (klass.getRdfsLabel() != null){
-                instanceTriple =
-                        subject + " <http://www.w3.org/2000/01/rdf-schema#label> \"" + klass.getRdfsLabel() + "\"\n";
-                instanceTriples.append(instanceTriple);
-            }
-            if (klass.getRdfsComment() != null){
-                instanceTriple =
-                        subject + " <http://www.w3.org/2000/01/rdf-schema#comment> \"" + klass.getRdfsComment() + "\"\n";
-                instanceTriples.append(instanceTriple);
-            }
+
+            instanceTriples.append(getMetaTriples(subject, klass));
 
             for (Edge edge : klass.getOutgoingEdges()){
                 String predicate = generateLongformURI(edge);
                 String object    = generateLongformURI(edge.getObject(), record);
 
-                instanceTriple = subject + " " + predicate + " " + object + "\n";
+                instanceTriple = subject + " " + predicate + " " + object + " .\n";
                 instanceTriples.append(instanceTriple);
             }
 
             instanceData.append(instanceTriples.toString());
         }
 
-        return instanceData.toString();
+        return instanceData.toString() + "\n";
+    }
+
+    private String getMetaTriples(String name, Vertex klass) throws PrefixMissingException {
+        String meta = "";
+        if (klass.getTypeDefinition() != null && klass.getTypeDefinition().length() != 0)
+            meta += name + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> " +
+                    generateLongformURI(klass.getTypeDefinition()) + " .\n";
+
+        if (klass.getRdfsLabel() != null && klass.getRdfsLabel().length() != 0)
+            meta += name + " <http://www.w3.org/2000/01/rdf-schema#label> \"" + klass.getRdfsLabel() + "\" .\n";
+
+        if (klass.getRdfsComment() != null && klass.getRdfsComment().length() != 0)
+            meta += name + " <http://www.w3.org/2000/01/rdf-schema#comment> \"" + klass.getRdfsComment() + "\" .\n";
+
+        return meta;
     }
 
     /**
@@ -125,21 +132,30 @@ public class DataIntegrator {
             else return "<" + longformPrefix + nameURI + ">";
         } else if (klass.getElementType() == INSTANCE_LITERAL){
             String dataType = klass.getDataType() != null ? klass.getDataType() : "";
+            String expandedDataType = generateLongformURI(dataType);
 
             switch (dataType){
-                case "xsd:String":
+                case "xsd:string":
                 case "":
                     return "\"" + getInstanceLevelData(klass, record) + "\"";
-                case "xsd:Integer":
-                case "xsd:Decimal":
-                case "xsd:Double":
-                case "xsd:Boolean":
+                case "xsd:integer":
+                case "xsd:decimal":
+                case "xsd:double":
+                case "xsd:boolean":
                     return getInstanceLevelData(klass, record);
                 default:
-                    return "\"" + getInstanceLevelData(klass, record) + "\"^^" + dataType;
+                    return "\"" + getInstanceLevelData(klass, record) + "\"^^" + expandedDataType;
             }
         }
         return null;
+    }
+
+    private String generateLongformURI(String type) throws PrefixMissingException {
+        if (type.matches("<https?://.*") || type.equals("")) return type;
+        else {
+            String[] typeParts = type.split(":", 2);
+            return "<" + generateLongformPrefix(typeParts[0]) + typeParts[1] + ">";
+        }
     }
 
     /**

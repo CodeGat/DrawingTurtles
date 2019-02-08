@@ -21,15 +21,16 @@ public class Edge {
      * @param subject the tail of the property arrow.
      * @param object the head of the property arrow.
      */
+    // TODO: 8/02/2019 if iri add <> keeps adding when save/loading. Need better fix.
     public Edge(StackPane container, Label name, Vertex subject, Vertex object){
         this.container = container;
         this.name = name.getText();
         this.subject = subject;
         this.object = object;
 
-        if (this.name.matches("http:.*|mailto:.*")){
+        if (this.name.matches("<?https?:.*>?|<?mailto:.*>?")) {
             isIri = true;
-            this.name = "<" + this.name + ">";
+            this.name = this.name.matches("<https?:.*>|<mailto:.*>") ? this.name : "<" + this.name + ">";
         } else isIri = false;
     }
 
