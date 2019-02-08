@@ -41,6 +41,7 @@ import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import model.graph.SelfReferentialArrow;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -428,17 +429,16 @@ public final class Controller implements Initializable {
      */
     private void addObjectOfProperty(MouseEvent mouseEvent, Vertex object) {
         StackPane compiledProperty = new StackPane();
-        QuadCurve selfrefArrow = new QuadCurve();
+        SelfReferentialArrow selfrefArrow = new SelfReferentialArrow();
+
         if (subject == object){
             Bounds b = subject.getBounds();
             selfrefArrow.setStartX(b.getMaxX());
             selfrefArrow.setStartY(b.getMinY() + (b.getHeight() / 2));
-            selfrefArrow.setControlX(b.getMaxX() + (b.getWidth() / 2));
-            selfrefArrow.setControlY(b.getMaxY() + (b.getHeight() / 2));
+            selfrefArrow.setControlX(b.getMaxX() + (b.getWidth() / 2) + 100);
+            selfrefArrow.setControlY(b.getMaxY() + (b.getHeight() / 2) + 100);
             selfrefArrow.setEndX(b.getMinX() + (b.getWidth() / 2));
             selfrefArrow.setEndY(b.getMaxY());
-            selfrefArrow.setStroke(Color.web("000000"));
-            selfrefArrow.setFill(Color.web("f4f4f4"));
 
             compiledProperty.setLayoutX(subject.getX());
             compiledProperty.setLayoutY(subject.getY());
@@ -473,7 +473,7 @@ public final class Controller implements Initializable {
 
         if (subject == object) {
             compiledProperty.getChildren().addAll(selfrefArrow, propertyName);
-            StackPane.setAlignment(propertyName, Pos.BOTTOM_RIGHT);
+            StackPane.setAlignment(propertyName, Pos.CENTER_RIGHT);
         } else compiledProperty.getChildren().addAll(arrow, propertyName);
 
         drawPane.getChildren().add(compiledProperty);
