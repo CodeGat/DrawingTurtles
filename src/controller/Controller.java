@@ -4,10 +4,12 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.shape.QuadCurve;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.conceptual.Edge;
@@ -424,15 +426,32 @@ public final class Controller implements Initializable {
      * Defines the Object, or range, of the property, and creates the association between the Subject and Object.
      * @param mouseEvent the second click on the canvas when 'Property' is selected.
      */
-    private void addObjectOfProperty(MouseEvent mouseEvent, Vertex obj) {
-        obj.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
-
-        arrow.setEndX(obj.getX());
-        arrow.setEndY(obj.getY());
-
+    private void addObjectOfProperty(MouseEvent mouseEvent, Vertex object) {
         StackPane compiledProperty = new StackPane();
-        compiledProperty.setLayoutX(subject.getX() < obj.getX() ? subject.getX() : obj.getX());
-        compiledProperty.setLayoutY(subject.getY() < obj.getY() ? subject.getY() : obj.getY());
+        QuadCurve selfrefArrow = new QuadCurve();
+        if (subject == object){
+            Bounds b = subject.getBounds();
+            selfrefArrow.setStartX(b.getMaxX());
+            selfrefArrow.setStartY(b.getMinY() + (b.getHeight() / 2));
+            selfrefArrow.setControlX(b.getMaxX() + (b.getWidth() / 2));
+            selfrefArrow.setControlY(b.getMaxY() + (b.getHeight() / 2));
+            selfrefArrow.setEndX(b.getMinX() + (b.getWidth() / 2));
+            selfrefArrow.setEndY(b.getMaxY());
+            selfrefArrow.setStroke(Color.web("000000"));
+            selfrefArrow.setFill(Color.web("f4f4f4"));
+
+            compiledProperty.setLayoutX(subject.getX());
+            compiledProperty.setLayoutY(subject.getY());
+            arrow = null;
+        } else {
+            object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
+
+            arrow.setEndX(object.getX());
+            arrow.setEndY(object.getY());
+
+            compiledProperty.setLayoutX(subject.getX() < object.getX() ? subject.getX() : object.getX());
+            compiledProperty.setLayoutY(subject.getY() < object.getY() ? subject.getY() : object.getY());
+        }
 
         ArrayList<String> propertyInfo = showNameElementDialog();
         if (propertyInfo == null || propertyInfo.size() == 0){
@@ -451,14 +470,18 @@ public final class Controller implements Initializable {
                 Insets.EMPTY
         )));
 
-        compiledProperty.getChildren().addAll(arrow, propertyName);
+        if (subject == object) {
+            compiledProperty.getChildren().addAll(selfrefArrow, propertyName);
+            StackPane.setAlignment(propertyName, Pos.BOTTOM_RIGHT);
+        } else compiledProperty.getChildren().addAll(arrow, propertyName);
+
         drawPane.getChildren().add(compiledProperty);
         compiledProperty.toBack();
 
-        Edge edge = new Edge(compiledProperty, propertyName, subject, obj);
+        Edge edge = new Edge(compiledProperty, propertyName, subject, object);
         properties.add(edge);
         subject.addOutgoingEdge(edge);
-        obj.addIncomingEdge(edge);
+        object.addIncomingEdge(edge);
 
         statusLbl.setText("Property " + propertyName.getText() + " created. ");
         subject = null;
