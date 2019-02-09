@@ -428,69 +428,18 @@ public final class Controller implements Initializable {
      * @param mouseEvent the second click on the canvas when 'Property' is selected.
      */
     private void addObjectOfProperty(MouseEvent mouseEvent, Vertex object) {
-        object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
+        boolean isSelfReferential = subject == object;
+        StackPane compiledProperty;
 
-        arrow.setEndX(object.getX());
-        arrow.setEndY(object.getY());
+        if (isSelfReferential) compiledProperty = addSelfReferentialProperty();
+        else compiledProperty = addNormalProperty(mouseEvent, object);
 
-        StackPane compiledProperty = new StackPane();
-        SelfReferentialArrow selfrefArrow = new SelfReferentialArrow();
+        if (compiledProperty == null) return;
 
-        if (subject == object){
-            Bounds b = subject.getBounds();
-            selfrefArrow.setStartX(b.getMaxX());
-            selfrefArrow.setStartY(b.getMinY() + (b.getHeight() / 2));
-            selfrefArrow.setControlX(b.getMaxX() + (b.getWidth() / 2) + 100);
-            selfrefArrow.setControlY(b.getMaxY() + (b.getHeight() / 2) + 100);
-            selfrefArrow.setEndX(b.getMinX() + (b.getWidth() / 2));
-            selfrefArrow.setEndY(b.getMaxY());
-
-            compiledProperty.setLayoutX(subject.getX());
-            compiledProperty.setLayoutY(subject.getY());
-            drawPane.getChildren().remove(arrow);
-            arrow = null;
-        } else {
-            object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
-
-            arrow.setEndX(object.getX());
-            arrow.setEndY(object.getY());
-
-            compiledProperty.setLayoutX(subject.getX() < object.getX() ? subject.getX() : object.getX());
-            compiledProperty.setLayoutY(subject.getY() < object.getY() ? subject.getY() : object.getY());
-        }
-
-        ArrayList<String> propertyInfo = showNameElementDialog();
-        if (propertyInfo == null || propertyInfo.size() == 0){
-            drawPane.getChildren().remove(arrow);
-            statusLbl.setText("Property creation cancelled. ");
-            subject = null;
-            arrow = null;
-            srcClick = true;
-            return;
-        }
-
-        Label propertyName = new Label(propertyInfo.get(0));
-        propertyName.setBackground(new Background(new BackgroundFill(
-                Color.web("F4F4F4"),
-                CornerRadii.EMPTY,
-                Insets.EMPTY
-        )));
-
-        if (subject == object) {
-            compiledProperty.getChildren().addAll(selfrefArrow, propertyName);
-            StackPane.setAlignment(propertyName, Pos.CENTER_RIGHT);
-        } else compiledProperty.getChildren().addAll(arrow, propertyName);
-
-        double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
-        if (textWidth > arrow.getWidth()) {
-            double overrunOneSide = (textWidth - arrow.getWidth()) / 2;
-            compiledProperty.setLayoutX(compiledProperty.getLayoutX() - overrunOneSide);
-        }
-
-        compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
         compiledProperty.toBack();
 
+        Label propertyName = (Label) compiledProperty.getChildren().get(1);
         Edge edge = new Edge(compiledProperty, propertyName, subject, object);
         properties.add(edge);
         subject.addOutgoingEdge(edge);
@@ -500,6 +449,84 @@ public final class Controller implements Initializable {
         subject = null;
         arrow = null;
         srcClick = true;
+    }
+
+    private StackPane addNormalProperty(MouseEvent mouseEvent, Vertex object) {
+        StackPane compiled = new StackPane();
+
+        object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
+
+        arrow.setEndX(object.getX());
+        arrow.setEndY(object.getY());
+
+        compiled.setLayoutX(subject.getX() < object.getX() ? subject.getX() : object.getX());
+        compiled.setLayoutY(subject.getY() < object.getY() ? subject.getY() : object.getY());
+
+        ArrayList<String> propertyInfo = showNameElementDialog();
+        if (propertyInfo == null || propertyInfo.size() == 0){
+            drawPane.getChildren().remove(arrow);
+            statusLbl.setText("Property creation cancelled. ");
+            subject = null;
+            arrow = null;
+            srcClick = true;
+            return null;
+        }
+
+        Label propertyName = new Label(propertyInfo.get(0));
+        BackgroundFill fill = new BackgroundFill(Color.web("F4F4F4"), CornerRadii.EMPTY, Insets.EMPTY);
+        propertyName.setBackground(new Background(fill));
+
+        double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
+        if (textWidth > arrow.getWidth()) {
+            double overrunOneSide = (textWidth - arrow.getWidth()) / 2;
+            compiled.setLayoutX(compiled.getLayoutX() - overrunOneSide);
+        }
+        compiled.getChildren().addAll(arrow, propertyName);
+
+        return compiled;
+    }
+
+    private StackPane addSelfReferentialProperty() {
+        StackPane compiled = new StackPane();
+        SelfReferentialArrow selfArrow = new SelfReferentialArrow();
+        Bounds b = subject.getBounds();
+
+        selfArrow.setStartX(b.getMaxX());
+        selfArrow.setStartY(b.getMinY() + (b.getHeight() / 2));
+        selfArrow.setControlX(b.getMaxX() + (b.getWidth() / 2) - 50);
+        selfArrow.setControlY(b.getMaxY() + (b.getHeight() / 2) - 50);
+        selfArrow.setEndX(b.getMinX() + (b.getWidth() / 2));
+        selfArrow.setEndY(b.getMaxY());
+
+        compiled.setLayoutX(subject.getX());
+        compiled.setLayoutY(subject.getY());
+        drawPane.getChildren().remove(arrow);
+        arrow = null;
+
+        ArrayList<String> propertyInfo = showNameElementDialog();
+        if (propertyInfo == null || propertyInfo.size() == 0){
+            drawPane.getChildren().remove(arrow);
+            statusLbl.setText("Property creation cancelled. ");
+            subject = null;
+            arrow = null;
+            srcClick = true;
+            return null;
+        }
+
+        Label propertyName = new Label(propertyInfo.get(0));
+        BackgroundFill fill = new BackgroundFill(Color.web("F4F4F4"), CornerRadii.EMPTY, Insets.EMPTY);
+        propertyName.setBackground(new Background(fill));
+
+        double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
+
+        if (textWidth > selfArrow.getWidth()){
+            double overrunOneSide = (textWidth - selfArrow.getWidth()) / 2;
+            compiled.setLayoutX(compiled.getLayoutX() - overrunOneSide);
+        }
+        compiled.getChildren().addAll(selfArrow, propertyName);
+        StackPane.setAlignment(propertyName, Pos.CENTER_RIGHT);
+
+        return compiled;
     }
 
     /**

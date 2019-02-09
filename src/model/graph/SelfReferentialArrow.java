@@ -86,6 +86,7 @@ public class SelfReferentialArrow extends Group {
     public double getControlY() { return curve.getControlY(); }
     public double getEndX()   { return curve.getEndX(); }
     public double getEndY()   { return curve.getEndY(); }
+    public double getWidth() { return Math.abs(curve.getStartX() - curve.getEndX()); }
 
     private DoubleProperty startXProperty() { return curve.startXProperty(); }
     private DoubleProperty startYProperty() { return curve.startYProperty(); }
