@@ -428,6 +428,11 @@ public final class Controller implements Initializable {
      * @param mouseEvent the second click on the canvas when 'Property' is selected.
      */
     private void addObjectOfProperty(MouseEvent mouseEvent, Vertex object) {
+        object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
+
+        arrow.setEndX(object.getX());
+        arrow.setEndY(object.getY());
+
         StackPane compiledProperty = new StackPane();
         SelfReferentialArrow selfrefArrow = new SelfReferentialArrow();
 
@@ -476,6 +481,13 @@ public final class Controller implements Initializable {
             StackPane.setAlignment(propertyName, Pos.CENTER_RIGHT);
         } else compiledProperty.getChildren().addAll(arrow, propertyName);
 
+        double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
+        if (textWidth > arrow.getWidth()) {
+            double overrunOneSide = (textWidth - arrow.getWidth()) / 2;
+            compiledProperty.setLayoutX(compiledProperty.getLayoutX() - overrunOneSide);
+        }
+
+        compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
         compiledProperty.toBack();
 
@@ -545,7 +557,6 @@ public final class Controller implements Initializable {
         } else isClass = !elementName.getText().matches(globalLiteralRegex + "|" + instanceLiteralRegex);
 
         double textWidth = elementName.getBoundsInLocal().getWidth();
-
         if (isClass){
             Ellipse elementType = new Ellipse(x, y, textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5, 37.5);
             elementType.setFill(Color.web("f4f4f4"));

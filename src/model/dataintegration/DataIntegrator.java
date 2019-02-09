@@ -129,8 +129,10 @@ public class DataIntegrator {
      * @throws PrefixMissingException if a given prefix does not have an expanded form.
      */
     private String generateLongformURI(Vertex klass, CSVRecord record) throws PrefixMissingException {
-        if (klass.getElementType() == GLOBAL_LITERAL || klass.isIri())
+        if (klass.getElementType() == GLOBAL_LITERAL)
             return klass.getName();
+        else if (klass.isIri())
+            return "<" + klass.getName() + ">";
         else if (klass.isBlank())
             return klass.getName() + blankNodePermutation;
         else if (klass.getElementType() == CLASS) {
@@ -204,7 +206,7 @@ public class DataIntegrator {
      */
     private String generateLongformURI(Edge edge) throws PrefixMissingException {
         if (edge.isIri()){
-            return edge.getName();
+            return "<" + edge.getName() + ">";
         } else {
             String name = edge.getName();
             String[] nameParts = name.split(":");
