@@ -244,7 +244,7 @@ public class Converter {
 
         for (Map.Entry<String, ArrayList<Vertex>> e : commonObjects.entrySet()){
             String predicateObjectListStr = "";
-            String propName = e.getKey();
+            String propName = e.getKey().matches("https?:.*") ? "<" + e.getKey() + ">" : e.getKey();
             String objectListStr;
             ArrayList<Vertex> objectList = e.getValue();
 
@@ -319,8 +319,9 @@ public class Converter {
      */
     private static String convertObject(Vertex object) {
         String objectStr = object.getName();
+        boolean asBlankNodeList = config.get(1);
 
-        if (config.get(1) && object.isBlank()) {
+        if (asBlankNodeList && object.isBlank()) {
             String predicateObjectList = convertPredicateObjectList(object);
 
             if (predicateObjectList.contains(";") || predicateObjectList.contains(",")) {
@@ -333,7 +334,7 @@ public class Converter {
             String dataType = object.getDataType();
             objectStr = "\"" + objectStr + "\"" +
                     (dataType != null && dataType.length() != 0 ? "^^" + object.getDataType() : "");
-        } else objectStr = objectStr.matches("http:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
+        } else objectStr = objectStr.matches("https?:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
 
         return objectStr;
     }
@@ -346,7 +347,7 @@ public class Converter {
      */
     private static String convertSubject(Vertex klass){
         String subname = klass.getName();
-        subname = subname.matches("http:.*|mailto:.*") ? "<" + subname + ">" : subname;
+        subname = subname.matches("https?:.*|mailto:.*") ? "<" + subname + ">" : subname;
         String typeDef;
 
         if (isOntology)

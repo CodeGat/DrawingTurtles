@@ -424,15 +424,15 @@ public final class Controller implements Initializable {
      * Defines the Object, or range, of the property, and creates the association between the Subject and Object.
      * @param mouseEvent the second click on the canvas when 'Property' is selected.
      */
-    private void addObjectOfProperty(MouseEvent mouseEvent, Vertex obj) {
-        obj.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
+    private void addObjectOfProperty(MouseEvent mouseEvent, Vertex object) {
+        object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
 
-        arrow.setEndX(obj.getX());
-        arrow.setEndY(obj.getY());
+        arrow.setEndX(object.getX());
+        arrow.setEndY(object.getY());
 
         StackPane compiledProperty = new StackPane();
-        compiledProperty.setLayoutX(subject.getX() < obj.getX() ? subject.getX() : obj.getX());
-        compiledProperty.setLayoutY(subject.getY() < obj.getY() ? subject.getY() : obj.getY());
+        compiledProperty.setLayoutX(subject.getX() < object.getX() ? subject.getX() : object.getX());
+        compiledProperty.setLayoutY(subject.getY() < object.getY() ? subject.getY() : object.getY());
 
         ArrayList<String> propertyInfo = showNameElementDialog();
         if (propertyInfo == null || propertyInfo.size() == 0){
@@ -451,14 +451,21 @@ public final class Controller implements Initializable {
                 Insets.EMPTY
         )));
 
+        double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
+        if (textWidth > arrow.getWidth()) {
+            double overrunOneSide = (textWidth - arrow.getWidth()) / 2;
+            compiledProperty.setLayoutX(compiledProperty.getLayoutX() - overrunOneSide);
+        }
+
         compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
         compiledProperty.toBack();
 
-        Edge edge = new Edge(compiledProperty, propertyName, subject, obj);
+        Edge edge = new Edge(compiledProperty, propertyName, subject, object);
+
         properties.add(edge);
         subject.addOutgoingEdge(edge);
-        obj.addIncomingEdge(edge);
+        object.addIncomingEdge(edge);
 
         statusLbl.setText("Property " + propertyName.getText() + " created. ");
         subject = null;
@@ -521,7 +528,6 @@ public final class Controller implements Initializable {
         } else isClass = !elementName.getText().matches(globalLiteralRegex + "|" + instanceLiteralRegex);
 
         double textWidth = elementName.getBoundsInLocal().getWidth();
-
         if (isClass){
             Ellipse elementType = new Ellipse(x, y, textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5, 37.5);
             elementType.setFill(Color.web("f4f4f4"));

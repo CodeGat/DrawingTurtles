@@ -81,8 +81,8 @@ public class Vertex {
             ((Text) container.getChildren().get(1)).setText("");
             isBlankNode = true;
             isIri = false;
-        } else if (this.name.matches("http:.*|mailto:.*")){
-            this.name = "<" + this.name + ">";
+        } else if (this.name.matches("https?:.*|mailto:.*")){
+//            this.name = "<" + this.name + ">";
             isBlankNode = false;
             isIri = true;
         } else {
