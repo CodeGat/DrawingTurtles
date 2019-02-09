@@ -245,10 +245,13 @@ public class DataIntegrator {
 
         for (Entry<String, Integer> header : headers.entrySet()){
             for (Vertex klass : classes){
-                boolean isExactMatch = header.getKey().equals(klass.getName());
+                String headerComparable =
+                        header.getKey().charAt(0) == '\uFEFF' ? header.getKey().substring(1) : header.getKey();
+
+                boolean isExactMatch = headerComparable.equals(klass.getName());
                 boolean isCloseMatch = !klass.isIri()
                         && klass.getElementType() == CLASS
-                        && header.getKey().equalsIgnoreCase(klass.getName().split(":", 2)[1]);
+                        && headerComparable.equalsIgnoreCase(klass.getName().split(":", 2)[1]);
 
                 if (isExactMatch || isCloseMatch){
                     csvTtlCorrelations.add(new Correlation(header.getValue(), header.getKey(), klass));
