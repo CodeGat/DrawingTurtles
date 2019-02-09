@@ -72,10 +72,10 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
         String[] newPrefixes = prefixResult.split(", ");
 
         for (String prefix : newPrefixes){
-            if (prefix.matches("[a-z]* : .*")) {
-                String[] prefixParts = prefix.split(" : ");
-                String   acronym = prefixParts[0];
-                String   expansion = prefixParts[1];
+            if (prefix.matches("[a-z]* ?: ?.*")) {
+                String[] prefixParts = prefix.split(":", 2);
+                String   acronym = prefixParts[0].trim();
+                String   expansion = prefixParts[1].trim();
 
                 prefixes.put(acronym, expansion);
                 prefixList.getItems().add(prefix);
@@ -89,7 +89,7 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
      */
     @FXML void removePrefixAction() {
         String prefix = prefixList.getSelectionModel().getSelectedItem();
-        prefixes.remove(prefix.split(" : ")[0]);
+        prefixes.remove(prefix.split(":", 1)[0].trim());
         prefixList.getItems().remove(prefix);
         prefixList.getSelectionModel().clearSelection();
     }
@@ -146,10 +146,12 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
                 if (reader.read(rawPrefixes) == 0) LOGGER.warning("Nothing in prefix file. ");
                 String[] strPrefixes = new String(rawPrefixes).trim().split("\\n");
                 for (String strPrefix : strPrefixes) {
-                    String[] prefixParts = strPrefix.split(" : ");
+                    String[] prefixParts = strPrefix.split(":", 2);
+                    String   acronym = prefixParts[0].trim();
+                    String   expansion = prefixParts[1].trim();
 
-                    if (!prefixes.containsKey(prefixParts[0])) {
-                        prefixes.put(prefixParts[0], prefixParts[1]);
+                    if (!prefixes.containsKey(acronym)) {
+                        prefixes.put(acronym, expansion);
                         prefixList.getItems().add(strPrefix);
                     }
                 }
