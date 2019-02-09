@@ -82,7 +82,7 @@ public class Vertex {
             isBlankNode = true;
             isIri = false;
         } else if (this.name.matches("https?:.*|mailto:.*")){
-            this.name = "<" + this.name + ">";
+//            this.name = "<" + this.name + ">";
             isBlankNode = false;
             isIri = true;
         } else {
