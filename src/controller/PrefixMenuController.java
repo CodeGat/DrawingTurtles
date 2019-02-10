@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Controller for the Prefix Menu.
+ * Controller for view.prefixmenu.fxml.
  */
 public class PrefixMenuController extends AbstractDataSharingController<Map<String, String>> implements Initializable {
 
@@ -45,9 +45,7 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
 
 
     /**
-     * Overridden initialize method that is run after the PrefixMenuController constructor is called.
-     * @param location location of other resources.
-     * @param resources text resources that can be used by the PrefixMenu Controller.
+     * Add listener for the BooleanProperty that determines whether a item is selected in the prefix list.
      */
     @Override public void initialize(URL location, ResourceBundle resources) {
         prefixList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -163,7 +161,7 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     }
 
     /**
-     * Commit to the current prefixes, giving them to the base Controller.
+     * Add the current prefixes for commital, and close the Window.
      */
     @FXML void commitPrefixAction() {
         commit_prefixes = prefixes;
@@ -172,7 +170,7 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     }
 
     /**
-     * Close the window.
+     * Closes the Window.
      */
     @FXML void cancelPrefixAction() {
         Stage stage = (Stage) cmtPrefixBtn.getScene().getWindow();
@@ -209,7 +207,7 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     /**
      * Creates a save file dialog, prompting the user to select a file to create and/or save data to.
      * @param owner the window that owns the dialog.
-     * @param extFilter the list of extension filters, for easy access to specific file types.
+     * @param extFilter the list of extension filters, for easy access to the specified file types.
      * @return the file the user has chosen to save to, or null otherwise.
      */
     private File showSaveFileDialog(Window owner, FileChooser.ExtensionFilter extFilter) {
@@ -227,6 +225,7 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     /**
      * Creates a load file dialog, which prompts the user to load from a specific file.
      * @param owner the window that owns the dialog.
+     * @param extFilter the list of extension filters, for easy access to the specified file types.
      * @return the file that will be loaded from.
      */
     private File showLoadFileDialog(Window owner, FileChooser.ExtensionFilter extFilter){
@@ -240,6 +239,10 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
         return fileChooser.showOpenDialog(owner);
     }
 
+    /**
+     * The data passed to this controller from the calling Controller.
+     * @param data the data to be passed.
+     */
     @Override
     public void setData(ArrayList<Map<String, String>> data) {
         prefixes = data.get(0);
@@ -251,6 +254,10 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
         prefixList.setItems(FXCollections.observableArrayList(prefixesAsList));
     }
 
+    /**
+     * Data (the prefixes) to be accessable to the calling Controller.
+     * @return the accessable data.
+     */
     @Override
     public ArrayList<Map<String, String>> getData() {
         ArrayList<Map<String, String>> data = new ArrayList<>();

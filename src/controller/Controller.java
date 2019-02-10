@@ -88,6 +88,10 @@ public final class Controller implements Initializable {
     private BooleanProperty graphCreated = new SimpleBooleanProperty(false);
     private BooleanProperty csvIngested = new SimpleBooleanProperty(false);
 
+    /**
+     * Adds listeners for the Boolean Properties (and hence the workflow checklist) of prefix inspection, graph
+     *    creation and .csv ingestion. Also adds the initial common prefixes.
+     */
     @Override public void initialize(URL location, ResourceBundle resources) {
         Image cross = new Image("/view/images/cross.png");
         Image tick  = new Image("/view/images/tick.png");
@@ -146,7 +150,7 @@ public final class Controller implements Initializable {
     }
 
     /**
-     * Creates and displays the Window defined in the fxml file, also passing data to a controller C.
+     * Creates and displays the Window defined in the fxml file, also passing data of type T to a controller C.
      * @param fxml the fxml file in which the layout is defined.
      * @param title the title of the new window.
      * @param data the parameters passed to the Controller.
@@ -195,7 +199,7 @@ public final class Controller implements Initializable {
     }
 
     /**
-     * on clicking 'Save Graph' button, attempt to traverse the graph and save a bespoke serialization of the graph to
+     * On clicking 'Save Graph' button, attempt to traverse the graph and save a bespoke serialization of the graph to
      *   a user-specified .gat file. That's a Graph Accessor Type format, not just my name...
      */
     @FXML public void saveGraphAction() {
@@ -348,8 +352,8 @@ public final class Controller implements Initializable {
     }
 
     /**
-     * On clicking the canvas, begin to draw the specified element to the canvas.
-     * @param mouseEvent the event that triggered the method.
+     * On clicking the canvas, determine the type of action and execute it.
+     * @param mouseEvent the click that triggered the method.
      */
     @FXML protected void canvasAction(MouseEvent mouseEvent) {
         Vertex vertex;
@@ -411,7 +415,7 @@ public final class Controller implements Initializable {
     }
 
     /**
-     * Keeps the arrow in line with the mouse as the user clicks on the target.
+     * Keeps the arrow in line with the mouse as the user clicks on the graph Object.
      * @param mouseEvent the event that triggered the method.
      */
     @FXML protected void moveArrowAction(MouseEvent mouseEvent) {
@@ -422,7 +426,8 @@ public final class Controller implements Initializable {
 
     /**
      * Defines the Object, or range, of the property, and creates the association between the Subject and Object.
-     * @param mouseEvent the second click on the canvas when 'Property' is selected.
+     * @param mouseEvent the second click on the canvas after a graph Subject is clicked.
+     * @param object the object specified by the users click.
      */
     private void addObjectOfProperty(MouseEvent mouseEvent, Vertex object) {
         object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
@@ -445,11 +450,8 @@ public final class Controller implements Initializable {
         }
 
         Label propertyName = new Label(propertyInfo.get(0));
-        propertyName.setBackground(new Background(new BackgroundFill(
-                Color.web("F4F4F4"),
-                CornerRadii.EMPTY,
-                Insets.EMPTY
-        )));
+        BackgroundFill fill = new BackgroundFill(Color.web("F4F4F4"), CornerRadii.EMPTY, Insets.EMPTY);
+        propertyName.setBackground(new Background(fill));
 
         double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
         if (textWidth > arrow.getWidth()) {
@@ -475,6 +477,7 @@ public final class Controller implements Initializable {
 
     /**
      * Defines the Subject, or domain, of the property.
+     * @param sub the Subject associated with the users click.
      */
     private void addSubjectOfProperty(Vertex sub) {
         subject = sub;
@@ -494,9 +497,8 @@ public final class Controller implements Initializable {
     }
 
     /**
-     * Draw a Class or Literal and it's name to the canvas, and create the GraphClass representation of the element.
-     * Helper method of {@link #canvasAction(MouseEvent) Add Element} method.
-     * @param mouseEvent the click to the canvas.
+     * Draw a Class or Literal and it's name to the canvas, and create the Vertex representation of the element.
+     * @param mouseEvent the click to the canvas that specifies where the element is to be placed.
      */
     private void addElementSubaction(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
@@ -559,6 +561,10 @@ public final class Controller implements Initializable {
         }
     }
 
+    /**
+     * Opens the Ontology Class Dialog window and promts the user to input information regarding the class.
+     * @return the new user-specified ontology class information, if it exists.
+     */
     private ArrayList<String> showNameOntologyClassDialog() {
         ArrayList<String> ontologyClass = showWindow("/view/ontologyclassdialog.fxml", "Add new Ontology Class", null);
         if (ontologyClass != null && ontologyClass.size() != 0) return ontologyClass;
@@ -625,6 +631,8 @@ public final class Controller implements Initializable {
 
     /**
      * Creates a load file dialog, which prompts the user to load from a specific file.
+     * @param title the title of the Dialog.
+     * @param extFilter the extension filter for the dialog, which restricts selection to files of a given type.
      * @return the file that will be loaded from.
      */
     private File showLoadFileDialog(String title, FileChooser.ExtensionFilter extFilter){
@@ -665,6 +673,9 @@ public final class Controller implements Initializable {
         if (updatedConfig != null) config = updatedConfig;
     }
 
+    /**
+     * Loads and parses a given .csv file into a List<CSVRecord>.
+     */
     @FXML protected void ingestCsvAction(){
         File loadFile = showLoadFileDialog(
                 "Load .csv for Instance-Level Turtle Generation",
@@ -688,6 +699,11 @@ public final class Controller implements Initializable {
         }
     }
 
+    /**
+     * Attempts to generate instance-level Turtle given a valid graph and .csv data.
+     * Also attempts to correlate the .csv headers and graph classes - if there are some left over, it is left to the
+     *    user.
+     */
     @FXML protected void instanceGenAction() {
         String instanceData;
         DataIntegrator dataIntegrator = new DataIntegrator(headers, csv, classes, prefixes);
@@ -734,6 +750,11 @@ public final class Controller implements Initializable {
         }
     }
 
+    /**
+     * Show the manual correlations dialog, prompting the user to correlate the .csv headers and the graph classes,
+     *    modifying the underlying DataIntegerator.
+     * @param generator the DataIntegrator that is modified when the user determines the correlations between data.
+     */
     private void showManualCorrelationDialog(DataIntegrator generator){
         ArrayList<DataIntegrator> data = new ArrayList<>();
         data.add(generator);

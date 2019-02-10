@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
+/**
+ * The controller for view.correlateDialog.fxml.
+ */
 public class CorrelateDialogController extends AbstractDataSharingController<DataIntegrator> implements Initializable {
     @FXML Button addManualCorrBtn, addHeaderBtn, commitBtn, cancelBtn;
     @FXML ListView<String> csvHeaderList;
@@ -39,6 +42,9 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
 
     private DataIntegrator dataIntegrator;
 
+    /**
+     * Initializes listeners for BooleanProperties relating to the state of the csvHeaderList, ttlHeaderList.
+     */
     @Override public void initialize(URL location, ResourceBundle resources) {
         isSelectionFromBothLists.addListener((observable, oldV, newV) -> {
             if (observable.getValue().booleanValue()) addManualCorrBtn.setDisable(false);
@@ -63,12 +69,18 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
         }));
     }
 
+    /**
+     * Once the user has selected a .csv header and a .ttl class that are to be correlated from the lists,
+     *    and clicked the 'Add' button, remove those from the list and add it to the correlated list.
+     */
     @FXML void addManualCorrelationAction() {
         String selectedCsvHeader = csvHeaderList.getSelectionModel().getSelectedItem();
         int index = Integer.parseInt(selectedCsvHeader.split(" ")[0]);
         String csvAttribute = selectedCsvHeader.split(" ")[1];
+
         String selectedTtlClass = ttlHeaderList.getSelectionModel().getSelectedItem();
         Vertex ttlClass = null;
+
         for (Vertex klass : uncorrelatedTtlClasses) {
             String klassName = klass.getName().toLowerCase();
             String selectedKlass = selectedTtlClass.toLowerCase();
@@ -94,10 +106,14 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
         csvTtlCorrelationList.setItems(FXCollections.observableArrayList(correlationStrList));
     }
 
-    @FXML void addHeaderAction() {
+    /**
+     * Stub for adding unique data .csv records.
+     */
+    @FXML void addHeaderAction() {}
 
-    }
-
+    /**
+     * Close the Window and mark the modified DataIntegrator for commital.
+     */
     @FXML void commitCorrelationBtn() {
         dataIntegrator.setCorrelations(correlations);
         dataIntegrator.setUncorrelated(new Pair<>(uncorrelatedCsvHeaders, uncorrelatedTtlClasses));
@@ -105,16 +121,23 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
         stage.close();
     }
 
+    /**
+     * Close the Window.
+     */
     @FXML void cancelCorrelationBtn() {
         Stage stage = (Stage) cancelBtn.getScene().getWindow();
         stage.close();
     }
 
+    /**
+     * Set the data passed from the Controller to variables in the CorrelateDialogController.
+     * @param data the data passed to the CorrelateDialogController to the Controller.
+     */
     @Override
     public void setData(ArrayList<DataIntegrator> data) {
-        DataIntegrator generator = data.get(0);
+        DataIntegrator integrator = data.get(0);
 
-        dataIntegrator = generator;
+        dataIntegrator = integrator;
         correlations = dataIntegrator.getCorrelations();
         ArrayList<String> correlationStrings = correlations
                 .stream()
@@ -125,7 +148,7 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
 
         uncorrelatedCsvHeaders = dataIntegrator.getUncorrelated().getKey();
         csvHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedCsvHeaders));
-        uncorrelatedTtlClasses = generator.getUncorrelated().getValue();
+        uncorrelatedTtlClasses = integrator.getUncorrelated().getValue();
         uncorrelatedTtlClassNames = uncorrelatedTtlClasses
                 .stream()
                 .map(Vertex::getName)
@@ -133,6 +156,10 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
         ttlHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedTtlClassNames));
     }
 
+    /**
+     * Add the data that the Controller can access from this class.
+     * @return the data that can be accessed when the Controller calls this method.
+     */
     @Override
     public ArrayList<DataIntegrator> getData() {
         ArrayList<DataIntegrator> data = new ArrayList<>();

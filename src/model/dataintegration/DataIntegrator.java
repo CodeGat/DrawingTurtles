@@ -15,6 +15,7 @@ import static model.conceptual.Vertex.GraphElemType.*;
  * Responsible for the generation of instance data, as well as correlating .csv headers and their .ttl counterparts.
  */
 public class DataIntegrator {
+
     /**
      * Exception when there is a prefix defined in the graph, but no expansion (ie. it is not defined in the Prefix
      *    Menu)
@@ -41,6 +42,13 @@ public class DataIntegrator {
     // append this int to the end of a blank node so each blank node is contained to it's own record.
     private static int blankNodePermutation = 0;
 
+    /**
+     * Constructor for the DataIntegrator.
+     * @param headers the list of .csv headers, or attributes.
+     * @param csv the list of .csv records.
+     * @param classes the list of graph classes.
+     * @param prefixes the map of prefix acronyms and their expanded form.
+     */
     public DataIntegrator(
             Map<String, Integer> headers,
             List<CSVRecord> csv,

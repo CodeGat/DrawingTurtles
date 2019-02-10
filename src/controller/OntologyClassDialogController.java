@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ResourceBundle;
 
+/**
+ * The controller for ontologyClassDialog.fxml.
+ */
 public class OntologyClassDialogController extends AbstractDataSharingController<String> implements Initializable {
     @FXML Button cmtBtn, cancelBtn;
     @FXML TextField typeTfd, nameTfd, labelTfd;
@@ -24,23 +27,28 @@ public class OntologyClassDialogController extends AbstractDataSharingController
 
     private ArrayList<String> commit_data = new ArrayList<>();
 
+    /**
+     * Adds listeners for the BooleanProperties that determine what fields to enable and disable depending on the type
+     *    of graph element - Instance or Global Literal, or Class.
+     * Adds listener for change on the textfield to help facilitate the determination of the above BooleanProperties.
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        final String stringLitRegex = "\".+\"";
-        final String otherLitRegex = "\".+\"\\^\\^.*";
-        final String langLitRegex = "\".+\"@.*";
-        final String instanceLitRegex = "(?<!\")[^:]*(?!\")";
-        final String booleanLitRegex = "true|false";
-        final String integerLitRegex = "[+\\-]?\\d+";
-        final String decimalLitRegex = "[+\\-]?\\d*\\.\\d+";
-        final String doubleLitRegex = "([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+";
-
-        final String literalRegex = stringLitRegex + "|" + otherLitRegex + "|" + langLitRegex + "|" +
-                instanceLitRegex + "|" + booleanLitRegex + "|" + integerLitRegex + "|" + decimalLitRegex + "|" +
-                doubleLitRegex;
-        final String classRegex = "([a-z]*:[^\" ]*)?";
-
         nameTfd.textProperty().addListener(((observable, oldValue, newValue) -> {
+            final String stringLitRegex   = "\".+\"";
+            final String otherLitRegex    = "\".+\"\\^\\^.*";
+            final String langLitRegex     = "\".+\"@.*";
+            final String instanceLitRegex = "(?<!\")[^:]*(?!\")";
+            final String booleanLitRegex  = "true|false";
+            final String integerLitRegex  = "[+\\-]?\\d+";
+            final String decimalLitRegex  = "[+\\-]?\\d*\\.\\d+";
+            final String doubleLitRegex   = "([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+";
+
+            final String literalRegex = stringLitRegex + "|" + otherLitRegex + "|" + langLitRegex + "|" +
+                    instanceLitRegex + "|" + booleanLitRegex + "|" + integerLitRegex + "|" + decimalLitRegex + "|" +
+                    doubleLitRegex;
+            final String classRegex = "([a-z]*:[^\" ]*)?";
+
             if (newValue.matches(classRegex)){
                 isClasslike.setValue(true);
                 isLiterallike.setValue(false);
@@ -83,22 +91,36 @@ public class OntologyClassDialogController extends AbstractDataSharingController
         }));
     }
 
-    @Override
-    public void setData(ArrayList<String> data) {}
-
-    @Override
-    public ArrayList<String> getData() {
-        return commit_data;
-    }
-
+    /**
+     * Add the created class and it's associated metadata for commital, and close the Window.
+     */
     @FXML void addNewClassAction() {
         commit_data.addAll(Arrays.asList(nameTfd.getText(), typeTfd.getText(), labelTfd.getText(), commentTxa.getText()));
         Stage stage = (Stage) cmtBtn.getScene().getWindow();
         stage.close();
     }
 
+    /**
+     * Close the Window.
+     */
     @FXML void cancelClassAction() {
         Stage stage = (Stage) cancelBtn.getScene().getWindow();
         stage.close();
+    }
+
+    /**
+     * Data is not passed to this controller.
+     * @param data the data that would be passed to this controller.
+     */
+    @Override
+    public void setData(ArrayList<String> data) {}
+
+    /**
+     * Pass the data from this controller to the calling Controller.
+     * @return the commited data for this controller, if it exists.
+     */
+    @Override
+    public ArrayList<String> getData() {
+        return commit_data;
     }
 }

@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Class that is responsible for the conversion of a visual model.graph into a .ttl string.
+ * Class that is responsible for the conversion of a visual graph into a .ttl string.
  */
 public class Converter {
     private static Map<String, String> prefixes;
@@ -133,8 +133,7 @@ public class Converter {
     }
 
     /**
-     * Conversion of visual properties into .ttl representation.
-     * Helper of {@link #convertGraphToTtlString(Map, ArrayList, ArrayList, ArrayList)}.
+     * Conversion of graph properties into .ttl representation.
      * @return the properties as a valid .tll string.
      */
     private static String convertGProperties() {
@@ -227,6 +226,7 @@ public class Converter {
         StringBuilder predicateObjectListSB = new StringBuilder();
         boolean first = true;
 
+        // a map of objects that share the same predicate.
         HashMap<String, ArrayList<Vertex>> commonObjects = new HashMap<>();
         for (Edge edge : subject.getOutgoingEdges()){
             Vertex obj = edge.getObject();
@@ -260,6 +260,10 @@ public class Converter {
         return predicateObjectListSB.toString();
     }
 
+    /**
+     * @param subject the subject of the potential rdfs properties.
+     * @return the meta-information about the given subject
+     */
     private static String getRdfsProperties(Vertex subject) {
         String result = "";
         String rdfsLabel = subject.getRdfsLabel();
@@ -357,7 +361,13 @@ public class Converter {
         return subname + typeDef + "\n" + tabs;
     }
 
+    /**
+     * Increase the current indentation level.
+     */
     private static void indentTab() { tabs += "\t"; }
 
+    /**
+     * Decreases the current indentation level.
+     */
     private static void dedentTab() { tabs = tabs.substring(0, tabs.length() - 1); }
 }

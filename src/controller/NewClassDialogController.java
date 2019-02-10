@@ -15,6 +15,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
+/**
+ * The controller for view.newClassDialog.fxml.
+ */
 public class NewClassDialogController extends AbstractDataSharingController<String> implements Initializable {
     private final BooleanProperty isClasslike = new SimpleBooleanProperty(false);
     private final BooleanProperty isLiterallike = new SimpleBooleanProperty(false);
@@ -25,17 +28,22 @@ public class NewClassDialogController extends AbstractDataSharingController<Stri
     @FXML Label dataTypeLbl;
     @FXML Button cmtBtn, cancelBtn;
 
+    /**
+     * Adds listeners for the BooleanProperties that determine what to show in the dataTypeLbl depending on the type
+     *    of graph element - Instance or Global Literal, or Class.
+     * Adds listener for change on the textfield to help facilitate the determination of the above BooleanProperties.
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         classNameTfd.textProperty().addListener(((observable, oldValue, newValue) -> {
-            final String stringLitRegex = "\".+\"";
-            final String otherLitRegex = "\".+\"\\^\\^.*";
-            final String langLitRegex = "\".+\"@.*";
+            final String stringLitRegex   = "\".+\"";
+            final String otherLitRegex    = "\".+\"\\^\\^.*";
+            final String langLitRegex     = "\".+\"@.*";
             final String instanceLitRegex = "(?<!\")[^:]*(?!\")";
-            final String booleanLitRegex = "true|false";
-            final String integerLitRegex = "[+\\-]?\\d+";
-            final String decimalLitRegex = "[+\\-]?\\d*\\.\\d+";
-            final String doubleLitRegex = "([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+";
+            final String booleanLitRegex  = "true|false";
+            final String integerLitRegex  = "[+\\-]?\\d+";
+            final String decimalLitRegex  = "[+\\-]?\\d*\\.\\d+";
+            final String doubleLitRegex   = "([+\\-]?\\d+\\.\\d+|[+\\-]?\\.\\d+|[+\\-]?\\d+)[Ee][+\\-]\\d+";
 
             final String literalRegex = stringLitRegex + "|" + otherLitRegex + "|" + langLitRegex + "|" +
                     instanceLitRegex + "|" + booleanLitRegex + "|" + integerLitRegex + "|" + decimalLitRegex + "|" +
@@ -72,6 +80,9 @@ public class NewClassDialogController extends AbstractDataSharingController<Stri
         }));
     }
 
+    /**
+     * Add data to be commited, and close the Window.
+     */
     @FXML void addNewClassAction() {
         commitData.add(classNameTfd.getText());
         commitData.add(dataTypeLbl.getText());
@@ -79,18 +90,33 @@ public class NewClassDialogController extends AbstractDataSharingController<Stri
         stage.close();
     }
 
+    /**
+     * Close the Window.
+     */
     @FXML void cancelAction() {
         Stage stage = (Stage) cancelBtn.getScene().getWindow();
         stage.close();
     }
 
+    /**
+     * Simplifies the addition of a new Class.
+     * @param keyEvent the key pressed.
+     */
     @FXML void keyPressedAction(KeyEvent keyEvent) {
         if (keyEvent.getCode() == KeyCode.ENTER) addNewClassAction();
     }
 
+    /**
+     * No data is needed in this Controller
+     * @param data the data to be passed to this controller.
+     */
     @Override
     public void setData(ArrayList<String> data) {}
 
+    /**
+     * Determine the data the Controller can access, if it exists.
+     * @return the data accessable by the Controller.
+     */
     @Override
     public ArrayList<String> getData() {
         return commitData;
