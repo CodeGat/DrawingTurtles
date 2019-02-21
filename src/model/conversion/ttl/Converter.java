@@ -88,6 +88,7 @@ public class Converter {
                 .map(p -> p.getName().split(":")[0]);
         Set<String> ttlPrefixSet = Stream
                 .concat(ttlClassPrefixesStream, ttlPropPrefixesStream)
+                .filter(p -> !p.equals("_"))
                 .collect(Collectors.toCollection(HashSet::new));
         Set<String> addedPrefixesSet = prefixes.keySet();
 
