@@ -134,9 +134,9 @@ public class Converter {
         return prefixStrs.toString();
     }
 
-    // TODO: 21/02/2019 Update javadoc
     /**
      * Conversion of graph properties into .ttl representation.
+     * Finds properties that are common, for example two 'foaf:knows', and determines the common type between them.
      * @return the properties as a valid .tll string.
      */
     private static String convertGProperties() {
@@ -174,10 +174,24 @@ public class Converter {
     }
 
     /**
-     *
-     * @param propName
-     * @param subObjPairs
-     * @return
+     * Finds the rdfs:domain and rdfs:range of the given propName.
+     * Squashes all subjects/objects that have the same type together, and attempts to find a common base type.
+     * For example:
+     *    a:T foaf:knows a:P ;
+     *        foaf:knows a:Q .
+     *    a:P a a:R .
+     *    a:Q a a:R .
+     * The domain would be a:T, and the range a:R.
+     * If there is no base type, it lists all of the types.
+     * For example:
+     *    a:T foaf:knows a:P ;
+     *        foaf:knows a:Q .
+     *    a:P a a:R .
+     *    a:Q a a:S .
+     * The domain would be a:T, and the range a:R, a:S;
+     * @param propName the name of the property.
+     * @param subObjPairs the subject/object pairs of the given property.
+     * @return the .ttl representation of the domain and range of the property.
      */
     private static String getDomainAndRange(String propName, ArrayList<Pair<Vertex, Vertex>> subObjPairs) {
         StringBuilder propStr = new StringBuilder(propName + " rdf:type owl:ObjectProperty ;\n\t");
@@ -190,9 +204,9 @@ public class Converter {
         });
 
         HashSet<String> commonSubTypeDefinitions = subs.stream().map(Vertex::getTypeDefinition).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
-        HashSet<String> commonSubDataTypes       = subs.stream().map(Vertex::getDataType)      .filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
         HashSet<String> commonObjTypeDefinitions = objs.stream().map(Vertex::getTypeDefinition).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
-        HashSet<String> commonObjDataTypes       = objs.stream().map(Vertex::getDataType)      .filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonSubDataTypes = subs.stream().map(Vertex::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonObjDataTypes = objs.stream().map(Vertex::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
 
         propStr.append("rdfs:domain ");
         if (commonSubTypeDefinitions.size() > 0){
@@ -232,37 +246,6 @@ public class Converter {
 
         return propStr.toString();
     }
-
-//    /**
-//     * Determines the range and domain of a given property.
-//     * This method is a simplified version of {@link #getDomainAndRange}, as it doesn't need to determine if there are
-//     *    multiple competing type definitions.
-//     * @param propName the name of the property we are finding the domain/range for.
-//     * @param subObjPair the subject and object of the given property.
-//     * @return the .ttl representation of the domain and range of the given property.
-//     */
-//    private static String addSinglePropStr(String propName, Pair<Vertex, Vertex> subObjPair) {
-//        String propStr = propName + " rdf:type owl:ObjectProperty ;\n\t";
-//        Vertex sub = subObjPair.getKey();
-//        Vertex obj = subObjPair.getValue();
-//
-//        propStr += "rdfs:domain ";
-//        if (sub.getTypeDefinition() != null)
-//            propStr += sub.getTypeDefinition() + " ;\n\t";
-//        else if (sub.getElementType() == Vertex.GraphElemType.GLOBAL_LITERAL && sub.getDataType() != null)
-//            propStr += sub.getDataType() + " ;\n\t";
-//        else
-//            propStr += sub.getName() + " ;\n\t";
-//
-//        propStr += "rdfs:range ";
-//        if (obj.getTypeDefinition() != null)
-//            propStr += obj.getTypeDefinition() + " ;\n";
-//        else if (obj.getElementType() == Vertex.GraphElemType.GLOBAL_LITERAL && obj.getDataType() != null)
-//            propStr += obj.getDataType() + " ;\n";
-//        else propStr += obj.getName() + " .\n";
-//
-//        return propStr;
-//    }
 
     /**
      * Comversion of visual Classes and Literals into their .ttl string equivalent.
