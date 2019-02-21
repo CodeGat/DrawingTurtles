@@ -341,12 +341,25 @@ public class Vertex {
      * @return the datatype of the Vertex, in angle-brackets if it is a fully-qualified IRI.
      */
     public String getDataType() {
-        if (dataType == null) return null;
+        if (this.elementType == GraphElemType.GLOBAL_LITERAL){
+            final String ints = "[+\\-]?\\d";
 
+            if      (name.matches("\".*\"")) return "xsd:string";
+            else if (name.matches("true|false")) return  "xsd:boolean";
+            else if (name.matches(ints+"+")) return "xsd:integer";
+            else if (name.matches(ints+"*\\.\\d+")) return "xsd:decimal";
+            else if (name.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+")) return "xsd:double";
+            else if (name.matches(".*\\^\\^.*")) return name.split("\\^\\^")[1];
+            else return null;
+        }
+
+        if (dataType == null)
+            return null;
         else if (dataType.matches("http(s)?:.*") && elementType != GraphElemType.CLASS)
             return "<" + dataType + ">";
         else if (this.elementType != GraphElemType.CLASS)
             return dataType;
-        else return null;
+        else
+            return null;
     }
 }

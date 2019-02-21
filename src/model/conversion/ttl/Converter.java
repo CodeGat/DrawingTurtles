@@ -1,5 +1,6 @@
 package model.conversion.ttl;
 
+import javafx.util.Pair;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 
@@ -88,6 +89,7 @@ public class Converter {
                 .map(p -> p.getName().split(":")[0]);
         Set<String> ttlPrefixSet = Stream
                 .concat(ttlClassPrefixesStream, ttlPropPrefixesStream)
+                .filter(p -> !p.equals("_"))
                 .collect(Collectors.toCollection(HashSet::new));
         Set<String> addedPrefixesSet = prefixes.keySet();
 
@@ -134,6 +136,7 @@ public class Converter {
 
     /**
      * Conversion of graph properties into .ttl representation.
+     * Finds properties that are common, for example two 'foaf:knows', and determines the common type between them.
      * @return the properties as a valid .tll string.
      */
     private static String convertGProperties() {
@@ -145,36 +148,105 @@ public class Converter {
                 "##################################################\n\n"
         );
 
+        // Map from the common property name to the associated subject/object pairs.
+        HashMap<String, ArrayList<Pair<Vertex, Vertex>>> commonProperties = new HashMap<>();
         for (Edge property : properties){
-            String propStr;
-            String prop = property.getName();
-            String obj = property.getObject().getName();
-            String sub = property.getSubject().getName();
+            Vertex sub = property.getSubject();
+            Vertex obj = property.getObject();
+            String propertyName = property.getName();
 
-            String subType = null;
-            String objType = null;
-            String ints = "[+\\-]?\\d";
+            // rdf:type is explicitly domain rdfs:Resource, range rdfs:Class. No need to constrain.
+            if (propertyName.equals("a")) continue;
 
-            if      (obj.matches("\".*\"")) objType = "xsd:string";
-            else if (obj.matches("true|false")) objType = "xsd:boolean";
-            else if (obj.matches(ints+"+")) objType = "xsd:integer";
-            else if (obj.matches(ints+"*\\.\\d+")) objType = "xsd:decimal";
-            else if (obj.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+")) objType = "xsd:double";
-            else if (obj.matches(".*\\^\\^.*")) objType = obj.split("\\^\\^")[1];
+            if (commonProperties.containsKey(propertyName))
+                commonProperties.get(propertyName).add(new Pair<>(sub, obj));
+            else {
+                ArrayList<Pair<Vertex, Vertex>> pairs = new ArrayList<>();
 
-            if      (sub.matches("\".*\"")) subType = "xsd:string";
-            else if (sub.matches("true|false")) subType = "xsd:boolean";
-            else if (sub.matches(ints+"+")) subType = "xsd:integer";
-            else if (sub.matches(ints+"*\\.\\d+")) subType = "xsd:decimal";
-            else if (sub.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+")) subType = "xsd:double";
-            else if (sub.matches(".*\\^\\^.*")) subType = sub.split("\\^\\^")[1];
-
-            propStr = prop + " rdf:type owl:ObjectProperty ;\n\t" +
-                    "rdfs:domain " + (subType == null ? sub : subType) + " ;\n\t" +
-                    "rdfs:range " + (objType == null ? obj : objType) + " .\n";
-            propStrs.append(propStr);
+                pairs.add(new Pair<>(sub, obj));
+                commonProperties.put(propertyName, pairs);
+            }
         }
+
+        commonProperties.forEach((prop, subObjPairs) -> propStrs.append(getDomainAndRange(prop, subObjPairs)));
+
         return propStrs.toString();
+    }
+
+    /**
+     * Finds the rdfs:domain and rdfs:range of the given propName.
+     * Squashes all subjects/objects that have the same type together, and attempts to find a common base type.
+     * For example:
+     *    a:T foaf:knows a:P ;
+     *        foaf:knows a:Q .
+     *    a:P a a:R .
+     *    a:Q a a:R .
+     * The domain would be a:T, and the range a:R.
+     * If there is no base type, it lists all of the types.
+     * For example:
+     *    a:T foaf:knows a:P ;
+     *        foaf:knows a:Q .
+     *    a:P a a:R .
+     *    a:Q a a:S .
+     * The domain would be a:T, and the range a:R, a:S;
+     * @param propName the name of the property.
+     * @param subObjPairs the subject/object pairs of the given property.
+     * @return the .ttl representation of the domain and range of the property.
+     */
+    private static String getDomainAndRange(String propName, ArrayList<Pair<Vertex, Vertex>> subObjPairs) {
+        StringBuilder propStr = new StringBuilder(propName + " rdf:type owl:ObjectProperty ;\n\t");
+
+        ArrayList<Vertex> subs = new ArrayList<>();
+        ArrayList<Vertex> objs = new ArrayList<>();
+        subObjPairs.forEach(p -> {
+            subs.add(p.getKey());
+            objs.add(p.getValue());
+        });
+
+        HashSet<String> commonSubTypeDefinitions = subs.stream().map(Vertex::getTypeDefinition).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonObjTypeDefinitions = objs.stream().map(Vertex::getTypeDefinition).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonSubDataTypes = subs.stream().map(Vertex::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonObjDataTypes = objs.stream().map(Vertex::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonSubNames = subs.stream().map(Vertex::getName).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonObjNames = objs.stream().map(Vertex::getName).collect(Collectors.toCollection(HashSet::new));
+
+        propStr.append("rdfs:domain ");
+        if (commonSubTypeDefinitions.size() > 0){
+            propStr.append(commonSubTypeDefinitions.size() != 1 ? "\n\t\t" : "");
+            commonSubTypeDefinitions.forEach(typedef -> propStr.append(typedef).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(";\n\t");
+        } else if (commonSubDataTypes.size() > 0){
+            propStr.append(commonSubDataTypes.size() != 1 ? "\n\t\t" : "");
+            commonSubDataTypes.forEach(datatype -> propStr.append(datatype).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(";\n\t");
+        } else {
+            propStr.append(commonSubNames.size() != 1 ? "\n\t\t" : "");
+            commonSubNames.forEach(s -> propStr.append(s).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(";\n\t");
+        }
+
+        propStr.append("rdfs:range ");
+        if (commonObjTypeDefinitions.size() > 0){
+            propStr.append(commonObjTypeDefinitions.size() != 1 ? "\n\t\t" : "");
+            commonObjTypeDefinitions.forEach(typedef -> propStr.append(typedef).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(".\n");
+        } else if (commonObjDataTypes.size() > 0){
+            propStr.append(commonObjDataTypes.size() != 1 ? "\n\t\t" : "");
+            commonObjDataTypes.forEach(datatype -> propStr.append(datatype).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(".\n");
+        } else {
+            propStr.append(commonObjNames.size() != 1 ? "\n\t\t" : "");
+            commonObjNames.forEach(o -> propStr.append(o).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(".\n");
+        }
+
+        return propStr.toString();
     }
 
     /**
