@@ -5,6 +5,7 @@ import model.conceptual.Edge;
 import model.conceptual.Vertex;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -134,6 +135,7 @@ public class Converter {
         return prefixStrs.toString();
     }
 
+    // TODO: 21/02/2019 Update javadoc
     /**
      * Conversion of graph properties into .ttl representation.
      * @return the properties as a valid .tll string.
@@ -173,8 +175,64 @@ public class Converter {
         return propStrs.toString();
     }
 
+    /**
+     *
+     * @param propName
+     * @param subObjPairs
+     * @return
+     */
     private static String addMultiplePropStr(String propName, ArrayList<Pair<Vertex, Vertex>> subObjPairs) {
-        return null;
+        StringBuilder propStr = new StringBuilder(propName + " rdf:type owl:ObjectProperty ;\n\t");
+
+        ArrayList<Vertex> subs = new ArrayList<>();
+        ArrayList<Vertex> objs = new ArrayList<>();
+        subObjPairs.forEach(p -> {
+            subs.add(p.getKey());
+            objs.add(p.getValue());
+        });
+
+        HashSet<String> commonSubTypeDefinitions = subs.stream().map(Vertex::getTypeDefinition).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonSubDataTypes       = subs.stream().map(Vertex::getDataType).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonObjTypeDefinitions = objs.stream().map(Vertex::getTypeDefinition).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonObjDataTypes       = objs.stream().map(Vertex::getDataType).collect(Collectors.toCollection(HashSet::new));
+
+        propStr.append("rdfs:domain ");
+        if (commonSubTypeDefinitions.size() > 0){
+            propStr.append(commonSubTypeDefinitions.size() != 1 ? "\n\t\t" : "");
+            commonSubTypeDefinitions.forEach(typedef -> propStr.append(typedef).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(";\n\t");
+        } else if (commonSubDataTypes.size() > 0){
+            propStr.append(commonSubDataTypes.size() != 1 ? "\n\t\t" : "");
+            commonSubDataTypes.forEach(datatype -> propStr.append(datatype).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(";\n\t");
+        } else {
+            propStr.append(subs.size() != 1 ? "\n\t\t" : "");
+            subs.forEach(s -> propStr.append(s.getName()).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(";\n\t");
+        }
+
+        propStr.append("rdfs:range ");
+        if (commonObjTypeDefinitions.size() > 0){
+            propStr.append(commonObjTypeDefinitions.size() != 1 ? "\n\t\t" : "");
+            commonObjTypeDefinitions.forEach(typedef -> propStr.append(typedef).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(".\n");
+        } else if (commonObjDataTypes.size() > 0){
+            propStr.append(commonObjDataTypes.size() != 1 ? "\n\t\t" : "");
+            commonObjDataTypes.forEach(datatype -> propStr.append(datatype).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(".\n");
+        } else {
+            propStr.append(objs.size() != 1 ? "\n\t\t" : "");
+            objs.forEach(o -> propStr.append(o.getName()).append(" ,\n\t\t"));
+            propStr.delete(propStr.length() - 4, propStr.length());
+            propStr.append(".\n");
+        }
+
+        return propStr.toString();
     }
 
     /**
@@ -203,7 +261,7 @@ public class Converter {
             propStr += obj.getTypeDefinition() + " ;\n";
         else if (obj.getElementType() == Vertex.GraphElemType.GLOBAL_LITERAL && obj.getDataType() != null)
             propStr += obj.getDataType() + " ;\n";
-        else propStr += obj.getName() + " ;\n";
+        else propStr += obj.getName() + " .\n";
 
         return propStr;
     }
