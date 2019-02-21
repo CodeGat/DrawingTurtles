@@ -207,6 +207,8 @@ public class Converter {
         HashSet<String> commonObjTypeDefinitions = objs.stream().map(Vertex::getTypeDefinition).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
         HashSet<String> commonSubDataTypes = subs.stream().map(Vertex::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
         HashSet<String> commonObjDataTypes = objs.stream().map(Vertex::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonSubNames = subs.stream().map(Vertex::getName).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonObjNames = objs.stream().map(Vertex::getName).collect(Collectors.toCollection(HashSet::new));
 
         propStr.append("rdfs:domain ");
         if (commonSubTypeDefinitions.size() > 0){
@@ -220,8 +222,8 @@ public class Converter {
             propStr.delete(propStr.length() - 4, propStr.length());
             propStr.append(";\n\t");
         } else {
-            propStr.append(subs.size() != 1 ? "\n\t\t" : "");
-            subs.forEach(s -> propStr.append(s.getName()).append(" ,\n\t\t"));
+            propStr.append(commonSubNames.size() != 1 ? "\n\t\t" : "");
+            commonSubNames.forEach(s -> propStr.append(s).append(" ,\n\t\t"));
             propStr.delete(propStr.length() - 4, propStr.length());
             propStr.append(";\n\t");
         }
@@ -238,8 +240,8 @@ public class Converter {
             propStr.delete(propStr.length() - 4, propStr.length());
             propStr.append(".\n");
         } else {
-            propStr.append(objs.size() != 1 ? "\n\t\t" : "");
-            objs.forEach(o -> propStr.append(o.getName()).append(" ,\n\t\t"));
+            propStr.append(commonObjNames.size() != 1 ? "\n\t\t" : "");
+            commonObjNames.forEach(o -> propStr.append(o).append(" ,\n\t\t"));
             propStr.delete(propStr.length() - 4, propStr.length());
             propStr.append(".\n");
         }
