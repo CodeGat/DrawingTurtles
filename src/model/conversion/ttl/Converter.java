@@ -1,5 +1,6 @@
 package model.conversion.ttl;
 
+import javafx.util.Pair;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 
@@ -146,36 +147,65 @@ public class Converter {
                 "##################################################\n\n"
         );
 
+        // Map from the common property name to the associated subject/object pairs.
+        HashMap<String, ArrayList<Pair<Vertex, Vertex>>> commonProperties = new HashMap<>();
         for (Edge property : properties){
-            String propStr;
-            String prop = property.getName();
-            String obj = property.getObject().getName();
-            String sub = property.getSubject().getName();
+            Vertex sub = property.getSubject();
+            Vertex obj = property.getObject();
+            String propertyName = property.getName();
 
-            String subType = null;
-            String objType = null;
-            String ints = "[+\\-]?\\d";
+            if (commonProperties.containsKey(propertyName))
+                commonProperties.get(propertyName).add(new Pair<>(sub, obj));
+            else {
+                ArrayList<Pair<Vertex, Vertex>> pairs = new ArrayList<>();
 
-            if      (obj.matches("\".*\"")) objType = "xsd:string";
-            else if (obj.matches("true|false")) objType = "xsd:boolean";
-            else if (obj.matches(ints+"+")) objType = "xsd:integer";
-            else if (obj.matches(ints+"*\\.\\d+")) objType = "xsd:decimal";
-            else if (obj.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+")) objType = "xsd:double";
-            else if (obj.matches(".*\\^\\^.*")) objType = obj.split("\\^\\^")[1];
+                pairs.add(new Pair<>(sub, obj));
+                commonProperties.put(propertyName, pairs);
+            }
+        }
 
-            if      (sub.matches("\".*\"")) subType = "xsd:string";
-            else if (sub.matches("true|false")) subType = "xsd:boolean";
-            else if (sub.matches(ints+"+")) subType = "xsd:integer";
-            else if (sub.matches(ints+"*\\.\\d+")) subType = "xsd:decimal";
-            else if (sub.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+")) subType = "xsd:double";
-            else if (sub.matches(".*\\^\\^.*")) subType = sub.split("\\^\\^")[1];
-
-            propStr = prop + " rdf:type owl:ObjectProperty ;\n\t" +
-                    "rdfs:domain " + (subType == null ? sub : subType) + " ;\n\t" +
-                    "rdfs:range " + (objType == null ? obj : objType) + " .\n";
-            propStrs.append(propStr);
+        for (Map.Entry<String, ArrayList<Pair<Vertex, Vertex>>> commonProperty : commonProperties.entrySet()){
+            if (commonProperty.getValue().size() == 1)
+                propStrs.append(addSinglePropStr(commonProperty.getKey(), commonProperty.getValue().get(0)));
+            else
+                propStrs.append(addMultiplePropStr(commonProperty.getKey(), commonProperty.getValue()));
         }
         return propStrs.toString();
+    }
+
+    private static String addMultiplePropStr(String propName, ArrayList<Pair<Vertex, Vertex>> subObjPairs) {
+        return null;
+    }
+
+    /**
+     * Determines the range and domain of a given property.
+     * This method is a simplified version of {@link #addMultiplePropStr}, as it doesn't need to determine if there are
+     *    multiple competing type definitions.
+     * @param propName the name of the property we are finding the domain/range for.
+     * @param subObjPair the subject and object of the given property.
+     * @return the .ttl representation of the domain and range of the given property.
+     */
+    private static String addSinglePropStr(String propName, Pair<Vertex, Vertex> subObjPair) {
+        String propStr = propName + " rdf:type owl:ObjectProperty ;\n\t";
+        Vertex sub = subObjPair.getKey();
+        Vertex obj = subObjPair.getValue();
+
+        propStr += "rdfs:domain ";
+        if (sub.getTypeDefinition() != null)
+            propStr += sub.getTypeDefinition() + " ;\n\t";
+        else if (sub.getElementType() == Vertex.GraphElemType.GLOBAL_LITERAL && sub.getDataType() != null)
+            propStr += sub.getDataType() + " ;\n\t";
+        else
+            propStr += sub.getName() + " ;\n\t";
+
+        propStr += "rdfs:range ";
+        if (obj.getTypeDefinition() != null)
+            propStr += obj.getTypeDefinition() + " ;\n";
+        else if (obj.getElementType() == Vertex.GraphElemType.GLOBAL_LITERAL && obj.getDataType() != null)
+            propStr += obj.getDataType() + " ;\n";
+        else propStr += obj.getName() + " ;\n";
+
+        return propStr;
     }
 
     /**
