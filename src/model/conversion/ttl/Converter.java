@@ -80,7 +80,6 @@ public class Converter {
             fixString.append(".\n");
         }
 
-        //
         Stream<String> ttlClassPrefixesStream = classes.stream()
                 .filter(c -> c.getElementType() == Vertex.GraphElemType.CLASS && !c.isIri())
                 .map(c -> c.getName().split(":")[0]);
