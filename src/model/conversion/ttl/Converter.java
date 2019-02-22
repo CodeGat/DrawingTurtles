@@ -193,7 +193,9 @@ public class Converter {
      * @return the .ttl representation of the domain and range of the property.
      */
     private static String getDomainAndRange(String propName, ArrayList<Pair<Vertex, Vertex>> subObjPairs) {
-        StringBuilder propStr = new StringBuilder(propName + " rdf:type owl:ObjectProperty ;\n\t");
+        String propStrBase = (propName.matches("https?:.*|mailto:.*") ? "<" + propName + ">" : propName) +
+                " rdf:type owl:ObjectProperty ;\n\t";
+        StringBuilder propStr = new StringBuilder(propStrBase);
 
         ArrayList<Vertex> subs = new ArrayList<>();
         ArrayList<Vertex> objs = new ArrayList<>();
@@ -222,7 +224,7 @@ public class Converter {
             propStr.append(";\n\t");
         } else {
             propStr.append(commonSubNames.size() != 1 ? "\n\t\t" : "");
-            commonSubNames.forEach(s -> propStr.append(s).append(" ,\n\t\t"));
+            commonSubNames.forEach(s -> propStr.append(s.matches("https?:.*|mailto:.*") ? "<" + s + ">" : s).append(" ,\n\t\t"));
             propStr.delete(propStr.length() - 4, propStr.length());
             propStr.append(";\n\t");
         }
@@ -240,7 +242,7 @@ public class Converter {
             propStr.append(".\n");
         } else {
             propStr.append(commonObjNames.size() != 1 ? "\n\t\t" : "");
-            commonObjNames.forEach(o -> propStr.append(o).append(" ,\n\t\t"));
+            commonObjNames.forEach(o -> propStr.append(o.matches("https?:.*|mailto:.*") ? "<" + o + ">" : o).append(" ,\n\t\t"));
             propStr.delete(propStr.length() - 4, propStr.length());
             propStr.append(".\n");
         }
