@@ -135,9 +135,7 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
      */
     @Override
     public void setData(ArrayList<DataIntegrator> data) {
-        DataIntegrator integrator = data.get(0);
-
-        dataIntegrator = integrator;
+        dataIntegrator = data.get(0);
         correlations = dataIntegrator.getCorrelations();
         ArrayList<String> correlationStrings = correlations
                 .stream()
@@ -148,7 +146,7 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
 
         uncorrelatedCsvHeaders = dataIntegrator.getUncorrelated().getKey();
         csvHeaderList.setItems(FXCollections.observableArrayList(uncorrelatedCsvHeaders));
-        uncorrelatedTtlClasses = integrator.getUncorrelated().getValue();
+        uncorrelatedTtlClasses = dataIntegrator.getUncorrelated().getValue();
         uncorrelatedTtlClassNames = uncorrelatedTtlClasses
                 .stream()
                 .map(Vertex::getName)
