@@ -242,13 +242,14 @@ public final class Controller implements Initializable {
             classes.clear();
             properties.clear();
 
-            try (FileReader reader = new FileReader(loadFile)){
-                char[] rawGraph = new char[10000]; //needs to be arbitrary
-                if (reader.read(rawGraph) == 0 ) {
-                    statusLbl.setText("Read failed: nothing in graph file.");
+            try (BufferedReader reader = new BufferedReader(new FileReader(loadFile))){
+                String graph = reader.readLine();
+                if (graph == null || graph.length() == 0){
+                    setWarnStatus("Graph Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
+                    return;
                 }
-                FromGatConverter binder = new FromGatConverter(new String(rawGraph));
+                FromGatConverter binder = new FromGatConverter(graph);
                 binder.bindGraph();
 
                 classes.addAll(binder.getClasses());
