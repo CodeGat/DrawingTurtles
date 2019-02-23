@@ -93,7 +93,8 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
      */
     @FXML void removePrefixAction() {
         String prefix = prefixList.getSelectionModel().getSelectedItem();
-        prefixes.remove(prefix.split(":", 1)[0].trim());
+        String prefixToRemove = prefix.split(":")[0].trim();
+        prefixes.remove(prefixToRemove);
         prefixList.getItems().remove(prefix);
         prefixList.getSelectionModel().clearSelection();
     }
@@ -150,21 +151,16 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
         if (loadFile != null){
             Controller.lastDirectory = loadFile.getParent();
             try (BufferedReader reader = new BufferedReader(new FileReader(loadFile))){
-                StringBuilder lines = new StringBuilder();
                 String line;
 
-                while((line = reader.readLine()) != null) lines.append(line);
-
-                if (lines.toString().length() == 0) setWarnStatus("Nothing in Prefix file. ");
-                String[] strPrefixes = lines.toString().trim().split("\\n");
-                for (String strPrefix : strPrefixes) {
-                    String[] prefixParts = strPrefix.split(":", 2);
+                while((line = reader.readLine()) != null) {
+                    String[] prefixParts = line.split(":", 2);
                     String   acronym = prefixParts[0].trim();
                     String   expansion = prefixParts[1].trim();
 
                     if (!prefixes.containsKey(acronym)) {
                         prefixes.put(acronym, expansion);
-                        prefixList.getItems().add(strPrefix);
+                        prefixList.getItems().add(line);
                     }
                 }
             } catch (IOException e) {
