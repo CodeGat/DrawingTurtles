@@ -55,6 +55,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static javafx.stage.FileChooser.*;
+
 /**
  * The Controller for application.fxml: takes care of actions from the application.
  */
@@ -207,13 +209,13 @@ public final class Controller implements Initializable {
         File saveFile = showSaveFileDialog(
                 "graph.gat",
                 "Save Graph As",
-                new FileChooser.ExtensionFilter("Graph Accessor Type Files (*.gat)", "*.gat"));
-        if (saveFile != null){
-            ToGatConverter converter = new ToGatConverter(
-                    drawPane.getWidth(),
-                    drawPane.getHeight(),
-                    classes, properties
-            );
+                new ExtensionFilter("Graph Accessor Type Files (*.gat)", "*.gat"));
+        if (saveFile != null) {
+            if (!saveFile.getName().matches(".*\\.gat")){
+                setWarnStatus("Failed to save Graph file: You attempted to save the file as a non-.gat file.");
+                return;
+            }
+            ToGatConverter converter = new ToGatConverter(drawPane.getWidth(), drawPane.getHeight(), classes, properties);
             String filetext = converter.traverseCanvas();
             try {
                 FileWriter writer = new FileWriter(saveFile);
@@ -233,9 +235,9 @@ public final class Controller implements Initializable {
      */
     @FXML public void loadGraphAction() {
         File loadFile = showLoadFileDialog(
-                "Load Graph File",
-                new FileChooser.ExtensionFilter("Graph Accessor Type file (*.gat)", "*.gat")
-        );
+                    "Load Graph File",
+                    new ExtensionFilter("Graph Accessor Type file (*.gat)", "*.gat")
+            );
         if (loadFile != null){
             lastDirectory = loadFile.getParent();
             drawPane.getChildren().clear();
@@ -315,9 +317,14 @@ public final class Controller implements Initializable {
         File saveFile = showSaveFileDialog(
                 "ontology.ttl",
                 "Save Turtle Ontology As",
-                new FileChooser.ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
+                new ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
         );
         if (saveFile != null){
+            if (!saveFile.getName().matches(".*\\.ttl")){
+                setWarnStatus("Failed to save Turtle File: You attempted to save the file as a non-.ttl file.");
+                return;
+            }
+
             String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties, config);
             try {
                 FileWriter writer = new FileWriter(saveFile);
@@ -339,9 +346,13 @@ public final class Controller implements Initializable {
         File saveFile = showSaveFileDialog(
                 "ontology.png",
                 "Save Conceptual Image As",
-                new FileChooser.ExtensionFilter("Portable Network Graphic Files (*.png)", "*.png")
+                new ExtensionFilter("Portable Network Graphic Files (*.png)", "*.png")
         );
         if (saveFile != null){
+            if (!saveFile.getName().matches(".*\\.png")){
+                setWarnStatus("Failed to save PNG File: You attempted to save the file as a non-.png file.");
+                return;
+            }
             try {
                 WritableImage writableImage = drawPane.snapshot(new SnapshotParameters(), null);
                 RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
@@ -620,7 +631,7 @@ public final class Controller implements Initializable {
      * @param extFilter the list of extension filters, for easy access to specific file types.
      * @return the file the user has chosen to save to, or null otherwise.
      */
-    private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
+    private File showSaveFileDialog(String fileName, String windowTitle, ExtensionFilter extFilter) {
         File directory = new File(lastDirectory != null ? lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
@@ -637,7 +648,7 @@ public final class Controller implements Initializable {
      * @param extFilter the extension filter for the dialog, which restricts selection to files of a given type.
      * @return the file that will be loaded from.
      */
-    private File showLoadFileDialog(String title, FileChooser.ExtensionFilter extFilter){
+    private File showLoadFileDialog(String title, ExtensionFilter extFilter){
         File directory = new File(lastDirectory != null ? lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);
@@ -681,7 +692,7 @@ public final class Controller implements Initializable {
     @FXML protected void ingestCsvAction(){
         File loadFile = showLoadFileDialog(
                 "Load .csv for Instance-Level Turtle Generation",
-                new FileChooser.ExtensionFilter("Comma Separated Values (*.csv)", "*.csv")
+                new ExtensionFilter("Comma Separated Values (*.csv)", "*.csv")
         );
         if (loadFile != null){
             csv = null;
@@ -698,7 +709,7 @@ public final class Controller implements Initializable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+        } else setInfoStatus(".csv ingesting cancelled. ");
     }
 
     /**
@@ -737,9 +748,13 @@ public final class Controller implements Initializable {
         File saveFile = showSaveFileDialog(
                 "instance.ttl",
                 "Save Instance-Level Turtle Document",
-                new FileChooser.ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
+                new ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
         );
         if (saveFile != null){
+            if (!saveFile.getName().matches(".*\\.ttl")){
+                setWarnStatus("Failed to save Turtle File: You attempted to save the file as a non-.ttl file.");
+                return;
+            }
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(instanceData);
