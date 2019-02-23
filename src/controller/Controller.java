@@ -67,7 +67,8 @@ public final class Controller implements Initializable {
     @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, instanceBtn,
             instrBtn, optionsBtn;
     @FXML ImageView ttlPrefImv, ttlGraphImv, instPrefImv, instGraphImv, instCsvImv;
-    @FXML protected Label  statusLbl;
+    @FXML protected Label statusLbl;
+    @FXML protected ToolBar toolBar;
 
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
@@ -219,11 +220,11 @@ public final class Controller implements Initializable {
                 writer.write(filetext);
                 writer.flush();
                 writer.close();
-                statusLbl.setText("File saved.");
+                setInfoStatus("File saved.");
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "failed to save graph: ", e);
             }
-        } else statusLbl.setText("File save cancelled.");
+        } else setInfoStatus("File save cancelled.");
     }
 
     /**
@@ -260,16 +261,16 @@ public final class Controller implements Initializable {
                 }
                 graphCreated.setValue(true);
                 prefixesInspected.setValue(false);
-                statusLbl.setText("Graph load successful.");
+                setInfoStatus("Graph load successful.");
             } catch (IOException e) {
-                statusLbl.setText("Graph load failed: IOException occurred while reading the graph from file. ");
+                setErrorStatus("Graph load failed: IOException occurred while reading the graph from file. ");
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
             } catch (FromGatConverter.PropertyElemMissingException e) {
-                statusLbl.setText("Graph load failed: " + e.getMissingElement() + " is missing from " +
+                setErrorStatus("Graph load failed: " + e.getMissingElement() + " is missing from " +
                         e.getPropertyName() + ". Try adding the arrow again. ");
                 LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
-        } else statusLbl.setText("Graph load cancelled.");
+        } else setInfoStatus("Graph load cancelled.");
     }
 
     /**
@@ -321,13 +322,13 @@ public final class Controller implements Initializable {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(ttl);
                 writer.close();
-                statusLbl.setText("File saved.");
+                setInfoStatus("File saved.");
                 Desktop.getDesktop().open(saveFile);
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "failed to export to .tll: ", e);
             }
 
-        } else statusLbl.setText("File save cancelled.");
+        } else setInfoStatus("File save cancelled.");
     }
 
     /**
@@ -344,11 +345,11 @@ public final class Controller implements Initializable {
                 WritableImage writableImage = drawPane.snapshot(new SnapshotParameters(), null);
                 RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
                 ImageIO.write(renderedImage, "png", saveFile);
-                statusLbl.setText("File saved.");
+                setInfoStatus("File saved.");
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "failed to export to .png: ", e);
             }
-        } else statusLbl.setText("Image save cancelled.");
+        } else setInfoStatus("Image save cancelled.");
     }
 
     /**
@@ -370,7 +371,7 @@ public final class Controller implements Initializable {
             addElementSubaction(mouseEvent);
         } else {
             drawPane.getChildren().remove(arrow);
-            statusLbl.setText("Outside any class or literal, property creation cancelled. ");
+            setInfoStatus("Outside any class or literal, property creation cancelled. ");
             subject = null;
             arrow = null;
             srcClick = true;
@@ -409,7 +410,7 @@ public final class Controller implements Initializable {
             property.getObject().getIncomingEdges().remove(property);
             properties.remove(property);
         } else {
-            statusLbl.setText("No graph element is under your cursor to delete. ");
+            setInfoStatus("No graph element is under your cursor to delete. ");
             LOGGER.info("Nothing under (" + x + ", " + y + ") for deletion.");
         }
     }
@@ -442,7 +443,7 @@ public final class Controller implements Initializable {
         ArrayList<String> propertyInfo = showNameElementDialog();
         if (propertyInfo == null || propertyInfo.size() == 0){
             drawPane.getChildren().remove(arrow);
-            statusLbl.setText("Property creation cancelled. ");
+            setInfoStatus("Property creation cancelled. ");
             subject = null;
             arrow = null;
             srcClick = true;
@@ -469,7 +470,7 @@ public final class Controller implements Initializable {
         subject.addOutgoingEdge(edge);
         object.addIncomingEdge(edge);
 
-        statusLbl.setText("Property " + propertyName.getText() + " created. ");
+        setInfoStatus("Property " + propertyName.getText() + " created. ");
         subject = null;
         arrow = null;
         srcClick = true;
@@ -493,7 +494,7 @@ public final class Controller implements Initializable {
         drawPane.getChildren().add(arrow);
         arrow.toBack();
         srcClick = false;
-        statusLbl.setText("Subject selected. Click another element for the Object.");
+        setInfoStatus("Subject selected. Click another element for the Object.");
     }
 
     /**
@@ -688,7 +689,7 @@ public final class Controller implements Initializable {
                 CSVParser parser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
                 headers = parser.getHeaderMap();
                 csv = parser.getRecords();
-                statusLbl.setText(".csv ingested. Yum.");
+                setInfoStatus(".csv ingested. Yum.");
                 LOGGER.info("Ingested " + loadFile.getName() + ".\nFound csv headers: " + headers);
                 instanceBtn.setDisable(false);
                 parser.close();
@@ -726,7 +727,7 @@ public final class Controller implements Initializable {
         try {
             instanceData = dataIntegrator.generate();
         } catch (DataIntegrator.PrefixMissingException e) {
-            statusLbl.setText("Data Integration failed: '" + e.getMissing() + "' is referenced in graph but not " +
+            setErrorStatus("Data Integration failed: '" + e.getMissing() + "' is referenced in graph but not " +
                     "defined in the Prefixes Menu. ");
             LOGGER.log(Level.SEVERE, "Integration failed: ", e);
             return;
@@ -743,7 +744,7 @@ public final class Controller implements Initializable {
                 writer.write(instanceData);
                 writer.flush();
                 writer.close();
-                statusLbl.setText("Instance-level Turtle saved.");
+                setInfoStatus("Instance-level Turtle saved.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -759,5 +760,32 @@ public final class Controller implements Initializable {
         ArrayList<DataIntegrator> data = new ArrayList<>();
         data.add(generator);
         showWindow("/view/correlateDialog.fxml", "Set Manual Correlations", data);
+    }
+
+    /**
+     * Sets the toolbar to transparent and displays a informative message to the user.
+     * @param message the message to send to the user.
+     */
+    private void setInfoStatus(String message) {
+        statusLbl.setText(message);
+        toolBar.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY)));
+    }
+
+    /**
+     * Sets the toolbar to orange and displays a warning message to the user.
+     * @param message the message to send to the user.
+     */
+    private void setWarnStatus(String message) {
+        statusLbl.setText(message);
+        toolBar.setBackground(new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY)));
+    }
+
+    /**
+     * Set the toolbar to red and displays an error message to the user.
+     * @param message the message to send to the user.
+     */
+    private void setErrorStatus(String message){
+        statusLbl.setText(message);
+        toolBar.setBackground(new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)));
     }
 }

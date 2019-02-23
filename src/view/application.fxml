@@ -47,7 +47,7 @@
         </ToolBar>
     </left>
     <top>
-        <ToolBar>
+        <ToolBar fx:id="toolBar">
             <Label text="Drawing Turtles "/>
             <Separator />
             <Label fx:id="statusLbl"/>
