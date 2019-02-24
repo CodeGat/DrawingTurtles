@@ -275,6 +275,14 @@ public final class Controller implements Initializable {
                 setErrorStatus("Graph load failed: " + e.getMissingElement() + " is missing from " +
                         e.getPropertyName() + ". Try adding the arrow again. ");
                 LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
+            } catch (OutsideElementException e) {
+                setErrorStatus("Graph load failed: The .gat file has been corrupted, properties do not match classes." +
+                        " Re-create the graph. ");
+                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
+            } catch (UndefinedElementTypeException e) {
+                setErrorStatus("Graph Load failed: The name of a class does not match Turtle syntax. Recreate the" +
+                        " graph. ");
+                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
         } else setInfoStatus("Graph load cancelled.");
     }

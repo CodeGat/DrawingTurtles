@@ -55,9 +55,12 @@ public class FromGatConverter {
 
     /**
      * Splits the output of the .gat file into it's respective elements and attempts to bind them.
-     * @throws PropertyElemMissingException passed from {@link #bindProperty(String)}
+     * @throws PropertyElemMissingException passed from {@link #bindNormalProperty(String)}
+     * @throws OutsideElementException passed from {@link #bindClass(String)}
+     * @throws UndefinedElementTypeException passed from {@link #bindClass(String)}
      */
-    public void bindGraph() throws PropertyElemMissingException {
+    public void bindGraph()
+            throws PropertyElemMissingException, OutsideElementException, UndefinedElementTypeException {
         String[] elements = Arrays.stream(gat.split("]\\[|\\[|]"))
                 .filter(s -> !s.equals(""))
                 .toArray(String[]::new);
@@ -86,8 +89,10 @@ public class FromGatConverter {
     /**
      * Binds a literal into both a human-friendly visual element of the graph, and a java-friendly Literal Vertex.
      * @param lit the .gat String serialization of a Literal.
+     * @throws OutsideElementException if the Vertex is outside the canvas.
+     * @throws UndefinedElementTypeException if the name of the Vertex does not match up with Turtle syntax.
      */
-    private void bindLiteral(String lit) {
+    private void bindLiteral(String lit) throws OutsideElementException, UndefinedElementTypeException {
         String[] litElements = lit.split("\\\\\\|", -1);
         double x = Double.valueOf(litElements[0].substring(1));
         double y = Double.valueOf(litElements[1]);
@@ -112,19 +117,18 @@ public class FromGatConverter {
 
         compiledLit.getChildren().addAll(rect, name);
         compiledElements.add(compiledLit);
-        try {
-            if (!dtype.equals("")) classes.add(new Vertex(compiledLit, dtype));
-            else classes.add(new Vertex(compiledLit));
-        } catch (OutsideElementException | UndefinedElementTypeException e) {
-            e.printStackTrace();
-        }
+
+        if (!dtype.equals("")) classes.add(new Vertex(compiledLit, dtype));
+        else classes.add(new Vertex(compiledLit));
     }
 
     /**
      * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Vertex.
      * @param cls the .gat String serialization of a Class.
+     * @throws OutsideElementException if the Vertex is outside the canvas.
+     * @throws UndefinedElementTypeException if the name of the Vertex does not match up with Turtle syntax.
      */
-    private void bindClass(String cls) {
+    private void bindClass(String cls) throws OutsideElementException, UndefinedElementTypeException {
         String[] clsElements = cls.split("\\\\\\|", -1);
         double x = Double.valueOf(clsElements[0].substring(1));
         double y = Double.valueOf(clsElements[1]);
@@ -148,20 +152,17 @@ public class FromGatConverter {
         compiledCls.getChildren().addAll(ellipse, name);
         compiledElements.add(compiledCls);
 
-        try {
-            if (!label.equals("") || !comment.equals(""))
-                classes.add(new Vertex(compiledCls, label, comment));
-            else classes.add(new Vertex(compiledCls));
-        } catch (OutsideElementException | UndefinedElementTypeException e) {
-            e.printStackTrace();
-        }
+        if (!label.equals("") || !comment.equals(""))
+            classes.add(new Vertex(compiledCls, label, comment));
+        else classes.add(new Vertex(compiledCls));
     }
 
     /**
      * Creates a human-friendly graph property arrow, and binds a java-friendly Edge.
      * @param prop the .gat String serialization of a Property.
+     * @throws PropertyElemMissingException if the start and end of the Arrow do not reach a class/literal.
      */
-    private void bindProperty(String prop) throws PropertyElemMissingException {
+    private void bindNormalProperty(String prop) throws PropertyElemMissingException {
         String[] propElements = prop.split("\\\\\\|");
         double sx = Double.valueOf(propElements[0].substring(1));
         double sy = Double.valueOf(propElements[1]);
