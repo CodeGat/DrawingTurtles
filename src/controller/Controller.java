@@ -544,10 +544,6 @@ public final class Controller implements Initializable {
         compiled.getChildren().addAll(selfRefEllipse, propertyName);
         StackPane.setAlignment(propertyName, Pos.BOTTOM_CENTER);
 
-        setInfoStatus("Property " + propertyName.getText() + " created. ");
-        subject = null;
-        arrow = null;
-        srcClick = true;
         return compiled;
     }
 
