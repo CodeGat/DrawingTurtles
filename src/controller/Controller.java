@@ -40,6 +40,7 @@ import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import model.graph.SelfReferentialArrow;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -524,16 +525,13 @@ public final class Controller implements Initializable {
      */
     private StackPane addSelfReferentialProperty() {
         StackPane compiled = new StackPane();
-
         Ellipse subEllipse = (Ellipse) subject.getContainer().getChildren().get(0);
-        Ellipse selfRefEllipse = new Ellipse(
-                subEllipse.getCenterX() + subEllipse.getRadiusX() / 2,
-                subEllipse.getCenterY() + subEllipse.getRadiusY() / 2,
-                subEllipse.getRadiusX() / 1.5,
-                subEllipse.getRadiusY()
-        );
-        selfRefEllipse.setFill(Color.TRANSPARENT);
-        selfRefEllipse.setStroke(Color.BLACK);
+
+        SelfReferentialArrow selfRefArrow = new SelfReferentialArrow();
+        selfRefArrow.setCenterX(subEllipse.getCenterX() + subEllipse.getRadiusX() / 2);
+        selfRefArrow.setCenterY(subEllipse.getCenterY() + subEllipse.getRadiusY() / 2);
+        selfRefArrow.setRadiusX(subEllipse.getRadiusX() / 1.5);
+        selfRefArrow.setRadiusY(subEllipse.getRadiusY());
 
         compiled.setLayoutX(subject.getX());
         compiled.setLayoutY(subject.getY());
@@ -556,11 +554,11 @@ public final class Controller implements Initializable {
 
         double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
 
-       if (textWidth > selfRefEllipse.getRadiusX() * 2){
-            double overrunOneSide = (textWidth - selfRefEllipse.getRadiusX()) / 2;
+       if (textWidth > selfRefArrow.getRadiusX() * 2){
+            double overrunOneSide = (textWidth - selfRefArrow.getRadiusX()) / 2;
             compiled.setLayoutX(compiled.getLayoutX() - overrunOneSide + subEllipse.getRadiusX() / 3);
         }
-        compiled.getChildren().addAll(selfRefEllipse, propertyName);
+        compiled.getChildren().addAll(selfRefArrow, propertyName);
         StackPane.setAlignment(propertyName, Pos.BOTTOM_CENTER);
 
         return compiled;
