@@ -13,12 +13,12 @@ public class Arrow extends Group {
     // the main line of the arrow.
     private final Line line;
 
+    private static final double arrowLength = 20;
+    private static final double arrowWidth = 7;
+
     public Arrow() {
         this(new Line(), new Line(), new Line());
     }
-
-    private static final double arrowLength = 20;
-    private static final double arrowWidth = 7;
 
     private Arrow(Line line, Line arrow1, Line arrow2) {
         super(line, arrow1, arrow2);

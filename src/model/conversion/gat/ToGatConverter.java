@@ -5,6 +5,7 @@ import javafx.scene.shape.Rectangle;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import model.graph.Arrow;
+import model.graph.SelfReferentialArrow;
 
 import java.util.ArrayList;
 
@@ -51,16 +52,39 @@ public class ToGatConverter {
         StringBuilder result = new StringBuilder();
 
         for (Edge e : properties) {
-            result.append("[");
-            Arrow a = (Arrow) e.getContainer().getChildren().get(0);
-            String shapeInfo = "A" + a.getStartX() + "\\|" + a.getStartY() + "\\|" + a.getEndX() + "\\|" +
-                    a.getEndY() + "\\|" + e.getLayoutX();
-            String shapeName = "\\|" + e.getName();
-            result.append(shapeInfo).append(shapeName);
-            result.append("]");
+            result.append(e.isSelfReferential() ? traverseSelfReferentialProperty(e) : traverseNormalProperty(e));
         }
 
         return result.toString();
+    }
+
+    /**
+     * Converts a self-referential Edge to the .gat structure.
+     * Of form: [RcenterX\|centerY\|radiusX\|radiusY\|layX\|layY\|name]
+     * @param edge the Edge we are converting
+     * @return the String .gat representation of the normal property.
+     */
+    private String traverseSelfReferentialProperty(Edge edge) {
+        SelfReferentialArrow a = (SelfReferentialArrow) edge.getContainer().getChildren().get(0);
+        String shapeInfo = "R"+ a.getCenterX() + "\\|" + a.getCenterY() + "\\|" + a.getRadiusX() + "\\|" +
+                a.getRadiusY() + "\\|" + edge.getLayoutX() + "\\|" + edge.getLayoutY();
+        String shapeName = "\\|" + edge.getName();
+        return "[" + shapeInfo + shapeName + "]";
+    }
+
+    /**
+     * Converts a normal Edge (namely, one that connects between two different Vertices) to the .gat structure.
+     * Of form: [Asx\|sy\|ex\|ey\|layX\|name]
+     * @param edge the Edge we are converting.
+     * @return the String .gat representation of the normal property.
+     */
+    private String traverseNormalProperty(Edge edge) {
+        Arrow a = (Arrow) edge.getContainer().getChildren().get(0);
+        String shapeInfo = "A" + a.getStartX() + "\\|" + a.getStartY() + "\\|" + a.getEndX() + "\\|" +
+                a.getEndY() + "\\|" + edge.getLayoutX();
+        String shapeName = "\\|" + edge.getName();
+
+        return "[" + shapeInfo + shapeName + "]";
     }
 
     /**

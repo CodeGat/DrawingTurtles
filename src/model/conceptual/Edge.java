@@ -17,6 +17,7 @@ public class Edge {
 
     // used to specify the x-location of the whole container, not just the arrow. .
     private double layoutX;
+    private double layoutY;
 
     /**
      * A simple constructor for the conceptual property.
@@ -31,6 +32,7 @@ public class Edge {
         this.subject = subject;
         this.object = object;
         this.layoutX = container.getBoundsInParent().getMinX();
+        this.layoutY = container.getBoundsInParent().getMinY();
         this.isIri = this.name.matches("https?:.*|mailto:.*");
     }
 
@@ -55,7 +57,9 @@ public class Edge {
      * Accessors
      */
     public boolean isIri(){ return isIri; }
+    public boolean isSelfReferential(){ return subject == object; }
     public double getLayoutX() { return layoutX; }
+    public double getLayoutY() { return layoutY; }
     public String getName() { return name; }
     public Vertex getObject() { return object; }
     public Vertex getSubject() { return subject; }

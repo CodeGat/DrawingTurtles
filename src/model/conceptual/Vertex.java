@@ -166,10 +166,10 @@ public class Vertex {
                     e.getRadiusX(), e.getRadiusY()
             );
 
-            if (coords.size() > 1) System.out.println("Went across two shapes, exiting. ");
-
-            this.x = coords.get(0).getKey();
-            this.y = coords.get(0).getValue();
+            if (coords.size() == 1) {
+                this.x = coords.get(0).getKey();
+                this.y = coords.get(0).getValue();
+            }
         }
     }
 

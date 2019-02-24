@@ -4,6 +4,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -39,6 +40,7 @@ import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import model.graph.SelfReferentialArrow;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -90,6 +92,8 @@ public final class Controller implements Initializable {
     private BooleanProperty prefixesInspected = new SimpleBooleanProperty(false);
     private BooleanProperty graphCreated = new SimpleBooleanProperty(false);
     private BooleanProperty csvIngested = new SimpleBooleanProperty(false);
+
+    public static final Color JFX_DEFAULT_COLOUR = Color.web("F4F4F4");
 
     /**
      * Adds listeners for the Boolean Properties (and hence the workflow checklist) of prefix inspection, graph
@@ -224,6 +228,7 @@ public final class Controller implements Initializable {
                 writer.close();
                 setInfoStatus("File saved.");
             } catch (IOException e) {
+                setErrorStatus("Failed to save graph: IOException occurred during save. ");
                 LOGGER.log(Level.SEVERE, "failed to save graph: ", e);
             }
         } else setInfoStatus("File save cancelled.");
@@ -245,7 +250,7 @@ public final class Controller implements Initializable {
             properties.clear();
 
             try (BufferedReader reader = new BufferedReader(new FileReader(loadFile))){
-                String graph = reader.readLine();
+                String graph = reader.readLine(); // TODO: 24/02/2019 may need to read more than one line in case of multiline rdfs:comment?
                 if (graph == null || graph.length() == 0){
                     setWarnStatus("Graph Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
@@ -271,6 +276,14 @@ public final class Controller implements Initializable {
             } catch (FromGatConverter.PropertyElemMissingException e) {
                 setErrorStatus("Graph load failed: " + e.getMissingElement() + " is missing from " +
                         e.getPropertyName() + ". Try adding the arrow again. ");
+                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
+            } catch (OutsideElementException e) {
+                setErrorStatus("Graph load failed: The .gat file has been corrupted, properties do not match classes." +
+                        " Re-create the graph. ");
+                LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
+            } catch (UndefinedElementTypeException e) {
+                setErrorStatus("Graph Load failed: The name of a class does not match Turtle syntax. Recreate the" +
+                        " graph. ");
                 LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
         } else setInfoStatus("Graph load cancelled.");
@@ -443,41 +456,18 @@ public final class Controller implements Initializable {
      * @param object the object specified by the users click.
      */
     private void addObjectOfProperty(MouseEvent mouseEvent, Vertex object) {
-        object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
+        boolean isSelfReferential = subject == object;
+        StackPane compiledProperty;
 
-        arrow.setEndX(object.getX());
-        arrow.setEndY(object.getY());
+        compiledProperty = isSelfReferential ? addSelfReferentialProperty() : addNormalProperty(mouseEvent, object);
 
-        StackPane compiledProperty = new StackPane();
-        compiledProperty.setLayoutX(subject.getX() < object.getX() ? subject.getX() : object.getX());
-        compiledProperty.setLayoutY(subject.getY() < object.getY() ? subject.getY() : object.getY());
+        if (compiledProperty == null) return;
 
-        ArrayList<String> propertyInfo = showNameElementDialog();
-        if (propertyInfo == null || propertyInfo.size() == 0){
-            drawPane.getChildren().remove(arrow);
-            setInfoStatus("Property creation cancelled. ");
-            subject = null;
-            arrow = null;
-            srcClick = true;
-            return;
-        }
-
-        Label propertyName = new Label(propertyInfo.get(0));
-        BackgroundFill fill = new BackgroundFill(Color.web("F4F4F4"), CornerRadii.EMPTY, Insets.EMPTY);
-        propertyName.setBackground(new Background(fill));
-
-        double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
-        if (textWidth > arrow.getWidth()) {
-            double overrunOneSide = (textWidth - arrow.getWidth()) / 2;
-            compiledProperty.setLayoutX(compiledProperty.getLayoutX() - overrunOneSide);
-        }
-
-        compiledProperty.getChildren().addAll(arrow, propertyName);
         drawPane.getChildren().add(compiledProperty);
         compiledProperty.toBack();
 
+        Label propertyName = (Label) compiledProperty.getChildren().get(1);
         Edge edge = new Edge(compiledProperty, propertyName, subject, object);
-
         properties.add(edge);
         subject.addOutgoingEdge(edge);
         object.addIncomingEdge(edge);
@@ -486,6 +476,92 @@ public final class Controller implements Initializable {
         subject = null;
         arrow = null;
         srcClick = true;
+    }
+
+    /**
+     * Adds a normal (non-self-referential) property to the canvas.
+     * @param mouseEvent the location of the users second click.
+     * @param object the object under the users second click.
+     * @return the compiled container of the arrow and the associated name.
+     */
+    private StackPane addNormalProperty(MouseEvent mouseEvent, Vertex object) {
+        StackPane compiled = new StackPane();
+
+        object.setSnapTo(subject.getX(), subject.getY(), mouseEvent.getX(), mouseEvent.getY());
+
+        arrow.setEndX(object.getX());
+        arrow.setEndY(object.getY());
+
+        compiled.setLayoutX(subject.getX() < object.getX() ? subject.getX() : object.getX());
+        compiled.setLayoutY(subject.getY() < object.getY() ? subject.getY() : object.getY());
+
+        ArrayList<String> propertyInfo = showNameElementDialog();
+        if (propertyInfo == null || propertyInfo.size() == 0){
+            drawPane.getChildren().remove(arrow);
+            setInfoStatus("Property creation cancelled. ");
+            subject = null;
+            arrow = null;
+            srcClick = true;
+            return null;
+        }
+
+        Label propertyName = new Label(propertyInfo.get(0));
+        BackgroundFill fill = new BackgroundFill(JFX_DEFAULT_COLOUR, CornerRadii.EMPTY, Insets.EMPTY);
+        propertyName.setBackground(new Background(fill));
+
+        double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
+        if (textWidth > arrow.getWidth()) {
+            double overrunOneSide = (textWidth - arrow.getWidth()) / 2;
+            compiled.setLayoutX(compiled.getLayoutX() - overrunOneSide);
+        }
+        compiled.getChildren().addAll(arrow, propertyName);
+
+        return compiled;
+    }
+
+    /**
+     * Adds a self-referential property to the canvas.
+     * @return the compiled container of the "arrow" and the associated name.
+     */
+    private StackPane addSelfReferentialProperty() {
+        StackPane compiled = new StackPane();
+        Ellipse subEllipse = (Ellipse) subject.getContainer().getChildren().get(0);
+
+        SelfReferentialArrow selfRefArrow = new SelfReferentialArrow();
+        selfRefArrow.setCenterX(subEllipse.getCenterX() + subEllipse.getRadiusX() / 2);
+        selfRefArrow.setCenterY(subEllipse.getCenterY() + subEllipse.getRadiusY() / 2);
+        selfRefArrow.setRadiusX(subEllipse.getRadiusX() / 1.5);
+        selfRefArrow.setRadiusY(subEllipse.getRadiusY());
+
+        compiled.setLayoutX(subject.getX());
+        compiled.setLayoutY(subject.getY());
+        drawPane.getChildren().remove(arrow);
+        arrow = null;
+
+        ArrayList<String> propertyInfo = showNameElementDialog();
+        if (propertyInfo == null || propertyInfo.size() == 0){
+            drawPane.getChildren().remove(arrow);
+            setInfoStatus("Property creation cancelled. ");
+            subject = null;
+            arrow = null;
+            srcClick = true;
+            return null;
+        }
+
+        Label propertyName = new Label(propertyInfo.get(0));
+        BackgroundFill fill = new BackgroundFill(JFX_DEFAULT_COLOUR, CornerRadii.EMPTY, Insets.EMPTY);
+        propertyName.setBackground(new Background(fill));
+
+        double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
+
+       if (textWidth > selfRefArrow.getRadiusX() * 2){
+            double overrunOneSide = (textWidth - selfRefArrow.getRadiusX()) / 2;
+            compiled.setLayoutX(compiled.getLayoutX() - overrunOneSide + subEllipse.getRadiusX() / 3);
+        }
+        compiled.getChildren().addAll(selfRefArrow, propertyName);
+        StackPane.setAlignment(propertyName, Pos.BOTTOM_CENTER);
+
+        return compiled;
     }
 
     /**
@@ -545,14 +621,14 @@ public final class Controller implements Initializable {
         double textWidth = elementName.getBoundsInLocal().getWidth();
         if (isClass){
             Ellipse elementType = new Ellipse(x, y, textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5, 37.5);
-            elementType.setFill(Color.web("f4f4f4"));
+            elementType.setFill(JFX_DEFAULT_COLOUR);
             elementType.setStroke(Color.BLACK);
             compiledElement.getChildren().addAll(elementType, elementName);
         } else {
             Rectangle elementType = new Rectangle(textWidth > 125 ? textWidth + 15 : 125, 75);
             String name = elementName.getText();
 
-            elementType.setFill(Color.web("f4f4f4"));
+            elementType.setFill(JFX_DEFAULT_COLOUR);
             elementType.setStroke(Color.BLACK);
             if (name.matches(instanceLiteralRegex) && !name.matches(globalLiteralRegex))
                 elementType.getStrokeDashArray().addAll(10d, 10d);
