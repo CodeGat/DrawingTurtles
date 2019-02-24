@@ -371,6 +371,7 @@ public final class Controller implements Initializable {
                 RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
                 ImageIO.write(renderedImage, "png", saveFile);
                 setInfoStatus("File saved.");
+                Desktop.getDesktop().open(saveFile);
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "failed to export to .png: ", e);
             }
@@ -837,6 +838,7 @@ public final class Controller implements Initializable {
                 writer.flush();
                 writer.close();
                 setInfoStatus("Instance-level Turtle saved.");
+                Desktop.getDesktop().open(saveFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }
