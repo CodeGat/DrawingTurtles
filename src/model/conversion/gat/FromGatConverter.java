@@ -19,6 +19,7 @@ import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
 import model.conceptual.Vertex.UndefinedElementTypeException;
 import model.graph.Arrow;
+import model.graph.SelfReferentialArrow;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -214,8 +215,7 @@ public class FromGatConverter {
         double ry = Double.valueOf(propElements[3]);
         double lx = Double.valueOf(propElements[4]);
         double ly = Double.valueOf(propElements[5]);
-        Color  c  = Color.web(propElements[6]);
-        String propName = propElements[7];
+        String propName = propElements[6];
 
         resizeEdgeOfCanvas(x, y);
 
@@ -223,14 +223,16 @@ public class FromGatConverter {
         compiledSelfRefProp.setLayoutX(lx);
         compiledSelfRefProp.setLayoutY(ly);
 
-        Ellipse ellipse = new Ellipse(x, y, rx, ry);
-        ellipse.setFill(c);
-        ellipse.setStroke(Color.BLACK);
+        SelfReferentialArrow arrow = new SelfReferentialArrow();
+        arrow.setCenterX(x);
+        arrow.setCenterY(y);
+        arrow.setRadiusX(rx);
+        arrow.setRadiusY(ry);
 
         Label name = new Label(propName);
         name.setBackground(new Background(new BackgroundFill(Controller.JFX_DEFAULT_COLOUR, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        compiledSelfRefProp.getChildren().addAll(ellipse, name);
+        compiledSelfRefProp.getChildren().addAll(arrow, name);
         StackPane.setAlignment(name, Pos.BOTTOM_CENTER);
 
         compiledProperties.add(compiledSelfRefProp);

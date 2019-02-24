@@ -5,6 +5,7 @@ import javafx.scene.shape.Rectangle;
 import model.conceptual.Edge;
 import model.conceptual.Vertex;
 import model.graph.Arrow;
+import model.graph.SelfReferentialArrow;
 
 import java.util.ArrayList;
 
@@ -59,14 +60,14 @@ public class ToGatConverter {
 
     /**
      * Converts a self-referential Edge to the .gat structure.
-     * Of form: [RcenterX\|centerY\|radiusX\|radiusY\|layX\|layY\|fill\|name]
+     * Of form: [RcenterX\|centerY\|radiusX\|radiusY\|layX\|layY\|name]
      * @param edge the Edge we are converting
      * @return the String .gat representation of the normal property.
      */
     private String traverseSelfReferentialProperty(Edge edge) {
-        Ellipse e = (Ellipse) edge.getContainer().getChildren().get(0);
-        String shapeInfo = "R"+ e.getCenterX() + "\\|" + e.getCenterY() + "\\|" + e.getRadiusX() + "\\|" +
-                e.getRadiusY() + "\\|" + edge.getLayoutX() + "\\|" + edge.getLayoutY() + "\\|" + e.getFill().toString();
+        SelfReferentialArrow a = (SelfReferentialArrow) edge.getContainer().getChildren().get(0);
+        String shapeInfo = "R"+ a.getCenterX() + "\\|" + a.getCenterY() + "\\|" + a.getRadiusX() + "\\|" +
+                a.getRadiusY() + "\\|" + edge.getLayoutX() + "\\|" + edge.getLayoutY();
         String shapeName = "\\|" + edge.getName();
         return "[" + shapeInfo + shapeName + "]";
     }
