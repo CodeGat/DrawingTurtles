@@ -9,7 +9,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.shape.QuadCurve;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.conceptual.Edge;
@@ -58,6 +57,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static javafx.stage.FileChooser.*;
+
 /**
  * The Controller for application.fxml: takes care of actions from the application.
  */
@@ -70,7 +71,8 @@ public final class Controller implements Initializable {
     @FXML protected Button prefixBtn, saveGraphBtn, loadGraphBtn, exportTllBtn, exportPngBtn, eatCsvBtn, instanceBtn,
             instrBtn, optionsBtn;
     @FXML ImageView ttlPrefImv, ttlGraphImv, instPrefImv, instGraphImv, instCsvImv;
-    @FXML protected Label  statusLbl;
+    @FXML protected Label statusLbl;
+    @FXML protected ToolBar toolBar;
 
     private ArrayList<Boolean> config = new ArrayList<>(Arrays.asList(false, false, false));
 
@@ -91,6 +93,10 @@ public final class Controller implements Initializable {
     private BooleanProperty graphCreated = new SimpleBooleanProperty(false);
     private BooleanProperty csvIngested = new SimpleBooleanProperty(false);
 
+    /**
+     * Adds listeners for the Boolean Properties (and hence the workflow checklist) of prefix inspection, graph
+     *    creation and .csv ingestion. Also adds the initial common prefixes.
+     */
     @Override public void initialize(URL location, ResourceBundle resources) {
         Image cross = new Image("/view/images/cross.png");
         Image tick  = new Image("/view/images/tick.png");
@@ -149,7 +155,7 @@ public final class Controller implements Initializable {
     }
 
     /**
-     * Creates and displays the Window defined in the fxml file, also passing data to a controller C.
+     * Creates and displays the Window defined in the fxml file, also passing data of type T to a controller C.
      * @param fxml the fxml file in which the layout is defined.
      * @param title the title of the new window.
      * @param data the parameters passed to the Controller.
@@ -198,31 +204,31 @@ public final class Controller implements Initializable {
     }
 
     /**
-     * on clicking 'Save Graph' button, attempt to traverse the graph and save a bespoke serialization of the graph to
+     * On clicking 'Save Graph' button, attempt to traverse the graph and save a bespoke serialization of the graph to
      *   a user-specified .gat file. That's a Graph Accessor Type format, not just my name...
      */
     @FXML public void saveGraphAction() {
         File saveFile = showSaveFileDialog(
                 "graph.gat",
                 "Save Graph As",
-                new FileChooser.ExtensionFilter("Graph Accessor Type Files (*.gat)", "*.gat"));
-        if (saveFile != null){
-            ToGatConverter converter = new ToGatConverter(
-                    drawPane.getWidth(),
-                    drawPane.getHeight(),
-                    classes, properties
-            );
+                new ExtensionFilter("Graph Accessor Type Files (*.gat)", "*.gat"));
+        if (saveFile != null) {
+            if (!saveFile.getName().matches(".*\\.gat")){
+                setWarnStatus("Failed to save Graph file: You attempted to save the file as a non-.gat file.");
+                return;
+            }
+            ToGatConverter converter = new ToGatConverter(drawPane.getWidth(), drawPane.getHeight(), classes, properties);
             String filetext = converter.traverseCanvas();
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(filetext);
                 writer.flush();
                 writer.close();
-                statusLbl.setText("File saved.");
+                setInfoStatus("File saved.");
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "failed to save graph: ", e);
             }
-        } else statusLbl.setText("File save cancelled.");
+        } else setInfoStatus("File save cancelled.");
     }
 
     /**
@@ -231,22 +237,23 @@ public final class Controller implements Initializable {
      */
     @FXML public void loadGraphAction() {
         File loadFile = showLoadFileDialog(
-                "Load Graph File",
-                new FileChooser.ExtensionFilter("Graph Accessor Type file (*.gat)", "*.gat")
-        );
+                    "Load Graph File",
+                    new ExtensionFilter("Graph Accessor Type file (*.gat)", "*.gat")
+            );
         if (loadFile != null){
             lastDirectory = loadFile.getParent();
             drawPane.getChildren().clear();
             classes.clear();
             properties.clear();
 
-            try (FileReader reader = new FileReader(loadFile)){
-                char[] rawGraph = new char[10000]; //needs to be arbitrary
-                if (reader.read(rawGraph) == 0 ) {
-                    statusLbl.setText("Read failed: nothing in graph file.");
+            try (BufferedReader reader = new BufferedReader(new FileReader(loadFile))){
+                String graph = reader.readLine();
+                if (graph == null || graph.length() == 0){
+                    setWarnStatus("Graph Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
+                    return;
                 }
-                FromGatConverter binder = new FromGatConverter(new String(rawGraph));
+                FromGatConverter binder = new FromGatConverter(graph);
                 binder.bindGraph();
 
                 classes.addAll(binder.getClasses());
@@ -259,16 +266,16 @@ public final class Controller implements Initializable {
                 }
                 graphCreated.setValue(true);
                 prefixesInspected.setValue(false);
-                statusLbl.setText("Graph load successful.");
+                setInfoStatus("Graph load successful.");
             } catch (IOException e) {
-                statusLbl.setText("Graph load failed: IOException occurred while reading the graph from file. ");
+                setErrorStatus("Graph load failed: IOException occurred while reading the graph from file. ");
                 LOGGER.log(Level.SEVERE, "Loading the graph failed: ", e);
             } catch (FromGatConverter.PropertyElemMissingException e) {
-                statusLbl.setText("Graph load failed: " + e.getMissingElement() + " is missing from " +
+                setErrorStatus("Graph load failed: " + e.getMissingElement() + " is missing from " +
                         e.getPropertyName() + ". Try adding the arrow again. ");
                 LOGGER.log(Level.SEVERE, "Parsing the graph failed: ", e);
             }
-        } else statusLbl.setText("Graph load cancelled.");
+        } else setInfoStatus("Graph load cancelled.");
     }
 
     /**
@@ -312,21 +319,26 @@ public final class Controller implements Initializable {
         File saveFile = showSaveFileDialog(
                 "ontology.ttl",
                 "Save Turtle Ontology As",
-                new FileChooser.ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
+                new ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
         );
         if (saveFile != null){
+            if (!saveFile.getName().matches(".*\\.ttl")){
+                setWarnStatus("Failed to save Turtle File: You attempted to save the file as a non-.ttl file.");
+                return;
+            }
+
             String ttl = Converter.convertGraphToTtlString(prefixes, classes, properties, config);
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(ttl);
                 writer.close();
-                statusLbl.setText("File saved.");
+                setInfoStatus("File saved.");
                 Desktop.getDesktop().open(saveFile);
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "failed to export to .tll: ", e);
             }
 
-        } else statusLbl.setText("File save cancelled.");
+        } else setInfoStatus("File save cancelled.");
     }
 
     /**
@@ -336,23 +348,27 @@ public final class Controller implements Initializable {
         File saveFile = showSaveFileDialog(
                 "ontology.png",
                 "Save Conceptual Image As",
-                new FileChooser.ExtensionFilter("Portable Network Graphic Files (*.png)", "*.png")
+                new ExtensionFilter("Portable Network Graphic Files (*.png)", "*.png")
         );
         if (saveFile != null){
+            if (!saveFile.getName().matches(".*\\.png")){
+                setWarnStatus("Failed to save PNG File: You attempted to save the file as a non-.png file.");
+                return;
+            }
             try {
                 WritableImage writableImage = drawPane.snapshot(new SnapshotParameters(), null);
                 RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
                 ImageIO.write(renderedImage, "png", saveFile);
-                statusLbl.setText("File saved.");
+                setInfoStatus("File saved.");
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "failed to export to .png: ", e);
             }
-        } else statusLbl.setText("Image save cancelled.");
+        } else setInfoStatus("Image save cancelled.");
     }
 
     /**
-     * On clicking the canvas, begin to draw the specified element to the canvas.
-     * @param mouseEvent the event that triggered the method.
+     * On clicking the canvas, determine the type of action and execute it.
+     * @param mouseEvent the click that triggered the method.
      */
     @FXML protected void canvasAction(MouseEvent mouseEvent) {
         Vertex vertex;
@@ -369,7 +385,7 @@ public final class Controller implements Initializable {
             addElementSubaction(mouseEvent);
         } else {
             drawPane.getChildren().remove(arrow);
-            statusLbl.setText("Outside any class or literal, property creation cancelled. ");
+            setInfoStatus("Outside any class or literal, property creation cancelled. ");
             subject = null;
             arrow = null;
             srcClick = true;
@@ -408,13 +424,13 @@ public final class Controller implements Initializable {
             property.getObject().getIncomingEdges().remove(property);
             properties.remove(property);
         } else {
-            statusLbl.setText("No graph element is under your cursor to delete. ");
+            setInfoStatus("No graph element is under your cursor to delete. ");
             LOGGER.info("Nothing under (" + x + ", " + y + ") for deletion.");
         }
     }
 
     /**
-     * Keeps the arrow in line with the mouse as the user clicks on the target.
+     * Keeps the arrow in line with the mouse as the user clicks on the graph Object.
      * @param mouseEvent the event that triggered the method.
      */
     @FXML protected void moveArrowAction(MouseEvent mouseEvent) {
@@ -425,7 +441,8 @@ public final class Controller implements Initializable {
 
     /**
      * Defines the Object, or range, of the property, and creates the association between the Subject and Object.
-     * @param mouseEvent the second click on the canvas when 'Property' is selected.
+     * @param mouseEvent the second click on the canvas after a graph Subject is clicked.
+     * @param object the object specified by the users click.
      */
     private void addObjectOfProperty(MouseEvent mouseEvent, Vertex object) {
         boolean isSelfReferential = subject == object;
@@ -465,7 +482,7 @@ public final class Controller implements Initializable {
         ArrayList<String> propertyInfo = showNameElementDialog();
         if (propertyInfo == null || propertyInfo.size() == 0){
             drawPane.getChildren().remove(arrow);
-            statusLbl.setText("Property creation cancelled. ");
+            setInfoStatus("Property creation cancelled. ");
             subject = null;
             arrow = null;
             srcClick = true;
@@ -506,7 +523,7 @@ public final class Controller implements Initializable {
         ArrayList<String> propertyInfo = showNameElementDialog();
         if (propertyInfo == null || propertyInfo.size() == 0){
             drawPane.getChildren().remove(arrow);
-            statusLbl.setText("Property creation cancelled. ");
+            setInfoStatus("Property creation cancelled. ");
             subject = null;
             arrow = null;
             srcClick = true;
@@ -526,11 +543,16 @@ public final class Controller implements Initializable {
         compiled.getChildren().addAll(selfArrow, propertyName);
         StackPane.setAlignment(propertyName, Pos.CENTER_RIGHT);
 
+        setInfoStatus("Property " + propertyName.getText() + " created. ");
+        subject = null;
+        arrow = null;
+        srcClick = true;
         return compiled;
     }
 
     /**
      * Defines the Subject, or domain, of the property.
+     * @param sub the Subject associated with the users click.
      */
     private void addSubjectOfProperty(Vertex sub) {
         subject = sub;
@@ -546,13 +568,12 @@ public final class Controller implements Initializable {
         drawPane.getChildren().add(arrow);
         arrow.toBack();
         srcClick = false;
-        statusLbl.setText("Subject selected. Click another element for the Object.");
+        setInfoStatus("Subject selected. Click another element for the Object.");
     }
 
     /**
-     * Draw a Class or Literal and it's name to the canvas, and create the GraphClass representation of the element.
-     * Helper method of {@link #canvasAction(MouseEvent) Add Element} method.
-     * @param mouseEvent the click to the canvas.
+     * Draw a Class or Literal and it's name to the canvas, and create the Vertex representation of the element.
+     * @param mouseEvent the click to the canvas that specifies where the element is to be placed.
      */
     private void addElementSubaction(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
@@ -615,6 +636,10 @@ public final class Controller implements Initializable {
         }
     }
 
+    /**
+     * Opens the Ontology Class Dialog window and promts the user to input information regarding the class.
+     * @return the new user-specified ontology class information, if it exists.
+     */
     private ArrayList<String> showNameOntologyClassDialog() {
         ArrayList<String> ontologyClass = showWindow("/view/ontologyclassdialog.fxml", "Add new Ontology Class", null);
         if (ontologyClass != null && ontologyClass.size() != 0) return ontologyClass;
@@ -668,7 +693,7 @@ public final class Controller implements Initializable {
      * @param extFilter the list of extension filters, for easy access to specific file types.
      * @return the file the user has chosen to save to, or null otherwise.
      */
-    private File showSaveFileDialog(String fileName, String windowTitle, FileChooser.ExtensionFilter extFilter) {
+    private File showSaveFileDialog(String fileName, String windowTitle, ExtensionFilter extFilter) {
         File directory = new File(lastDirectory != null ? lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialFileName(fileName);
@@ -681,9 +706,11 @@ public final class Controller implements Initializable {
 
     /**
      * Creates a load file dialog, which prompts the user to load from a specific file.
+     * @param title the title of the Dialog.
+     * @param extFilter the extension filter for the dialog, which restricts selection to files of a given type.
      * @return the file that will be loaded from.
      */
-    private File showLoadFileDialog(String title, FileChooser.ExtensionFilter extFilter){
+    private File showLoadFileDialog(String title, ExtensionFilter extFilter){
         File directory = new File(lastDirectory != null ? lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);
@@ -721,10 +748,13 @@ public final class Controller implements Initializable {
         if (updatedConfig != null) config = updatedConfig;
     }
 
+    /**
+     * Loads and parses a given .csv file into a List<CSVRecord>.
+     */
     @FXML protected void ingestCsvAction(){
         File loadFile = showLoadFileDialog(
                 "Load .csv for Instance-Level Turtle Generation",
-                new FileChooser.ExtensionFilter("Comma Separated Values (*.csv)", "*.csv")
+                new ExtensionFilter("Comma Separated Values (*.csv)", "*.csv")
         );
         if (loadFile != null){
             csv = null;
@@ -733,7 +763,7 @@ public final class Controller implements Initializable {
                 CSVParser parser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
                 headers = parser.getHeaderMap();
                 csv = parser.getRecords();
-                statusLbl.setText(".csv ingested. Yum.");
+                setInfoStatus(".csv ingested. Yum.");
                 LOGGER.info("Ingested " + loadFile.getName() + ".\nFound csv headers: " + headers);
                 instanceBtn.setDisable(false);
                 parser.close();
@@ -741,9 +771,14 @@ public final class Controller implements Initializable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+        } else setInfoStatus(".csv ingesting cancelled. ");
     }
 
+    /**
+     * Attempts to generate instance-level Turtle given a valid graph and .csv data.
+     * Also attempts to correlate the .csv headers and graph classes - if there are some left over, it is left to the
+     *    user.
+     */
     @FXML protected void instanceGenAction() {
         String instanceData;
         DataIntegrator dataIntegrator = new DataIntegrator(headers, csv, classes, prefixes);
@@ -766,7 +801,7 @@ public final class Controller implements Initializable {
         try {
             instanceData = dataIntegrator.generate();
         } catch (DataIntegrator.PrefixMissingException e) {
-            statusLbl.setText("Data Integration failed: '" + e.getMissing() + "' is referenced in graph but not " +
+            setErrorStatus("Data Integration failed: '" + e.getMissing() + "' is referenced in graph but not " +
                     "defined in the Prefixes Menu. ");
             LOGGER.log(Level.SEVERE, "Integration failed: ", e);
             return;
@@ -775,24 +810,60 @@ public final class Controller implements Initializable {
         File saveFile = showSaveFileDialog(
                 "instance.ttl",
                 "Save Instance-Level Turtle Document",
-                new FileChooser.ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
+                new ExtensionFilter("Turtle Files (*.ttl)", "*.ttl")
         );
         if (saveFile != null){
+            if (!saveFile.getName().matches(".*\\.ttl")){
+                setWarnStatus("Failed to save Turtle File: You attempted to save the file as a non-.ttl file.");
+                return;
+            }
             try {
                 FileWriter writer = new FileWriter(saveFile);
                 writer.write(instanceData);
                 writer.flush();
                 writer.close();
-                statusLbl.setText("Instance-level Turtle saved.");
+                setInfoStatus("Instance-level Turtle saved.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
+    /**
+     * Show the manual correlations dialog, prompting the user to correlate the .csv headers and the graph classes,
+     *    modifying the underlying DataIntegerator.
+     * @param generator the DataIntegrator that is modified when the user determines the correlations between data.
+     */
     private void showManualCorrelationDialog(DataIntegrator generator){
         ArrayList<DataIntegrator> data = new ArrayList<>();
         data.add(generator);
         showWindow("/view/correlateDialog.fxml", "Set Manual Correlations", data);
+    }
+
+    /**
+     * Sets the toolbar to transparent and displays a informative message to the user.
+     * @param message the message to send to the user.
+     */
+    private void setInfoStatus(String message) {
+        statusLbl.setText(message);
+        toolBar.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY)));
+    }
+
+    /**
+     * Sets the toolbar to orange and displays a warning message to the user.
+     * @param message the message to send to the user.
+     */
+    private void setWarnStatus(String message) {
+        statusLbl.setText(message);
+        toolBar.setBackground(new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY)));
+    }
+
+    /**
+     * Set the toolbar to red and displays an error message to the user.
+     * @param message the message to send to the user.
+     */
+    private void setErrorStatus(String message){
+        statusLbl.setText(message);
+        toolBar.setBackground(new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)));
     }
 }

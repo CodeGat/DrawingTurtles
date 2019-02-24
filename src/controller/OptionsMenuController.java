@@ -8,7 +8,7 @@ import javafx.stage.Stage;
 import java.util.ArrayList;
 
 /**
- * Controller for the Options Menu.
+ * Controller for view.optionsmenu.fxml.
  */
 public class OptionsMenuController extends AbstractDataSharingController<Boolean> {
     @FXML Button cancelBtn, commitBtn;
@@ -17,7 +17,7 @@ public class OptionsMenuController extends AbstractDataSharingController<Boolean
     private ArrayList<Boolean> commit_config;
 
     /**
-     * Commits the changes to the base Controller.
+     * Adds the options state for commital, and closes the Window.
      */
     @FXML void commitConfigBtn() {
         commit_config = new ArrayList<>();
@@ -29,13 +29,17 @@ public class OptionsMenuController extends AbstractDataSharingController<Boolean
     }
 
     /**
-     * Closes the window.
+     * Closes the Window.
      */
     @FXML void cancelConfigBtn() {
         Stage stage = (Stage) cancelBtn.getScene().getWindow();
         stage.close();
     }
 
+    /**
+     * get the current options data from the Controller.
+     * @param data the data to be passed.
+     */
     @Override
     public void setData(ArrayList<Boolean> data) {
         collectionsCbx.setSelected(data.get(0));
@@ -43,6 +47,10 @@ public class OptionsMenuController extends AbstractDataSharingController<Boolean
         ontologyCbx.setSelected(data.get(2));
     }
 
+    /**
+     * Pass the data from this controller to the calling Controller.
+     * @return the data (options) if it exists.
+     */
     @Override
     public ArrayList<Boolean> getData() {
         return commit_config;

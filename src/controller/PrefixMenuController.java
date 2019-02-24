@@ -5,19 +5,18 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextInputDialog;
+import javafx.geometry.Insets;
+import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Map;
@@ -27,16 +26,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static javafx.stage.FileChooser.*;
+
 /**
- * Controller for the Prefix Menu.
+ * Controller for view.prefixmenu.fxml.
  */
 public class PrefixMenuController extends AbstractDataSharingController<Map<String, String>> implements Initializable {
 
     private static final Logger LOGGER = Logger.getLogger(PrefixMenuController.class.getName());
 
     @FXML AnchorPane root;
+    @FXML ToolBar toolBar;
     @FXML Button addPrefixBtn, remPrefixBtn, clrPrefixBtn, savPrefixBtn, lodPrefixBtn, cmtPrefixBtn, canPrefixBtn;
     @FXML ListView<String> prefixList;
+    @FXML Label statusLbl;
 
     private final BooleanProperty isItemSelected = new SimpleBooleanProperty(false);
 
@@ -45,9 +48,7 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
 
 
     /**
-     * Overridden initialize method that is run after the PrefixMenuController constructor is called.
-     * @param location location of other resources.
-     * @param resources text resources that can be used by the PrefixMenu Controller.
+     * Add listener for the BooleanProperty that determines whether a item is selected in the prefix list.
      */
     @Override public void initialize(URL location, ResourceBundle resources) {
         prefixList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -68,14 +69,17 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     @FXML protected void addPrefixAction() {
         String prefixResult = showAddPrefixesDialog();
 
-        if (prefixResult == null) return;
+        if (prefixResult == null) {
+            setInfoStatus("Prefix addition cancelled. ");
+            return;
+        }
         String[] newPrefixes = prefixResult.split(", ");
 
         for (String prefix : newPrefixes){
-            if (prefix.matches("[a-z]* : .*")) {
-                String[] prefixParts = prefix.split(" : ");
-                String   acronym = prefixParts[0];
-                String   expansion = prefixParts[1];
+            if (prefix.matches("[a-z]* ?: ?.*")) {
+                String[] prefixParts = prefix.split(":", 2);
+                String   acronym = prefixParts[0].trim();
+                String   expansion = prefixParts[1].trim();
 
                 prefixes.put(acronym, expansion);
                 prefixList.getItems().add(prefix);
@@ -89,7 +93,8 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
      */
     @FXML void removePrefixAction() {
         String prefix = prefixList.getSelectionModel().getSelectedItem();
-        prefixes.remove(prefix.split(" : ")[0]);
+        String prefixToRemove = prefix.split(":")[0].trim();
+        prefixes.remove(prefixToRemove);
         prefixList.getItems().remove(prefix);
         prefixList.getSelectionModel().clearSelection();
     }
@@ -108,9 +113,13 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     @FXML protected void savePrefixAction() {
         File saveFile = showSaveFileDialog(
                 savPrefixBtn.getScene().getWindow(),
-                new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt")
+                new ExtensionFilter("Text Files (*.txt)", "*.txt")
         );
         if (saveFile != null && prefixes.size() != 0) {
+            if (!saveFile.getName().matches(".*\\.txt")){
+                setWarnStatus("Failed to save Prefixes file: You attempted to save the file as a non-.txt file.");
+                return;
+            }
             Controller.lastDirectory = saveFile.getParent();
             StringBuilder prefixesToSave = new StringBuilder();
             for (Map.Entry<String, String> prefix : prefixes.entrySet()) {
@@ -125,9 +134,10 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
                 writer.flush();
                 writer.close();
             } catch (IOException e) {
+                setErrorStatus("Failed to save Prefixes file: IOException occurred during save.");
                 LOGGER.log(Level.SEVERE, "failed to save prefixes: ", e);
             }
-        }
+        } else setInfoStatus("Saving of prefixes cancelled. ");
     }
 
     /**
@@ -136,32 +146,33 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     @FXML protected void loadPrefixAction(){
         File loadFile = showLoadFileDialog(
                 lodPrefixBtn.getScene().getWindow(),
-                new FileChooser.ExtensionFilter("Text file (*.txt)", "*.txt")
+                new ExtensionFilter("Text file (*.txt)", "*.txt")
         );
         if (loadFile != null){
             Controller.lastDirectory = loadFile.getParent();
-            try (FileReader reader = new FileReader(loadFile)){
-                char[] rawPrefixes = new char[10000];
+            try (BufferedReader reader = new BufferedReader(new FileReader(loadFile))){
+                String line;
 
-                if (reader.read(rawPrefixes) == 0) LOGGER.warning("Nothing in prefix file. ");
-                String[] strPrefixes = new String(rawPrefixes).trim().split("\\n");
-                for (String strPrefix : strPrefixes) {
-                    String[] prefixParts = strPrefix.split(" : ");
+                while((line = reader.readLine()) != null) {
+                    String[] prefixParts = line.split(":", 2);
+                    String   acronym = prefixParts[0].trim();
+                    String   expansion = prefixParts[1].trim();
 
-                    if (!prefixes.containsKey(prefixParts[0])) {
-                        prefixes.put(prefixParts[0], prefixParts[1]);
-                        prefixList.getItems().add(strPrefix);
+                    if (!prefixes.containsKey(acronym)) {
+                        prefixes.put(acronym, expansion);
+                        prefixList.getItems().add(line);
                     }
                 }
             } catch (IOException e) {
+                setErrorStatus("Failed to load Prefixes file: IOException occurred during load. ");
                 LOGGER.log(Level.SEVERE, "Loading prefixes failed: ", e);
             }
-        }
+        } else setInfoStatus("Prefix loading cancelled. ");
 
     }
 
     /**
-     * Commit to the current prefixes, giving them to the base Controller.
+     * Add the current prefixes for commital, and close the Window.
      */
     @FXML void commitPrefixAction() {
         commit_prefixes = prefixes;
@@ -170,7 +181,7 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     }
 
     /**
-     * Close the window.
+     * Closes the Window.
      */
     @FXML void cancelPrefixAction() {
         Stage stage = (Stage) cmtPrefixBtn.getScene().getWindow();
@@ -207,10 +218,10 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     /**
      * Creates a save file dialog, prompting the user to select a file to create and/or save data to.
      * @param owner the window that owns the dialog.
-     * @param extFilter the list of extension filters, for easy access to specific file types.
+     * @param extFilter the list of extension filters, for easy access to the specified file types.
      * @return the file the user has chosen to save to, or null otherwise.
      */
-    private File showSaveFileDialog(Window owner, FileChooser.ExtensionFilter extFilter) {
+    private File showSaveFileDialog(Window owner, ExtensionFilter extFilter) {
         File directory =
                 new File(Controller.lastDirectory != null ? Controller.lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
@@ -225,9 +236,10 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
     /**
      * Creates a load file dialog, which prompts the user to load from a specific file.
      * @param owner the window that owns the dialog.
+     * @param extFilter the list of extension filters, for easy access to the specified file types.
      * @return the file that will be loaded from.
      */
-    private File showLoadFileDialog(Window owner, FileChooser.ExtensionFilter extFilter){
+    private File showLoadFileDialog(Window owner, ExtensionFilter extFilter){
         File directory =
                 new File(Controller.lastDirectory != null ? Controller.lastDirectory : System.getProperty("user.home"));
         FileChooser fileChooser = new FileChooser();
@@ -238,6 +250,10 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
         return fileChooser.showOpenDialog(owner);
     }
 
+    /**
+     * The data passed to this controller from the calling Controller.
+     * @param data the data to be passed.
+     */
     @Override
     public void setData(ArrayList<Map<String, String>> data) {
         prefixes = data.get(0);
@@ -249,11 +265,42 @@ public class PrefixMenuController extends AbstractDataSharingController<Map<Stri
         prefixList.setItems(FXCollections.observableArrayList(prefixesAsList));
     }
 
+    /**
+     * Data (the prefixes) to be accessable to the calling Controller.
+     * @return the accessable data.
+     */
     @Override
     public ArrayList<Map<String, String>> getData() {
         ArrayList<Map<String, String>> data = new ArrayList<>();
         data.add(commit_prefixes);
 
         return data;
+    }
+
+    /**
+     * Sets the toolbar to transparent and displays a informative message to the user.
+     * @param message the message to send to the user.
+     */
+    private void setInfoStatus(String message) {
+        statusLbl.setText(message);
+        toolBar.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY)));
+    }
+
+    /**
+     * Sets the toolbar to orange and displays a warning message to the user.
+     * @param message the message to send to the user.
+     */
+    private void setWarnStatus(String message) {
+        statusLbl.setText(message);
+        toolBar.setBackground(new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY)));
+    }
+
+    /**
+     * Set the toolbar to red and displays an error message to the user.
+     * @param message the message to send to the user.
+     */
+    private void setErrorStatus(String message){
+        statusLbl.setText(message);
+        toolBar.setBackground(new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)));
     }
 }

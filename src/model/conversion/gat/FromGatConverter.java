@@ -22,9 +22,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * Class for turning a loaded .gat file into a graph.
+ * Class for turning a .gat file into a graph.
  */
 public class FromGatConverter {
+
+    /**
+     * Exception if a subject/object cannot be reached from either end of the property arrow.
+     */
     public class PropertyElemMissingException extends Exception {
         private String elementMissing, propertyName;
 
@@ -51,6 +55,7 @@ public class FromGatConverter {
 
     /**
      * Splits the output of the .gat file into it's respective elements and attempts to bind them.
+     * @throws PropertyElemMissingException passed from {@link #bindProperty(String)}
      */
     public void bindGraph() throws PropertyElemMissingException {
         String[] elements = Arrays.stream(gat.split("]\\[|\\[|]"))
@@ -102,6 +107,7 @@ public class FromGatConverter {
         Rectangle rect = new Rectangle(w, h, c);
         rect.setStroke(Color.BLACK);
 
+        // if the literal is an instance literal, give it a dashed rectangle.
         if (etype.equals("i")) rect.getStrokeDashArray().addAll(10d, 10d);
 
         compiledLit.getChildren().addAll(rect, name);

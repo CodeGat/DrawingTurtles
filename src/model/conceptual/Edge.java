@@ -15,10 +15,12 @@ public class Edge {
     private final Vertex object;
     private boolean isIri;
 
+    // used to specify the x-location of the whole container, not just the arrow. .
     private double layoutX;
 
     /**
      * A simple constructor for the conceptual property.
+     * @param container the container of the arrow and the property name.
      * @param name the name of the property.
      * @param subject the tail of the property arrow.
      * @param object the head of the property arrow.
@@ -31,14 +33,6 @@ public class Edge {
         this.layoutX = container.getBoundsInParent().getMinX();
         this.isIri = this.name.matches("https?:.*|mailto:.*");
     }
-
-    public String getName() { return name; }
-
-    public Vertex getObject() { return object; }
-
-    public Vertex getSubject() { return subject; }
-
-    public StackPane getContainer() { return container; }
 
     /**
      * The bounds of the name of the arrow in the graph are given by the top-left coordinate of the container, plus
@@ -57,7 +51,14 @@ public class Edge {
         );
     }
 
+    /**
+     * Accessors
+     */
     public boolean isIri(){ return isIri; }
     public double getLayoutX() { return layoutX; }
+    public String getName() { return name; }
+    public Vertex getObject() { return object; }
+    public Vertex getSubject() { return subject; }
+    public StackPane getContainer() { return container; }
 }
 

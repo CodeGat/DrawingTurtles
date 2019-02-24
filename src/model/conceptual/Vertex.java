@@ -20,18 +20,23 @@ public class Vertex {
         CLASS, GLOBAL_LITERAL, INSTANCE_LITERAL
     }
 
+    /**
+     * Exception when the users click is outside the bounds of this Vertex.
+     */
     public class OutsideElementException extends Exception {
-        OutsideElementException(){
-            super();
-        }
+        OutsideElementException(){ super(); }
     }
 
+    /**
+     * Exception when the name of the Vertex does not match any of the regex for Classes or Global/Instance Literals.
+     */
     public class UndefinedElementTypeException extends Exception {
         UndefinedElementTypeException() { super(); }
     }
 
     private static char nextBlankNodeName = (char) 96;
     private static final ArrayList<Character> blankNodeNames = new ArrayList<>();
+
     private static final String globalLiteralRegex = "\".*\"(\\^\\^.*|@.*)?" + // unspecified / String
             "|true|false" + // boolean
             "|[+\\-]?\\d+" + //integer
@@ -51,6 +56,14 @@ public class Vertex {
 
     private String rdfsLabel, rdfsComment;
 
+    /**
+     * Constructor for a Vertex with meta-information, namely it's human-readable label and comment (defined in RDFS).
+     * @param element the container of the shape and name of the Vertex.
+     * @param rdfsLabel the human-readable label of the Vertex.
+     * @param rdfsComment the comment regarding the Vertex.
+     * @throws OutsideElementException if the container is not castable to a stackpane (aka it is outside the canvas.
+     * @throws UndefinedElementTypeException if the name of the Vertex does not correspond to any of the GraphElemTypes.
+     */
     public Vertex(EventTarget element, String rdfsLabel, String rdfsComment)
             throws OutsideElementException, UndefinedElementTypeException {
         this(element);
@@ -58,15 +71,21 @@ public class Vertex {
         this.rdfsComment = rdfsComment;
     }
 
+    /**
+     * Constructor for a Vertex with meta-information regarding the datatype of the Literal.
+     * @param element the container of the shape and the name.
+     * @param dataType the data type of the given Vertex.
+     * @throws OutsideElementException if the container is not castable to a stackpane (aka it is outside the canvas.
+     * @throws UndefinedElementTypeException if the name of the Vertex does not correspond to any of the GraphElemTypes.
+     */
     public Vertex(EventTarget element, String dataType) throws OutsideElementException, UndefinedElementTypeException {
         this(element);
         this.dataType = dataType;
     }
 
     /**
-     * Constructor for the creation of a new GraphClass that doesn't yet exist.
-     * Allows the property arrow to start or end at the closest edge, making it look more natural.
-     * @param element the enclosing container for the shape and text
+     * Constructor for the creation of a new Vertex that doesn't yet exist.
+     * @param element the enclosing container for the shape and text.
      */
     public Vertex(EventTarget element) throws OutsideElementException, UndefinedElementTypeException {
         try {
@@ -77,12 +96,12 @@ public class Vertex {
 
         this.name = ((Text) container.getChildren().get(1)).getText();
 
+        // determine if the Vertex is a Blank Node or fully qualified IRI.
         if (this.name.charAt(0) == '_') {
             ((Text) container.getChildren().get(1)).setText("");
             isBlankNode = true;
             isIri = false;
         } else if (this.name.matches("https?:.*|mailto:.*")){
-//            this.name = "<" + this.name + ">";
             isBlankNode = false;
             isIri = true;
         } else {
@@ -90,6 +109,7 @@ public class Vertex {
             isIri = false;
         }
 
+        // determine whether the Vertex is a class, global literal or instance literal.
         if (container.getChildren().get(0) instanceof Ellipse) this.elementType = GraphElemType.CLASS;
         else if (this.name.matches(globalLiteralRegex)) this.elementType = GraphElemType.GLOBAL_LITERAL;
         else if (this.name.matches(instanceLiteralRegex)) this.elementType = GraphElemType.INSTANCE_LITERAL;
@@ -175,7 +195,6 @@ public class Vertex {
 
         x1 -= midX;
         y1 -= midY;
-
         x2 -= midX;
         y2 -= midY;
 
@@ -318,14 +337,29 @@ public class Vertex {
         return rdfsComment;
     }
 
+    /**
+     * @return the datatype of the Vertex, in angle-brackets if it is a fully-qualified IRI.
+     */
     public String getDataType() {
-        if (dataType == null) return null;
+        if (this.elementType == GraphElemType.GLOBAL_LITERAL){
+            final String ints = "[+\\-]?\\d";
+
+            if      (name.matches("\".*\"")) return "xsd:string";
+            else if (name.matches("true|false")) return  "xsd:boolean";
+            else if (name.matches(ints+"+")) return "xsd:integer";
+            else if (name.matches(ints+"*\\.\\d+")) return "xsd:decimal";
+            else if (name.matches("("+ints+"+\\.\\d+|[+\\-]?\\.\\d+|"+ints+")E"+ints+"+")) return "xsd:double";
+            else if (name.matches(".*\\^\\^.*")) return name.split("\\^\\^")[1];
+            else return null;
+        }
+
+        if (dataType == null)
+            return null;
         else if (dataType.matches("http(s)?:.*") && elementType != GraphElemType.CLASS)
             return "<" + dataType + ">";
         else if (this.elementType != GraphElemType.CLASS)
             return dataType;
-
-        System.out.println("data type was not null or a class or an iri, must have been empty string. ");
-        return null;
+        else
+            return null;
     }
 }

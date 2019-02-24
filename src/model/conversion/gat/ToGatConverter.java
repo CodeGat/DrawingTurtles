@@ -15,6 +15,7 @@ public class ToGatConverter {
     private double w, h;
     private ArrayList<Vertex> classes;
     private ArrayList<Edge> properties;
+
     /**
      * Constructor of the ElementConverter.
      * @param w width of the canvas.
