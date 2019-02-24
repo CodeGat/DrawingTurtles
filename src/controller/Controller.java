@@ -40,7 +40,6 @@ import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import model.graph.SelfReferentialArrow;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -92,6 +91,8 @@ public final class Controller implements Initializable {
     private BooleanProperty prefixesInspected = new SimpleBooleanProperty(false);
     private BooleanProperty graphCreated = new SimpleBooleanProperty(false);
     private BooleanProperty csvIngested = new SimpleBooleanProperty(false);
+
+    private static final Color JFX_DEFAULT_COLOUR = Color.web("F4F4F4");
 
     /**
      * Adds listeners for the Boolean Properties (and hence the workflow checklist) of prefix inspection, graph
@@ -448,8 +449,7 @@ public final class Controller implements Initializable {
         boolean isSelfReferential = subject == object;
         StackPane compiledProperty;
 
-        if (isSelfReferential) compiledProperty = addSelfReferentialProperty();
-        else compiledProperty = addNormalProperty(mouseEvent, object);
+        compiledProperty = isSelfReferential ? addSelfReferentialProperty() : addNormalProperty(mouseEvent, object);
 
         if (compiledProperty == null) return;
 
@@ -462,7 +462,7 @@ public final class Controller implements Initializable {
         subject.addOutgoingEdge(edge);
         object.addIncomingEdge(edge);
 
-        statusLbl.setText("Property " + propertyName.getText() + " created. ");
+        setInfoStatus("Property " + propertyName.getText() + " created. ");
         subject = null;
         arrow = null;
         srcClick = true;
@@ -490,7 +490,7 @@ public final class Controller implements Initializable {
         }
 
         Label propertyName = new Label(propertyInfo.get(0));
-        BackgroundFill fill = new BackgroundFill(Color.web("F4F4F4"), CornerRadii.EMPTY, Insets.EMPTY);
+        BackgroundFill fill = new BackgroundFill(JFX_DEFAULT_COLOUR, CornerRadii.EMPTY, Insets.EMPTY);
         propertyName.setBackground(new Background(fill));
 
         double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
@@ -505,15 +505,16 @@ public final class Controller implements Initializable {
 
     private StackPane addSelfReferentialProperty() {
         StackPane compiled = new StackPane();
-        SelfReferentialArrow selfArrow = new SelfReferentialArrow();
-        Bounds b = subject.getBounds();
 
-        selfArrow.setStartX(b.getMaxX());
-        selfArrow.setStartY(b.getMinY() + (b.getHeight() / 2));
-        selfArrow.setControlX(b.getMaxX() + (b.getWidth() / 2) - 50);
-        selfArrow.setControlY(b.getMaxY() + (b.getHeight() / 2) - 50);
-        selfArrow.setEndX(b.getMinX() + (b.getWidth() / 2));
-        selfArrow.setEndY(b.getMaxY());
+        Ellipse subEllipse = (Ellipse) subject.getContainer().getChildren().get(0);
+        Ellipse selfRefEllipse = new Ellipse(
+                subEllipse.getCenterX() + subEllipse.getRadiusX() / 2,
+                subEllipse.getCenterY() + subEllipse.getRadiusY() / 2,
+                subEllipse.getRadiusX() / 1.5,
+                subEllipse.getRadiusY()
+        );
+        selfRefEllipse.setFill(Color.TRANSPARENT);
+        selfRefEllipse.setStroke(Color.BLACK);
 
         compiled.setLayoutX(subject.getX());
         compiled.setLayoutY(subject.getY());
@@ -531,17 +532,17 @@ public final class Controller implements Initializable {
         }
 
         Label propertyName = new Label(propertyInfo.get(0));
-        BackgroundFill fill = new BackgroundFill(Color.web("F4F4F4"), CornerRadii.EMPTY, Insets.EMPTY);
+        BackgroundFill fill = new BackgroundFill(JFX_DEFAULT_COLOUR, CornerRadii.EMPTY, Insets.EMPTY);
         propertyName.setBackground(new Background(fill));
 
         double textWidth = (new Text(propertyInfo.get(0))).getBoundsInLocal().getWidth();
 
-        if (textWidth > selfArrow.getWidth()){
-            double overrunOneSide = (textWidth - selfArrow.getWidth()) / 2;
-            compiled.setLayoutX(compiled.getLayoutX() - overrunOneSide);
+       if (textWidth > selfRefEllipse.getRadiusX() * 2){
+            double overrunOneSide = (textWidth - selfRefEllipse.getRadiusX()) / 2;
+            compiled.setLayoutX(compiled.getLayoutX() - overrunOneSide + subEllipse.getRadiusX() / 3);
         }
-        compiled.getChildren().addAll(selfArrow, propertyName);
-        StackPane.setAlignment(propertyName, Pos.CENTER_RIGHT);
+        compiled.getChildren().addAll(selfRefEllipse, propertyName);
+        StackPane.setAlignment(propertyName, Pos.BOTTOM_CENTER);
 
         setInfoStatus("Property " + propertyName.getText() + " created. ");
         subject = null;
@@ -607,14 +608,14 @@ public final class Controller implements Initializable {
         double textWidth = elementName.getBoundsInLocal().getWidth();
         if (isClass){
             Ellipse elementType = new Ellipse(x, y, textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5, 37.5);
-            elementType.setFill(Color.web("f4f4f4"));
+            elementType.setFill(JFX_DEFAULT_COLOUR);
             elementType.setStroke(Color.BLACK);
             compiledElement.getChildren().addAll(elementType, elementName);
         } else {
             Rectangle elementType = new Rectangle(textWidth > 125 ? textWidth + 15 : 125, 75);
             String name = elementName.getText();
 
-            elementType.setFill(Color.web("f4f4f4"));
+            elementType.setFill(JFX_DEFAULT_COLOUR);
             elementType.setStroke(Color.BLACK);
             if (name.matches(instanceLiteralRegex) && !name.matches(globalLiteralRegex))
                 elementType.getStrokeDashArray().addAll(10d, 10d);
