@@ -7,6 +7,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Line;
 
+/**
+ * A sort of hacky self-referential arrow that is actually an Ellipse with two pointy bits.
+ */
 public class SelfReferentialArrow extends Group {
     private final Ellipse ellipse;
 
@@ -48,6 +51,9 @@ public class SelfReferentialArrow extends Group {
         updater.invalidated(null);
     }
 
+    /**
+     * Accessor/Setter methods.
+     */
     public void setCenterX(double value){ ellipse.setCenterX(value); }
     public void setCenterY(double value){ ellipse.setCenterY(value); }
     public void setRadiusX(double value){ ellipse.setRadiusX(value); }
