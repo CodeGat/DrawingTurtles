@@ -212,14 +212,16 @@ public class FromGatConverter {
         double y = Double.valueOf(propElements[1]);
         double rx = Double.valueOf(propElements[2]);
         double ry = Double.valueOf(propElements[3]);
-        Color  c  = Color.web(propElements[4]);
-        String propName = propElements[5];
+        double lx = Double.valueOf(propElements[4]);
+        double ly = Double.valueOf(propElements[5]);
+        Color  c  = Color.web(propElements[6]);
+        String propName = propElements[7];
 
         resizeEdgeOfCanvas(x, y);
 
         StackPane compiledSelfRefProp = new StackPane();
-        compiledSelfRefProp.setLayoutX(x);
-        compiledSelfRefProp.setLayoutY(y);
+        compiledSelfRefProp.setLayoutX(lx);
+        compiledSelfRefProp.setLayoutY(ly);
 
         Ellipse ellipse = new Ellipse(x, y, rx, ry);
         ellipse.setFill(c);
