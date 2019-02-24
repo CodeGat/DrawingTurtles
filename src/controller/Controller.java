@@ -92,7 +92,7 @@ public final class Controller implements Initializable {
     private BooleanProperty graphCreated = new SimpleBooleanProperty(false);
     private BooleanProperty csvIngested = new SimpleBooleanProperty(false);
 
-    private static final Color JFX_DEFAULT_COLOUR = Color.web("F4F4F4");
+    public static final Color JFX_DEFAULT_COLOUR = Color.web("F4F4F4");
 
     /**
      * Adds listeners for the Boolean Properties (and hence the workflow checklist) of prefix inspection, graph
@@ -227,6 +227,7 @@ public final class Controller implements Initializable {
                 writer.close();
                 setInfoStatus("File saved.");
             } catch (IOException e) {
+                setErrorStatus("Failed to save graph: IOException occurred during save. ");
                 LOGGER.log(Level.SEVERE, "failed to save graph: ", e);
             }
         } else setInfoStatus("File save cancelled.");
@@ -248,7 +249,7 @@ public final class Controller implements Initializable {
             properties.clear();
 
             try (BufferedReader reader = new BufferedReader(new FileReader(loadFile))){
-                String graph = reader.readLine();
+                String graph = reader.readLine(); // TODO: 24/02/2019 may need to read more than one line in case of multiline rdfs:comment?
                 if (graph == null || graph.length() == 0){
                     setWarnStatus("Graph Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
@@ -476,6 +477,12 @@ public final class Controller implements Initializable {
         srcClick = true;
     }
 
+    /**
+     * Adds a normal (non-self-referential) property to the canvas.
+     * @param mouseEvent the location of the users second click.
+     * @param object the object under the users second click.
+     * @return the compiled container of the arrow and the associated name.
+     */
     private StackPane addNormalProperty(MouseEvent mouseEvent, Vertex object) {
         StackPane compiled = new StackPane();
 
@@ -511,6 +518,10 @@ public final class Controller implements Initializable {
         return compiled;
     }
 
+    /**
+     * Adds a self-referential property to the canvas.
+     * @return the compiled container of the "arrow" and the associated name.
+     */
     private StackPane addSelfReferentialProperty() {
         StackPane compiled = new StackPane();
 

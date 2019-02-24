@@ -55,6 +55,7 @@ public class Edge {
      * Accessors
      */
     public boolean isIri(){ return isIri; }
+    public boolean isSelfReferential(){ return subject == object; }
     public double getLayoutX() { return layoutX; }
     public String getName() { return name; }
     public Vertex getObject() { return object; }

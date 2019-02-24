@@ -1,8 +1,10 @@
 package model.conversion.gat;
 
+import controller.Controller;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -68,7 +70,8 @@ public class FromGatConverter {
         for (String element : elements) {
             if (element.charAt(0) == 'L') bindLiteral(element);
             else if (element.charAt(0) == 'C') bindClass(element);
-            else if (element.charAt(0) == 'A') bindProperty(element);
+            else if (element.charAt(0) == 'A') bindNormalProperty(element);
+            else if (element.charAt(0) == 'R') bindSelfReferentialProperty(element);
             else if (element.charAt(0) == 'G') bindCanvas(element);
         }
     }
@@ -196,6 +199,48 @@ public class FromGatConverter {
             obj.addIncomingEdge(edge);
             properties.add(edge);
         } else throw new PropertyElemMissingException((sub == null ? "subject" : "object"), name.getText());
+    }
+
+    /**
+     * Creates a human-friendly self-referential graph property arrow, and binds a java-friendly Edge.
+     * @param refProp the .gat String serialization of a self-referential Property.
+     * @throws PropertyElemMissingException if the self-referential Property is not associated with a class.
+     */
+    private void bindSelfReferentialProperty(String refProp) throws PropertyElemMissingException {
+        String[] propElements = refProp.split("\\\\\\|", -1);
+        double x = Double.valueOf(propElements[0].substring(1));
+        double y = Double.valueOf(propElements[1]);
+        double rx = Double.valueOf(propElements[2]);
+        double ry = Double.valueOf(propElements[3]);
+        Color  c  = Color.web(propElements[4]);
+        String propName = propElements[5];
+
+        resizeEdgeOfCanvas(x, y);
+
+        StackPane compiledSelfRefProp = new StackPane();
+        compiledSelfRefProp.setLayoutX(x);
+        compiledSelfRefProp.setLayoutY(y);
+
+        Ellipse ellipse = new Ellipse(x, y, rx, ry);
+        ellipse.setFill(c);
+        ellipse.setStroke(Color.BLACK);
+
+        Label name = new Label(propName);
+        name.setBackground(new Background(new BackgroundFill(Controller.JFX_DEFAULT_COLOUR, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        compiledSelfRefProp.getChildren().addAll(ellipse, name);
+        StackPane.setAlignment(name, Pos.BOTTOM_CENTER);
+
+        compiledProperties.add(compiledSelfRefProp);
+        compiledSelfRefProp.toBack();
+
+        Vertex vertex = findClassUnder(x, y);
+        if (vertex != null){
+            Edge edge = new Edge(compiledSelfRefProp, name, vertex, vertex);
+            vertex.addOutgoingEdge(edge);
+            vertex.addIncomingEdge(edge);
+            properties.add(edge);
+        } else throw new PropertyElemMissingException("self-referential class", name.getText());
     }
 
     /**
