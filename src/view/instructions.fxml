@@ -21,8 +21,11 @@
                 <Label text="&quot;John Smith&quot;, 200.1, &quot;2456&quot;^^xsd:Postcode" style="-fx-font-family: 'Courier New'"/>
                 <Label text="The following will be interpreted as Classes (Ellipses):"/>
                 <Label text="http://xmlns.com/foaf/0.1/knows, :thing, a:Person" style="-fx-font-family: 'Courier New'"/>
-                <Label text="Anything outside of the Turtle syntax will be considered a Placeholder for instance-level Data (Dashed Rectangle): " wrapText="true" />
+                <Label text="Anything outside of the Turtle syntax will be considered a Placeholder Literal for instance-level Data (Dashed Rectangle): " wrapText="true" />
                 <Label text="Name, Work ID, Publication Place" style="-fx-font-family: 'Courier New'" />
+                <Label text="Placeholder Classes (Dashed Ellipse) are defined the same way as regular classes, so to specify you want a Placeholder Class you must have selected 'Optimize for ontology and instance-level .ttl creation' in Options. " wrapText="true"/>
+                <Label text="Placeholder Classes are used when you want a prefix before your data, such as when you want linkable IDs. For example, if you have a Placeholder class 'a:ID' with prefix 'a' = http://ids.org/id#', and .csv ids '100' and '200', the instance-level expansion would be:" wrapText="true"/>
+                <Label text="http://ids.org/id#100 and http://ids.org/id#200" style="-fx-font-family: 'Courier New'"/>
                 <Label text="Properties between two graph elements are created by clicking on an existing element, then clicking on the other. Properties that are self referential are created similarly - clicking twice on an existing element.&#13;" wrapText="true"/>
                 <Label text="Workflow: exporting as .ttl" style="-fx-font-weight: bold;" />
                 <Label text="Exporting as a normal .ttl file is easy - just create your graph without any Placeholders, and click the 'export as .ttl' Button, remembering to add any defined prefixes to the Prefixes Menu. &#13;" wrapText="true"/>

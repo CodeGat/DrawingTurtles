@@ -35,7 +35,7 @@
                 <font><Font name="Courier New" /></font>
             </Label>
             <Separator GridPane.rowIndex="9"/>
-            <CheckBox fx:id="ontologyCbx" text="Optimize .ttl output for ontology creation (.owl)" GridPane.rowIndex="10"/>
+            <CheckBox fx:id="ontologyCbx" text="Optimize for ontology and instance-level .ttl creation" GridPane.rowIndex="10"/>
         </GridPane>
     </center>
     <bottom>
