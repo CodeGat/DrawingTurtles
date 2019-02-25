@@ -8,6 +8,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static model.conceptual.Vertex.GraphElemType.*;
+
 /**
  * Class that is responsible for the conversion of a visual graph into a .ttl string.
  */
@@ -68,20 +70,20 @@ public class Converter {
             fixString.append(".\n");
         }
 
-        // reminding the user that instance literals will be replaced by their corresponding instance level data when
+        // reminding the user that instance elements will be replaced by their corresponding instance level data when
         //    converted to instance-level .ttl.
-        if (classes.stream().anyMatch(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
-            fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
-                    "d during instance-level .ttl creation: \n# ");
+        if (classes.stream().anyMatch(c -> c.getElementType() == INSTANCE_LITERAL)){
+            fixString.append("# The following Elements are placeholders for instance-level data that will be populate" +
+                    "d during instance-level .ttl creation: \n#   ");
             classes.stream()
-                    .filter(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)
+                    .filter(c -> c.getElementType() == INSTANCE_LITERAL || c.getElementType() == INSTANCE_CLASS)
                     .forEach(c -> fixString.append(c.getName()).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
             fixString.append(".\n");
         }
 
         Stream<String> ttlClassPrefixesStream = classes.stream()
-                .filter(c -> c.getElementType() == Vertex.GraphElemType.GLOBAL_CLASS && !c.isIri())
+                .filter(c -> c.getElementType() == GLOBAL_CLASS && !c.isIri())
                 .map(c -> c.getName().split(":")[0]);
         Stream<String> ttlPropPrefixesStream = properties.stream()
                 .filter(p -> !p.isIri())
@@ -265,7 +267,7 @@ public class Converter {
         for (Vertex graphClass : classes) {
             isBlanknode = config.get(1) && graphClass.isBlank();
 
-            if (graphClass.getElementType() == Vertex.GraphElemType.GLOBAL_CLASS && !isBlanknode)
+            if (graphClass.getElementType() == GLOBAL_CLASS && !isBlanknode)
                 classStrs.append(convertTriple(graphClass));
         }
 
@@ -407,7 +409,7 @@ public class Converter {
                 dedentTab();
                 objectStr += tabs + "]";
             } else objectStr = "[" + predicateObjectList + "]";
-        } else if (object.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL) {
+        } else if (object.getElementType() == INSTANCE_LITERAL) {
             String dataType = object.getDataType();
             objectStr = "\"" + objectStr + "\"" +
                     (dataType != null && dataType.length() != 0 ? "^^" + object.getDataType() : "");
