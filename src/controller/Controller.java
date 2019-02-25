@@ -11,7 +11,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import model.conceptual.Class;
 import model.conceptual.Edge;
+import model.conceptual.Literal;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
 import model.conceptual.Vertex.UndefinedElementTypeException;
@@ -162,12 +164,12 @@ public final class Controller implements Initializable {
      * @param title the title of the new window.
      * @param data the parameters passed to the Controller.
      * @param <C> a Controller that can pass data to and recieve data from this method (extending
-     *           AbstractDataSharingController).
+     *           DataSharingController).
      * @param <T> the type of data passed to and from the Controller.
      * @return the data after it has been modified by the Controller.
      */
     @FXML @SuppressWarnings("unchecked")
-    private <C extends AbstractDataSharingController<T>, T> ArrayList<T> showWindow(String fxml, String title, ArrayList<T> data){
+    private <C extends DataSharingController<T>, T> ArrayList<T> showWindow(String fxml, String title, ArrayList<T> data){
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             Parent parent = loader.load();
@@ -250,8 +252,12 @@ public final class Controller implements Initializable {
             properties.clear();
 
             try (BufferedReader reader = new BufferedReader(new FileReader(loadFile))){
-                String graph = reader.readLine(); // TODO: 24/02/2019 may need to read more than one line in case of multiline rdfs:comment?
-                if (graph == null || graph.length() == 0){
+                StringBuilder graphLines = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) graphLines.append(line).append("\n");
+
+                String graph = graphLines.toString();
+                if (graph.length() == 0){
                     setWarnStatus("Graph Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
                     return;
@@ -616,14 +622,17 @@ public final class Controller implements Initializable {
 
         if (elementName.getText().equals("")){
             isClass = true;
-            elementName = new Text("_:" + Vertex.getNextBlankNodeName());
+            elementName = new Text("_:" + Class.getNextBlankNodeName());
         } else isClass = !elementName.getText().matches(globalLiteralRegex + "|" + instanceLiteralRegex);
 
         double textWidth = elementName.getBoundsInLocal().getWidth();
         if (isClass){
             Ellipse elementType = new Ellipse(x, y, textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5, 37.5);
+            boolean isPlaceholder = classInfo.size() >= 4 && Boolean.valueOf(classInfo.get(4));
+
             elementType.setFill(JFX_DEFAULT_COLOUR);
             elementType.setStroke(Color.BLACK);
+            if (isPlaceholder) elementType.getStrokeDashArray().addAll(10d, 10d);
             compiledElement.getChildren().addAll(elementType, elementName);
         } else {
             Rectangle elementType = new Rectangle(textWidth > 125 ? textWidth + 15 : 125, 75);
@@ -641,13 +650,22 @@ public final class Controller implements Initializable {
             if (isOntology && isClass) {
                 String rdfslabel = classInfo.get(2);
                 String rdfscomment = classInfo.get(3);
-                classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment));
+                classes.add(new Class(compiledElement, rdfslabel, rdfscomment));
             } else if (isOntology){
                 String dataType = classInfo.get(1);
-                classes.add(new Vertex(compiledElement, dataType));
-            } else classes.add(new Vertex(compiledElement));
-        } catch (OutsideElementException | UndefinedElementTypeException e) {
-            e.printStackTrace();
+                classes.add(new Literal(compiledElement, dataType));
+            } else if (isClass) {
+                classes.add(new Class(compiledElement));
+            } else {
+                classes.add(new Literal(compiledElement));
+            }
+        } catch (UndefinedElementTypeException e) {
+            setErrorStatus("Adding the element failed: The name does not match Turtle syntax. Recreate the" +
+                    " graph. ");
+            LOGGER.log(Level.SEVERE, "Adding element failed: ", e);
+        } catch (OutsideElementException e) {
+            setErrorStatus("Somehow, you went outside the bounds of the canvas...");
+            LOGGER.log(Level.SEVERE, "Adding the element failed: ", e);
         }
     }
 
@@ -739,20 +757,7 @@ public final class Controller implements Initializable {
      * Creates an instructional alert.
      */
     private void showInstructionsAlert() {
-        Alert instrAlert = new Alert(Alert.AlertType.INFORMATION);
-        instrAlert.setTitle("Instructions on using Drawing Turtles");
-        instrAlert.setHeaderText(null);
-        instrAlert.setContentText(
-                "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
-                        " add to the canvas, then click somewhere on the canvas. Add a name (even in .ttl syntax!) an" +
-                        "d the item will be created in that position. \nIn regards to the Property button, you must c" +
-                        "lick on a valid (already existing) element in the graph as the subject, and then another as " +
-                        "the object. If you click on something that is not a Class or Literal, you will need toclick " +
-                        "the subject-object pair again.\nFeel free to add elements near the edge of the graph, it aut" +
-                        "omatically resizes! "
-        );
-
-        instrAlert.showAndWait();
+        showWindow("/view/instructions.fxml", "Instructions for Drawing Turtles", null);
     }
 
     /**
@@ -809,9 +814,7 @@ public final class Controller implements Initializable {
             return;
         }
 
-        LOGGER.info("AFTER Correlation:" +
-                "\nCorrelated: " + dataIntegrator.getCorrelations().toString() +
-                "\nUncorrelated (assumed constant): " + dataIntegrator.uncorrelatedClassesToString());
+        LOGGER.info("AFTER Correlation:" + "\nCorrelated: " + dataIntegrator.getCorrelations().toString());
 
         try {
             instanceData = dataIntegrator.generate();

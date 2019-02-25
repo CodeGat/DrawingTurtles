@@ -19,8 +19,8 @@
             <Button fx:id="addManualCorrBtn" maxWidth="Infinity" disable="true" onMouseClicked="#addManualCorrelationAction" text="Add Correlation"/>
             <Button fx:id="addHeaderBtn" maxWidth="Infinity" disable="true" onMouseClicked="#addHeaderAction" text="Add .csv Attribute"/>
             <Separator/>
-            <Button fx:id="commitBtn" maxWidth="Infinity" disable="true" onMouseClicked="#commitCorrelationBtn" text="Commit Correlations"/>
-            <Button fx:id="cancelBtn" maxWidth="Infinity" onMouseClicked="#cancelCorrelationBtn" text="Cancel Correlations"/>
+            <Button fx:id="commitBtn" maxWidth="Infinity" disable="true" onMouseClicked="#commitCorrelationAction" text="Commit Correlations"/>
+            <Button fx:id="cancelBtn" maxWidth="Infinity" onMouseClicked="#cancelCorrelationAction" text="Cancel Correlations"/>
             <Separator/>
         </ToolBar>
         <Text GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="2" text="Manually Correlated Attributes and Classes"/>

@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 /**
  * The controller for view.correlateDialog.fxml.
  */
-public class CorrelateDialogController extends AbstractDataSharingController<DataIntegrator> implements Initializable {
+public class CorrelateDialogController extends DataSharingController<DataIntegrator> implements Initializable {
     @FXML Button addManualCorrBtn, addHeaderBtn, commitBtn, cancelBtn;
     @FXML ListView<String> csvHeaderList;
     @FXML ListView<String> csvTtlCorrelationList;
@@ -114,7 +114,7 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
     /**
      * Close the Window and mark the modified DataIntegrator for commital.
      */
-    @FXML void commitCorrelationBtn() {
+    @FXML void commitCorrelationAction() {
         dataIntegrator.setCorrelations(correlations);
         dataIntegrator.setUncorrelated(new Pair<>(uncorrelatedCsvHeaders, uncorrelatedTtlClasses));
         Stage stage = (Stage) commitBtn.getScene().getWindow();
@@ -124,7 +124,7 @@ public class CorrelateDialogController extends AbstractDataSharingController<Dat
     /**
      * Close the Window.
      */
-    @FXML void cancelCorrelationBtn() {
+    @FXML void cancelCorrelationAction() {
         Stage stage = (Stage) cancelBtn.getScene().getWindow();
         stage.close();
     }

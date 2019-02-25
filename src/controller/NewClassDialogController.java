@@ -18,7 +18,7 @@ import java.util.ResourceBundle;
 /**
  * The controller for view.newClassDialog.fxml.
  */
-public class NewClassDialogController extends AbstractDataSharingController<String> implements Initializable {
+public class NewClassDialogController extends DataSharingController<String> implements Initializable {
     private final BooleanProperty isClasslike = new SimpleBooleanProperty(false);
     private final BooleanProperty isLiterallike = new SimpleBooleanProperty(false);
 

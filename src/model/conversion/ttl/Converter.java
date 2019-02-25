@@ -1,12 +1,16 @@
 package model.conversion.ttl;
 
 import javafx.util.Pair;
+import model.conceptual.Class;
 import model.conceptual.Edge;
+import model.conceptual.Literal;
 import model.conceptual.Vertex;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static model.conceptual.Vertex.GraphElemType.*;
 
 /**
  * Class that is responsible for the conversion of a visual graph into a .ttl string.
@@ -61,27 +65,27 @@ public class Converter {
         final int fixStringInitLength = fixString.length();
 
         // checking for blank node names, reminding the user to rename them from basic characters.
-        if (Vertex.getBlankNodeNames().size() > 0){
+        if (Class.getBlankNodeNames().size() > 0){
             fixString.append("# Don't forget to rename generic blank node names, namely: \n# ");
-            Vertex.getBlankNodeNames().forEach(n -> fixString.append(n).append(", "));
+            Class.getBlankNodeNames().forEach(n -> fixString.append(n).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
             fixString.append(".\n");
         }
 
-        // reminding the user that instance literals will be replaced by their corresponding instance level data when
+        // reminding the user that instance elements will be replaced by their corresponding instance level data when
         //    converted to instance-level .ttl.
-        if (classes.stream().anyMatch(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)){
-            fixString.append("# The following Literals are placeholders for instance-level data that will be populate" +
-                    "d during instance-level .ttl creation: \n# ");
+        if (classes.stream().anyMatch(c -> c.getElementType() == INSTANCE_LITERAL)){
+            fixString.append("# The following Elements are placeholders for instance-level data that will be populate" +
+                    "d during instance-level .ttl creation: \n#   ");
             classes.stream()
-                    .filter(c -> c.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL)
+                    .filter(c -> c.getElementType() == INSTANCE_LITERAL || c.getElementType() == INSTANCE_CLASS)
                     .forEach(c -> fixString.append(c.getName()).append(", "));
             fixString.delete(fixString.length() - 2, fixString.length());
             fixString.append(".\n");
         }
 
         Stream<String> ttlClassPrefixesStream = classes.stream()
-                .filter(c -> c.getElementType() == Vertex.GraphElemType.CLASS && !c.isIri())
+                .filter(c -> c.getElementType() == GLOBAL_CLASS && !((Class) c).isIri())
                 .map(c -> c.getName().split(":")[0]);
         Stream<String> ttlPropPrefixesStream = properties.stream()
                 .filter(p -> !p.isIri())
@@ -197,19 +201,31 @@ public class Converter {
                 " rdf:type owl:ObjectProperty ;\n\t";
         StringBuilder propStr = new StringBuilder(propStrBase);
 
-        ArrayList<Vertex> subs = new ArrayList<>();
-        ArrayList<Vertex> objs = new ArrayList<>();
+        HashSet<String> commonSubNames = new HashSet<>();
+        HashSet<String> commonObjNames = new HashSet<>();
+        ArrayList<Class> classSubs = new ArrayList<>();
+        ArrayList<Class> classObjs = new ArrayList<>();
+        ArrayList<Literal> litSubs = new ArrayList<>();
+        ArrayList<Literal> litObjs = new ArrayList<>();
+
         subObjPairs.forEach(p -> {
-            subs.add(p.getKey());
-            objs.add(p.getValue());
+            Vertex sub = p.getKey();
+            Vertex obj = p.getValue();
+
+            commonSubNames.add(sub.getName());
+            commonObjNames.add(obj.getName());
+
+            if (sub instanceof Class) classSubs.add((Class) sub);
+            else litSubs.add((Literal) sub);
+
+            if (obj instanceof Class) classObjs.add((Class) obj);
+            else litObjs.add((Literal) obj);
         });
 
-        HashSet<String> commonSubTypeDefinitions = subs.stream().map(Vertex::getTypeDefinition).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
-        HashSet<String> commonObjTypeDefinitions = objs.stream().map(Vertex::getTypeDefinition).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
-        HashSet<String> commonSubDataTypes = subs.stream().map(Vertex::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
-        HashSet<String> commonObjDataTypes = objs.stream().map(Vertex::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
-        HashSet<String> commonSubNames = subs.stream().map(Vertex::getName).collect(Collectors.toCollection(HashSet::new));
-        HashSet<String> commonObjNames = objs.stream().map(Vertex::getName).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonSubTypeDefinitions = classSubs.stream().map(Class::getTypeDefinition).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonObjTypeDefinitions = classObjs.stream().map(Class::getTypeDefinition).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonSubDataTypes = litSubs.stream().map(Literal::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> commonObjDataTypes = litObjs.stream().map(Literal::getDataType).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
 
         propStr.append("rdfs:domain ");
         if (commonSubTypeDefinitions.size() > 0){
@@ -260,12 +276,11 @@ public class Converter {
                 "#####            Ontology Classes            #####\n" +
                 "##################################################\n\n"
         );
-        boolean isBlanknode;
 
         for (Vertex graphClass : classes) {
-            isBlanknode = config.get(1) && graphClass.isBlank();
+            boolean isBlanknode = config.get(1) && graphClass instanceof Class && ((Class) graphClass).isBlank();
 
-            if (graphClass.getElementType() == Vertex.GraphElemType.CLASS && !isBlanknode)
+            if (graphClass.getElementType() == GLOBAL_CLASS && !isBlanknode)
                 classStrs.append(convertTriple(graphClass));
         }
 
@@ -281,7 +296,7 @@ public class Converter {
         String subjectString = convertSubject(subject);
         String predicateObjectString = convertPredicateObjectList(subject);
 
-        if (predicateObjectString.length() == 0 && !isOntology && subject.getTypeDefinition() == null) {
+        if (predicateObjectString.length() == 0 && !isOntology && ((Class) subject).getTypeDefinition() == null) {
             return "";
         } else if (predicateObjectString.length() == 0)
             subjectString = subjectString.substring(0, subjectString.length() - 4);
@@ -311,7 +326,7 @@ public class Converter {
 
         if (isOntology) {
             int initPredObjListSBLength = predicateObjectListSB.length();
-            predicateObjectListSB.append(getRdfsProperties(subject));
+            predicateObjectListSB.append(getRdfsProperties((Class) subject));
             if (predicateObjectListSB.length() > initPredObjListSBLength) first = false;
         }
 
@@ -337,7 +352,7 @@ public class Converter {
      * @param subject the subject of the potential rdfs properties.
      * @return the meta-information about the given subject
      */
-    private static String getRdfsProperties(Vertex subject) {
+    private static String getRdfsProperties(Class subject) {
         String result = "";
         String rdfsLabel = subject.getRdfsLabel();
         String rdfsComment = subject.getRdfsComment();
@@ -398,7 +413,7 @@ public class Converter {
         String objectStr = object.getName();
         boolean asBlankNodeList = config.get(1);
 
-        if (asBlankNodeList && object.isBlank()) {
+        if (object instanceof Class && asBlankNodeList && ((Class) object).isBlank()) {
             String predicateObjectList = convertPredicateObjectList(object);
 
             if (predicateObjectList.contains(";") || predicateObjectList.contains(",")) {
@@ -407,10 +422,11 @@ public class Converter {
                 dedentTab();
                 objectStr += tabs + "]";
             } else objectStr = "[" + predicateObjectList + "]";
-        } else if (object.getElementType() == Vertex.GraphElemType.INSTANCE_LITERAL) {
-            String dataType = object.getDataType();
+        } else if (object instanceof Literal && object.getElementType() == INSTANCE_LITERAL) {
+            Literal literal = (Literal) object;
+            String dataType = literal.getDataType();
             objectStr = "\"" + objectStr + "\"" +
-                    (dataType != null && dataType.length() != 0 ? "^^" + object.getDataType() : "");
+                    (dataType != null && dataType.length() != 0 ? "^^" + literal.getDataType() : "");
         } else objectStr = objectStr.matches("https?:.*|mailto:.*") ? "<"+objectStr+">" : objectStr;
 
         return objectStr;
@@ -423,13 +439,14 @@ public class Converter {
      * @return a string representation of the subjects class.
      */
     private static String convertSubject(Vertex klass){
+        Class subject = (Class) klass;
         String subname = klass.getName();
         subname = subname.matches("https?:.*|mailto:.*") ? "<" + subname + ">" : subname;
         String typeDef;
 
         if (isOntology)
-            typeDef = " a " + (klass.getTypeDefinition() != null ? klass.getTypeDefinition() + " ;" : "owl:Class ;");
-        else typeDef = klass.getTypeDefinition() != null ? " a " + klass.getTypeDefinition() + " ;" : "    ";
+            typeDef = " a " + (subject.getTypeDefinition() != null ? subject.getTypeDefinition() + " ;" : "owl:Class ;");
+        else typeDef = subject.getTypeDefinition() != null ? " a " + subject.getTypeDefinition() + " ;" : "    ";
 
         return subname + typeDef + "\n" + tabs;
     }

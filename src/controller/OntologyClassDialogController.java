@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -17,10 +18,11 @@ import java.util.ResourceBundle;
 /**
  * The controller for ontologyClassDialog.fxml.
  */
-public class OntologyClassDialogController extends AbstractDataSharingController<String> implements Initializable {
+public class OntologyClassDialogController extends DataSharingController<String> implements Initializable {
     @FXML Button cmtBtn, cancelBtn;
     @FXML TextField typeTfd, nameTfd, labelTfd;
     @FXML TextArea commentTxa;
+    @FXML CheckBox placeholderClassCbx;
 
     private final BooleanProperty isClasslike = new SimpleBooleanProperty(false);
     private final BooleanProperty isLiterallike = new SimpleBooleanProperty(false);
@@ -34,6 +36,8 @@ public class OntologyClassDialogController extends AbstractDataSharingController
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        placeholderClassCbx.setSelected(false);
+
         nameTfd.textProperty().addListener(((observable, oldValue, newValue) -> {
             final String stringLitRegex   = "\".+\"";
             final String otherLitRegex    = "\".+\"\\^\\^.*";
@@ -74,9 +78,11 @@ public class OntologyClassDialogController extends AbstractDataSharingController
             if (observable.getValue().booleanValue()){
                 labelTfd.setDisable(false);
                 commentTxa.setDisable(false);
+                placeholderClassCbx.setDisable(false);
             } else {
                 labelTfd.setDisable(true);
                 commentTxa.setDisable(true);
+                placeholderClassCbx.setDisable(true);
                 labelTfd.setText("");
                 commentTxa.setText("");
             }
@@ -95,7 +101,12 @@ public class OntologyClassDialogController extends AbstractDataSharingController
      * Add the created class and it's associated metadata for commital, and close the Window.
      */
     @FXML void addNewClassAction() {
-        commit_data.addAll(Arrays.asList(nameTfd.getText(), typeTfd.getText(), labelTfd.getText(), commentTxa.getText()));
+        commit_data.addAll(Arrays.asList(
+                nameTfd.getText(),
+                typeTfd.getText(),
+                labelTfd.getText(),
+                commentTxa.getText(),
+                Boolean.toString(placeholderClassCbx.isSelected())));
         Stage stage = (Stage) cmtBtn.getScene().getWindow();
         stage.close();
     }

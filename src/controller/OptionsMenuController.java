@@ -10,7 +10,7 @@ import java.util.ArrayList;
 /**
  * Controller for view.optionsmenu.fxml.
  */
-public class OptionsMenuController extends AbstractDataSharingController<Boolean> {
+public class OptionsMenuController extends DataSharingController<Boolean> {
     @FXML Button cancelBtn, commitBtn;
     @FXML CheckBox collectionsCbx, blankCbx, ontologyCbx;
 

@@ -14,7 +14,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import model.conceptual.Class;
 import model.conceptual.Edge;
+import model.conceptual.Literal;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
 import model.conceptual.Vertex.UndefinedElementTypeException;
@@ -103,7 +105,7 @@ public class FromGatConverter {
         double w = Double.valueOf(litElements[2]);
         double h = Double.valueOf(litElements[3]);
         Color  c = Color.web(litElements[4]);
-        String etype = litElements[5];
+        boolean isInstance = litElements[5].equals("i");
         Text   name  = new Text(litElements[6]);
         String dtype = litElements[7];
 
@@ -117,31 +119,31 @@ public class FromGatConverter {
         rect.setStroke(Color.BLACK);
 
         // if the literal is an instance literal, give it a dashed rectangle.
-        if (etype.equals("i")) rect.getStrokeDashArray().addAll(10d, 10d);
+        if (isInstance) rect.getStrokeDashArray().addAll(10d, 10d);
 
         compiledLit.getChildren().addAll(rect, name);
         compiledElements.add(compiledLit);
 
-        if (!dtype.equals("")) classes.add(new Vertex(compiledLit, dtype));
-        else classes.add(new Vertex(compiledLit));
+        if (!dtype.equals("")) classes.add(new Literal(compiledLit, dtype));
+        else classes.add(new Literal(compiledLit));
     }
 
     /**
      * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Vertex.
      * @param cls the .gat String serialization of a Class.
      * @throws OutsideElementException if the Vertex is outside the canvas.
-     * @throws UndefinedElementTypeException if the name of the Vertex does not match up with Turtle syntax.
      */
-    private void bindClass(String cls) throws OutsideElementException, UndefinedElementTypeException {
+    private void bindClass(String cls) throws OutsideElementException {
         String[] clsElements = cls.split("\\\\\\|", -1);
         double x = Double.valueOf(clsElements[0].substring(1));
         double y = Double.valueOf(clsElements[1]);
         double rx = Double.valueOf(clsElements[2]);
         double ry = Double.valueOf(clsElements[3]);
         Color  c  = Color.web(clsElements[4]);
-        Text   name = new Text(clsElements[5]);
-        String label = clsElements[6];
-        String comment = clsElements[7];
+        boolean isInstance = clsElements[5].equals("i");
+        Text   name = new Text(clsElements[6]);
+        String label = clsElements[7];
+        String comment = clsElements[8];
 
         resizeEdgeOfCanvas(x, y);
 
@@ -153,12 +155,15 @@ public class FromGatConverter {
         ellipse.setFill(c);
         ellipse.setStroke(Color.BLACK);
 
+        // if the class is an instance class, give it a dashed ellipse.
+        if (isInstance) ellipse.getStrokeDashArray().addAll(10d, 10d);
+
         compiledCls.getChildren().addAll(ellipse, name);
         compiledElements.add(compiledCls);
 
         if (!label.equals("") || !comment.equals(""))
-            classes.add(new Vertex(compiledCls, label, comment));
-        else classes.add(new Vertex(compiledCls));
+            classes.add(new Class(compiledCls, label, comment));
+        else classes.add(new Class(compiledCls));
     }
 
     /**

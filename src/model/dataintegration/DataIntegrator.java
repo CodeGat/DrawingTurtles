@@ -1,6 +1,8 @@
 package model.dataintegration;
 
+import model.conceptual.Class;
 import model.conceptual.Edge;
+import model.conceptual.Literal;
 import model.conceptual.Vertex;
 import javafx.util.Pair;
 import org.apache.commons.csv.CSVRecord;
@@ -67,7 +69,7 @@ public class DataIntegrator {
      */
     public String generate() throws PrefixMissingException {
         StringBuilder instanceData = new StringBuilder();
-        ttlClasses = classes.stream().filter(c -> c.getElementType() == CLASS).collect(Collectors.toList());
+        ttlClasses = classes.stream().filter(c -> c instanceof Class).collect(Collectors.toList());
 
         for (CSVRecord record : csv)
             instanceData.append(generateInstanceDataOf(record));
@@ -91,7 +93,7 @@ public class DataIntegrator {
             String instanceTriple;
             final String subject = generateLongformURI(klass, record);
 
-            instanceTriples.append(getMetaTriples(subject, klass));
+            instanceTriples.append(getMetaTriples(subject, (Class) klass));
 
             for (Edge edge : klass.getOutgoingEdges()){
                 String predicate = generateLongformURI(edge);
@@ -114,7 +116,7 @@ public class DataIntegrator {
      * @return the expanded meta-information as a String
      * @throws PrefixMissingException if a given prefix does not have an expanded form.
      */
-    private String getMetaTriples(String name, Vertex klass) throws PrefixMissingException {
+    private String getMetaTriples(String name, Class klass) throws PrefixMissingException {
         String meta = "";
         if (klass.getTypeDefinition() != null && klass.getTypeDefinition().length() != 0)
             meta += name + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> " +
@@ -123,56 +125,63 @@ public class DataIntegrator {
         if (klass.getRdfsLabel() != null && klass.getRdfsLabel().length() != 0)
             meta += name + " <http://www.w3.org/2000/01/rdf-schema#label> \"" + klass.getRdfsLabel() + "\" .\n";
 
-        if (klass.getRdfsComment() != null && klass.getRdfsComment().length() != 0)
-            meta += name + " <http://www.w3.org/2000/01/rdf-schema#comment> \"" + klass.getRdfsComment() + "\" .\n";
+        if (klass.getRdfsComment() != null && klass.getRdfsComment().length() != 0){
+            String quoteLevel = klass.getRdfsComment().contains("\n") ? "\"\"\"" : "\"";
+            meta += name + " <http://www.w3.org/2000/01/rdf-schema#comment> " + quoteLevel + klass.getRdfsComment() +
+                    quoteLevel + " .\n";
+        }
 
         return meta;
     }
 
     /**
      * Create the expansion of the graph node into a well-formed URI or Literal.
-     * @param klass the Vertex to be expanded.
+     * @param vertex the Vertex to be expanded.
      * @param record the data to populate the Vertices instance-level fields.
      * @return the instance data of the given Vertex as a String.
      * @throws PrefixMissingException if a given prefix does not have an expanded form.
      */
-    private String generateLongformURI(Vertex klass, CSVRecord record) throws PrefixMissingException {
-        if (klass.getElementType() == GLOBAL_LITERAL)
-            return klass.getName();
-        else if (klass.isIri())
-            return "<" + klass.getName() + ">";
-        else if (klass.isBlank())
-            return klass.getName() + blankNodePermutation;
-        else if (klass.getElementType() == CLASS) {
-            String   name = klass.getName();
-            String[] nameParts = name.split(":");
-            String   prefixAcronym = nameParts[0];
-            String   nameURI = nameParts[1];
+    private String generateLongformURI(Vertex vertex, CSVRecord record) throws PrefixMissingException {
+        if (vertex instanceof Class){
+            Class klass = (Class) vertex;
 
-            String longformPrefix = generateLongformPrefix(prefixAcronym);
-            String instanceData = getInstanceLevelData(klass, record);
+            if (klass.getElementType() == GLOBAL_LITERAL) return klass.getName();
+            else if (klass.isIri()) return "<" + klass.getName() + ">";
+            else if (klass.isBlank()) return klass.getName() + blankNodePermutation;
+            else {
+                String name = klass.getName();
+                String[] nameParts = name.split(":");
+                String prefixAcronym = nameParts[0];
+                String nameURI = nameParts[1];
 
-            if (instanceData != null)
-                return "<" + longformPrefix + instanceData + ">";
-            else return "<" + longformPrefix + nameURI + ">";
-        } else if (klass.getElementType() == INSTANCE_LITERAL){
-            String dataType = klass.getDataType() != null ? klass.getDataType() : "";
-            String expandedDataType = generateLongformURI(dataType);
+                String longformPrefix = generateLongformPrefix(prefixAcronym);
+                String instanceData = getInstanceLevelData(klass, record);
 
-            switch (dataType){
-                case "xsd:string":
-                case "":
-                    return "\"" + getInstanceLevelData(klass, record) + "\"";
-                case "xsd:integer":
-                case "xsd:decimal":
-                case "xsd:double":
-                case "xsd:boolean":
-                    return getInstanceLevelData(klass, record);
-                default:
-                    return "\"" + getInstanceLevelData(klass, record) + "\"^^" + expandedDataType;
+                if (instanceData != null)
+                    return "<" + longformPrefix + instanceData + ">";
+                else return "<" + longformPrefix + nameURI + ">";
             }
+        } else {
+            Literal literal = (Literal) vertex;
+
+            if (literal.getElementType() == INSTANCE_LITERAL) {
+                String dataType = literal.getDataType() != null ? literal.getDataType() : "";
+                String expandedDataType = generateLongformURI(dataType);
+
+                switch (dataType) {
+                    case "xsd:string":
+                    case "":
+                        return "\"" + getInstanceLevelData(literal, record) + "\"";
+                    case "xsd:integer":
+                    case "xsd:decimal":
+                    case "xsd:double":
+                    case "xsd:boolean":
+                        return getInstanceLevelData(literal, record);
+                    default:
+                        return "\"" + getInstanceLevelData(literal, record) + "\"^^" + expandedDataType;
+                }
+            } else return literal.getName();
         }
-        return null;
     }
 
     /**
@@ -248,17 +257,23 @@ public class DataIntegrator {
      * Find either classes or csv headers that do not directly correlate (are not noticably similar).
      */
     public void attemptCorrelationOfHeaders(){
-        ArrayList<Vertex> uncorrelatedClasses = new ArrayList<>(classes);
+        ArrayList<Vertex> instances = classes
+                .stream()
+                .filter(p -> p.getElementType() == INSTANCE_CLASS || p.getElementType() == INSTANCE_LITERAL)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        ArrayList<Vertex> uncorrelatedClasses = new ArrayList<>(instances);
         Map<String, Integer> uncorrelatedHeaders = new HashMap<>(headers);
 
         for (Entry<String, Integer> header : headers.entrySet()){
-            for (Vertex klass : classes){
+            for (Vertex klass : instances){
                 String headerComparable =
                         header.getKey().charAt(0) == '\uFEFF' ? header.getKey().substring(1) : header.getKey();
 
                 boolean isExactMatch = headerComparable.equals(klass.getName());
-                boolean isCloseMatch = !klass.isIri()
-                        && klass.getElementType() == CLASS
+                boolean isCloseMatch = klass instanceof Class
+                        && !((Class) klass).isIri()
+                        && klass.getElementType() == INSTANCE_CLASS
                         && headerComparable.equalsIgnoreCase(klass.getName().split(":", 2)[1]);
 
                 if (isExactMatch || isCloseMatch){
@@ -292,13 +307,8 @@ public class DataIntegrator {
         this.csvTtlUncorrelated = uncorrelated;
     }
 
-    public String uncorrelatedClassesToString(){
-        StringBuilder result = new StringBuilder();
-        csvTtlUncorrelated.getValue().forEach(cls -> result.append(cls.getName()).append(" "));
-        return result.toString();
-    }
-
     public String uncorrelatedToString(){
+        if (csvTtlUncorrelated == null) return "none";
         StringBuilder result = new StringBuilder("[");
         csvTtlUncorrelated.getKey().forEach(header -> result.append(header).append(" "));
         result.append("] and [");
