@@ -103,7 +103,7 @@ public class FromGatConverter {
         double w = Double.valueOf(litElements[2]);
         double h = Double.valueOf(litElements[3]);
         Color  c = Color.web(litElements[4]);
-        String etype = litElements[5];
+        boolean isInstance = litElements[5].equals("i");
         Text   name  = new Text(litElements[6]);
         String dtype = litElements[7];
 
@@ -117,7 +117,7 @@ public class FromGatConverter {
         rect.setStroke(Color.BLACK);
 
         // if the literal is an instance literal, give it a dashed rectangle.
-        if (etype.equals("i")) rect.getStrokeDashArray().addAll(10d, 10d);
+        if (isInstance) rect.getStrokeDashArray().addAll(10d, 10d);
 
         compiledLit.getChildren().addAll(rect, name);
         compiledElements.add(compiledLit);
@@ -139,7 +139,7 @@ public class FromGatConverter {
         double rx = Double.valueOf(clsElements[2]);
         double ry = Double.valueOf(clsElements[3]);
         Color  c  = Color.web(clsElements[4]);
-        String etype = clsElements[5];
+        boolean isInstance = clsElements[5].equals("i");
         Text   name = new Text(clsElements[6]);
         String label = clsElements[7];
         String comment = clsElements[8];
@@ -155,13 +155,13 @@ public class FromGatConverter {
         ellipse.setStroke(Color.BLACK);
 
         // if the class is an instance class, give it a dashed ellipse.
-        if (etype.equals("i")) ellipse.getStrokeDashArray().addAll(10d, 10d);
+        if (isInstance) ellipse.getStrokeDashArray().addAll(10d, 10d);
 
         compiledCls.getChildren().addAll(ellipse, name);
         compiledElements.add(compiledCls);
 
         if (!label.equals("") || !comment.equals(""))
-            classes.add(new Vertex(compiledCls, label, comment, etype.equals("i")));
+            classes.add(new Vertex(compiledCls, label, comment));
         else classes.add(new Vertex(compiledCls));
     }
 

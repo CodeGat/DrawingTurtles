@@ -67,7 +67,10 @@ public class DataIntegrator {
      */
     public String generate() throws PrefixMissingException {
         StringBuilder instanceData = new StringBuilder();
-        ttlClasses = classes.stream().filter(c -> c.getElementType() == GLOBAL_CLASS).collect(Collectors.toList());
+        ttlClasses = classes
+                .stream()
+                .filter(c -> c.getElementType() == GLOBAL_CLASS || c.getElementType() == INSTANCE_CLASS)
+                .collect(Collectors.toList());
 
         for (CSVRecord record : csv)
             instanceData.append(generateInstanceDataOf(record));
@@ -143,7 +146,7 @@ public class DataIntegrator {
             return "<" + klass.getName() + ">";
         else if (klass.isBlank())
             return klass.getName() + blankNodePermutation;
-        else if (klass.getElementType() == GLOBAL_CLASS) {
+        else if (klass.getElementType() == GLOBAL_CLASS || klass.getElementType() == INSTANCE_CLASS) {
             String   name = klass.getName();
             String[] nameParts = name.split(":");
             String   prefixAcronym = nameParts[0];
@@ -248,17 +251,22 @@ public class DataIntegrator {
      * Find either classes or csv headers that do not directly correlate (are not noticably similar).
      */
     public void attemptCorrelationOfHeaders(){
-        ArrayList<Vertex> uncorrelatedClasses = new ArrayList<>(classes);
+        ArrayList<Vertex> instances = classes
+                .stream()
+                .filter(p -> p.getElementType() == INSTANCE_CLASS || p.getElementType() == INSTANCE_LITERAL)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        ArrayList<Vertex> uncorrelatedClasses = new ArrayList<>(instances);
         Map<String, Integer> uncorrelatedHeaders = new HashMap<>(headers);
 
         for (Entry<String, Integer> header : headers.entrySet()){
-            for (Vertex klass : classes){
+            for (Vertex klass : instances){
                 String headerComparable =
                         header.getKey().charAt(0) == '\uFEFF' ? header.getKey().substring(1) : header.getKey();
 
                 boolean isExactMatch = headerComparable.equals(klass.getName());
                 boolean isCloseMatch = !klass.isIri()
-                        && klass.getElementType() == GLOBAL_CLASS
+                        && klass.getElementType() == INSTANCE_CLASS
                         && headerComparable.equalsIgnoreCase(klass.getName().split(":", 2)[1]);
 
                 if (isExactMatch || isCloseMatch){

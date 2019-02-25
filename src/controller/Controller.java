@@ -644,8 +644,7 @@ public final class Controller implements Initializable {
             if (isOntology && isClass) {
                 String rdfslabel = classInfo.get(2);
                 String rdfscomment = classInfo.get(3);
-                boolean isPlaceholder = Boolean.valueOf(classInfo.get(4));
-                classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment, isPlaceholder));
+                classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment));
             } else if (isOntology){
                 String dataType = classInfo.get(1);
                 classes.add(new Vertex(compiledElement, dataType));

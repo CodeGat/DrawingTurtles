@@ -5,6 +5,7 @@ import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Ellipse;
+import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
 
@@ -52,7 +53,6 @@ public class Vertex {
     private ArrayList<Edge> incomingEdges, outgoingEdges;
     private boolean isBlankNode;
     private boolean isIri;
-    private boolean isPlaceholder = false;
     private String typeDefinition;
 
     private String rdfsLabel, rdfsComment;
@@ -65,14 +65,11 @@ public class Vertex {
      * @throws OutsideElementException if the container is not castable to a stackpane (aka it is outside the canvas.
      * @throws UndefinedElementTypeException if the name of the Vertex does not correspond to any of the GraphElemTypes.
      */
-    public Vertex(EventTarget element, String rdfsLabel, String rdfsComment, boolean isPlaceholder)
+    public Vertex(EventTarget element, String rdfsLabel, String rdfsComment)
             throws OutsideElementException, UndefinedElementTypeException {
         this(element);
         this.rdfsLabel = rdfsLabel;
         this.rdfsComment = rdfsComment;
-        this.isPlaceholder = isPlaceholder;
-
-        if (this.isPlaceholder) this.elementType = GraphElemType.INSTANCE_CLASS;
     }
 
     /**
@@ -98,7 +95,9 @@ public class Vertex {
             throw new OutsideElementException();
         }
 
-        this.name = ((Text) container.getChildren().get(1)).getText();
+        Shape shape = (Shape) container.getChildren().get(0);
+        Text name = (Text) container.getChildren().get(1);
+        this.name = name.getText();
 
         // determine if the Vertex is a Blank Node or fully qualified IRI.
         if (this.name.charAt(0) == '_') {
@@ -114,7 +113,9 @@ public class Vertex {
         }
 
         // determine whether the Vertex is a class, global literal or instance literal.
-        if (container.getChildren().get(0) instanceof Ellipse) this.elementType = GraphElemType.GLOBAL_CLASS;
+        if (shape instanceof Ellipse && shape.getStrokeDashArray().size() == 0)
+            this.elementType = GraphElemType.GLOBAL_CLASS;
+        else if (shape instanceof Ellipse) this.elementType = GraphElemType.INSTANCE_CLASS;
         else if (this.name.matches(globalLiteralRegex)) this.elementType = GraphElemType.GLOBAL_LITERAL;
         else if (this.name.matches(instanceLiteralRegex)) this.elementType = GraphElemType.INSTANCE_LITERAL;
         else throw new UndefinedElementTypeException();
@@ -322,8 +323,6 @@ public class Vertex {
     public boolean isBlank() { return isBlankNode; }
 
     public boolean isIri() { return isIri; }
-
-    public boolean isPlaceholder() { return isPlaceholder; }
 
     public static char getNextBlankNodeName() {
         nextBlankNodeName += 1;
