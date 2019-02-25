@@ -81,7 +81,7 @@ public class Converter {
         }
 
         Stream<String> ttlClassPrefixesStream = classes.stream()
-                .filter(c -> c.getElementType() == Vertex.GraphElemType.CLASS && !c.isIri())
+                .filter(c -> c.getElementType() == Vertex.GraphElemType.GLOBAL_CLASS && !c.isIri())
                 .map(c -> c.getName().split(":")[0]);
         Stream<String> ttlPropPrefixesStream = properties.stream()
                 .filter(p -> !p.isIri())
@@ -265,7 +265,7 @@ public class Converter {
         for (Vertex graphClass : classes) {
             isBlanknode = config.get(1) && graphClass.isBlank();
 
-            if (graphClass.getElementType() == Vertex.GraphElemType.CLASS && !isBlanknode)
+            if (graphClass.getElementType() == Vertex.GraphElemType.GLOBAL_CLASS && !isBlanknode)
                 classStrs.append(convertTriple(graphClass));
         }
 

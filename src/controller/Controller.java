@@ -622,8 +622,11 @@ public final class Controller implements Initializable {
         double textWidth = elementName.getBoundsInLocal().getWidth();
         if (isClass){
             Ellipse elementType = new Ellipse(x, y, textWidth / 2 > 62.5 ? textWidth / 2 + 10 : 62.5, 37.5);
+            boolean isPlaceholder = classInfo.size() >= 4 && Boolean.valueOf(classInfo.get(4));
+
             elementType.setFill(JFX_DEFAULT_COLOUR);
             elementType.setStroke(Color.BLACK);
+            if (isPlaceholder) elementType.getStrokeDashArray().addAll(10d, 10d);
             compiledElement.getChildren().addAll(elementType, elementName);
         } else {
             Rectangle elementType = new Rectangle(textWidth > 125 ? textWidth + 15 : 125, 75);
@@ -641,7 +644,8 @@ public final class Controller implements Initializable {
             if (isOntology && isClass) {
                 String rdfslabel = classInfo.get(2);
                 String rdfscomment = classInfo.get(3);
-                classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment));
+                boolean isPlaceholder = Boolean.valueOf(classInfo.get(4));
+                classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment, isPlaceholder));
             } else if (isOntology){
                 String dataType = classInfo.get(1);
                 classes.add(new Vertex(compiledElement, dataType));

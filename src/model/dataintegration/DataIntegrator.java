@@ -67,7 +67,7 @@ public class DataIntegrator {
      */
     public String generate() throws PrefixMissingException {
         StringBuilder instanceData = new StringBuilder();
-        ttlClasses = classes.stream().filter(c -> c.getElementType() == CLASS).collect(Collectors.toList());
+        ttlClasses = classes.stream().filter(c -> c.getElementType() == GLOBAL_CLASS).collect(Collectors.toList());
 
         for (CSVRecord record : csv)
             instanceData.append(generateInstanceDataOf(record));
@@ -143,7 +143,7 @@ public class DataIntegrator {
             return "<" + klass.getName() + ">";
         else if (klass.isBlank())
             return klass.getName() + blankNodePermutation;
-        else if (klass.getElementType() == CLASS) {
+        else if (klass.getElementType() == GLOBAL_CLASS) {
             String   name = klass.getName();
             String[] nameParts = name.split(":");
             String   prefixAcronym = nameParts[0];
@@ -258,7 +258,7 @@ public class DataIntegrator {
 
                 boolean isExactMatch = headerComparable.equals(klass.getName());
                 boolean isCloseMatch = !klass.isIri()
-                        && klass.getElementType() == CLASS
+                        && klass.getElementType() == GLOBAL_CLASS
                         && headerComparable.equalsIgnoreCase(klass.getName().split(":", 2)[1]);
 
                 if (isExactMatch || isCloseMatch){

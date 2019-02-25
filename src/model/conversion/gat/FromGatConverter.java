@@ -139,9 +139,10 @@ public class FromGatConverter {
         double rx = Double.valueOf(clsElements[2]);
         double ry = Double.valueOf(clsElements[3]);
         Color  c  = Color.web(clsElements[4]);
-        Text   name = new Text(clsElements[5]);
-        String label = clsElements[6];
-        String comment = clsElements[7];
+        String etype = clsElements[5];
+        Text   name = new Text(clsElements[6]);
+        String label = clsElements[7];
+        String comment = clsElements[8];
 
         resizeEdgeOfCanvas(x, y);
 
@@ -153,11 +154,14 @@ public class FromGatConverter {
         ellipse.setFill(c);
         ellipse.setStroke(Color.BLACK);
 
+        // if the class is an instance class, give it a dashed ellipse.
+        if (etype.equals("i")) ellipse.getStrokeDashArray().addAll(10d, 10d);
+
         compiledCls.getChildren().addAll(ellipse, name);
         compiledElements.add(compiledCls);
 
         if (!label.equals("") || !comment.equals(""))
-            classes.add(new Vertex(compiledCls, label, comment));
+            classes.add(new Vertex(compiledCls, label, comment, etype.equals("i")));
         else classes.add(new Vertex(compiledCls));
     }
 

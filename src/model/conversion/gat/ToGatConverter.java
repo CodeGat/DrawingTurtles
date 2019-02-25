@@ -9,6 +9,8 @@ import model.graph.SelfReferentialArrow;
 
 import java.util.ArrayList;
 
+import static model.conceptual.Vertex.GraphElemType.*;
+
 /**
  * Class responsible for converting a graph into a .gat file.
  */
@@ -89,7 +91,7 @@ public class ToGatConverter {
 
     /**
      * Converts classes to the .gat structure.
-     * For classes, of form:  [CcenterX\|centerY\|radiusX\|radiusY\|fill\|name\|label\|comment]
+     * For classes, of form:  [CcenterX\|centerY\|radiusX\|radiusY\|fill\|instanceorglobal\|name\|label\|comment]
      * For literals, of form: [LlayoutX\|layoutY\|width\|height\|fill\|instanceorglobal\|name\|datatype]
      * @return the String .gat representation of the properties.
      */
@@ -98,14 +100,15 @@ public class ToGatConverter {
 
         for (Vertex v : classes) {
             result.append("[");
-            if (v.getElementType() == Vertex.GraphElemType.CLASS){
+            if (v.getElementType() == GLOBAL_CLASS || v.getElementType() == INSTANCE_CLASS){
                 Ellipse e = (Ellipse) v.getContainer().getChildren().get(0);
-                String shapeInfo = "C"+ e.getCenterX() + "\\|" + e.getCenterY() + "\\|" + e.getRadiusX() + "\\|" +
+                String shapeInfo = "C" + e.getCenterX() + "\\|" + e.getCenterY() + "\\|" + e.getRadiusX() + "\\|" +
                         e.getRadiusY() + "\\|" + e.getFill().toString();
+                String elemType = "\\|" + (e.getStrokeDashArray().size() != 0 ? "i" : "g");
                 String shapeName = "\\|" + v.getName();
                 String rdfsLabel = "\\|" + (v.getRdfsLabel() != null ? v.getRdfsLabel() : "");
                 String rdfsComment = "\\|" + (v.getRdfsComment() != null ? v.getRdfsComment() : "");
-                result.append(shapeInfo).append(shapeName).append(rdfsLabel).append(rdfsComment);
+                result.append(shapeInfo).append(elemType).append(shapeName).append(rdfsLabel).append(rdfsComment);
             } else {
                 Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
                 String shapeInfo = "L" + r.getParent().getLayoutX() + "\\|" + r.getParent().getLayoutY() + "\\|" +

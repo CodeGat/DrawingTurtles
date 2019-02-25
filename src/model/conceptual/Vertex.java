@@ -17,7 +17,7 @@ import java.util.Arrays;
 public class Vertex {
 
     public enum GraphElemType {
-        CLASS, GLOBAL_LITERAL, INSTANCE_LITERAL
+        GLOBAL_CLASS, INSTANCE_CLASS, GLOBAL_LITERAL, INSTANCE_LITERAL
     }
 
     /**
@@ -52,6 +52,7 @@ public class Vertex {
     private ArrayList<Edge> incomingEdges, outgoingEdges;
     private boolean isBlankNode;
     private boolean isIri;
+    private boolean isPlaceholder = false;
     private String typeDefinition;
 
     private String rdfsLabel, rdfsComment;
@@ -64,11 +65,14 @@ public class Vertex {
      * @throws OutsideElementException if the container is not castable to a stackpane (aka it is outside the canvas.
      * @throws UndefinedElementTypeException if the name of the Vertex does not correspond to any of the GraphElemTypes.
      */
-    public Vertex(EventTarget element, String rdfsLabel, String rdfsComment)
+    public Vertex(EventTarget element, String rdfsLabel, String rdfsComment, boolean isPlaceholder)
             throws OutsideElementException, UndefinedElementTypeException {
         this(element);
         this.rdfsLabel = rdfsLabel;
         this.rdfsComment = rdfsComment;
+        this.isPlaceholder = isPlaceholder;
+
+        if (this.isPlaceholder) this.elementType = GraphElemType.INSTANCE_CLASS;
     }
 
     /**
@@ -110,7 +114,7 @@ public class Vertex {
         }
 
         // determine whether the Vertex is a class, global literal or instance literal.
-        if (container.getChildren().get(0) instanceof Ellipse) this.elementType = GraphElemType.CLASS;
+        if (container.getChildren().get(0) instanceof Ellipse) this.elementType = GraphElemType.GLOBAL_CLASS;
         else if (this.name.matches(globalLiteralRegex)) this.elementType = GraphElemType.GLOBAL_LITERAL;
         else if (this.name.matches(instanceLiteralRegex)) this.elementType = GraphElemType.INSTANCE_LITERAL;
         else throw new UndefinedElementTypeException();
@@ -319,6 +323,8 @@ public class Vertex {
 
     public boolean isIri() { return isIri; }
 
+    public boolean isPlaceholder() { return isPlaceholder; }
+
     public static char getNextBlankNodeName() {
         nextBlankNodeName += 1;
         blankNodeNames.add(nextBlankNodeName);
@@ -355,9 +361,9 @@ public class Vertex {
 
         if (dataType == null)
             return null;
-        else if (dataType.matches("http(s)?:.*") && elementType != GraphElemType.CLASS)
+        else if (dataType.matches("http(s)?:.*") && elementType != GraphElemType.GLOBAL_CLASS)
             return "<" + dataType + ">";
-        else if (this.elementType != GraphElemType.CLASS)
+        else if (this.elementType != GraphElemType.GLOBAL_CLASS)
             return dataType;
         else
             return null;
