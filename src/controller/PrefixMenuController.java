@@ -7,10 +7,9 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -35,7 +34,7 @@ public class PrefixMenuController extends DataSharingController<Map<String, Stri
 
     private static final Logger LOGGER = Logger.getLogger(PrefixMenuController.class.getName());
 
-    @FXML AnchorPane root;
+    @FXML BorderPane root;
     @FXML ToolBar toolBar;
     @FXML Button addPrefixBtn, remPrefixBtn, clrPrefixBtn, savPrefixBtn, lodPrefixBtn, cmtPrefixBtn, canPrefixBtn;
     @FXML ListView<String> prefixList;
@@ -61,6 +60,16 @@ public class PrefixMenuController extends DataSharingController<Map<String, Stri
             else remPrefixBtn.setDisable(true);
 
         });
+    }
+
+    @FXML void keyPressedAction(KeyEvent keyEvent) {
+        KeyCode keyCode = keyEvent.getCode();
+
+        if (keyCode == KeyCode.ENTER) commitPrefixAction();
+        else if (keyCode == KeyCode.S) savePrefixAction();
+        else if (keyCode == KeyCode.L) loadPrefixAction();
+        else if (keyCode == KeyCode.A) addPrefixAction();
+        else if (keyCode == KeyCode.C) cancelPrefixAction();
     }
 
     /**

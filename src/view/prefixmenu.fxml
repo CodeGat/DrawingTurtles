@@ -4,27 +4,43 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.GridPane?>
 
 <?import javafx.scene.control.Label?>
-<AnchorPane fx:id="root" maxHeight="400.0" maxWidth="600.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.PrefixMenuController">
-    <GridPane>
-        <ToolBar fx:id="toolBar" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2">
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.text.Text?>
+<BorderPane fx:id="root"
+            maxHeight="400.0"
+            maxWidth="600.0"
+            xmlns="http://javafx.com/javafx/8.0.172-ea"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="controller.PrefixMenuController"
+            onKeyPressed="#keyPressedAction">
+    <top>
+        <ToolBar fx:id="toolBar">
             <Label fx:id="statusLbl"/>
         </ToolBar>
-        <ListView fx:id="prefixList" prefHeight="400.0" prefWidth="400.0" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-        <ToolBar orientation="VERTICAL" prefHeight="400.0" prefWidth="0.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
-            <Button fx:id="addPrefixBtn" maxWidth="Infinity" onMouseClicked="#addPrefixAction" text="Add New Prefix" />
-            <Button fx:id="remPrefixBtn" maxWidth="Infinity" disable="true" onMouseClicked="#removePrefixAction" text="Remove Selected Prefix" />
-            <Separator />
-            <Button fx:id="clrPrefixBtn" maxWidth="Infinity" onMouseClicked="#clearPrefixAction" text="Clear All Prefixes" />
-            <Separator />
-            <Button fx:id="savPrefixBtn" maxWidth="Infinity" onMouseClicked="#savePrefixAction" text="Save Prefixes" />
-            <Button fx:id="lodPrefixBtn" maxWidth="Infinity" onMouseClicked="#loadPrefixAction" text="Load Prefixes" />
-            <Separator />
-            <Button fx:id="cmtPrefixBtn" maxWidth="Infinity" onMouseClicked="#commitPrefixAction" text="Commit Prefixes" />
-            <Button fx:id="canPrefixBtn" maxWidth="Infinity" onMouseClicked="#cancelPrefixAction" text="Cancel Prefixes" />
+    </top>
+    <center>
+        <GridPane>
+            <ListView fx:id="prefixList" prefHeight="400.0" prefWidth="400.0" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <ToolBar orientation="VERTICAL" prefHeight="400.0" prefWidth="0.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                <Button fx:id="addPrefixBtn" maxWidth="Infinity" onMouseClicked="#addPrefixAction" text="Add New Prefix" />
+                <Button fx:id="remPrefixBtn" maxWidth="Infinity" disable="true" onMouseClicked="#removePrefixAction" text="Remove Selected Prefix" />
+                <Separator />
+                <Button fx:id="clrPrefixBtn" maxWidth="Infinity" onMouseClicked="#clearPrefixAction" text="Clear All Prefixes" />
+                <Separator />
+                <Button fx:id="savPrefixBtn" maxWidth="Infinity" onMouseClicked="#savePrefixAction" text="Save Prefixes" />
+                <Button fx:id="lodPrefixBtn" maxWidth="Infinity" onMouseClicked="#loadPrefixAction" text="Load Prefixes" />
+                <Separator />
+                <Button fx:id="cmtPrefixBtn" maxWidth="Infinity" onMouseClicked="#commitPrefixAction" text="Commit Prefixes" />
+                <Button fx:id="canPrefixBtn" maxWidth="Infinity" onMouseClicked="#cancelPrefixAction" text="Cancel Prefixes" />
+            </ToolBar>
+        </GridPane>
+    </center>
+    <bottom>
+        <ToolBar>
+            <Text text="[A]-Add new Prefix [S]-Save Prefixes [L]-Load prefixes [Enter]-Commit [C]-Cancel"/>
         </ToolBar>
-    </GridPane>
-</AnchorPane>
+    </bottom>
+</BorderPane>
