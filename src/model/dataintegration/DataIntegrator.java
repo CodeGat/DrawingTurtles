@@ -180,9 +180,8 @@ public class DataIntegrator {
                     default:
                         return "\"" + getInstanceLevelData(literal, record) + "\"^^" + expandedDataType;
                 }
-            }
+            } else return literal.getName();
         }
-        return null;
     }
 
     /**
@@ -306,13 +305,6 @@ public class DataIntegrator {
     }
     public void setUncorrelated(Pair<ArrayList<String>, ArrayList<Vertex>> uncorrelated) {
         this.csvTtlUncorrelated = uncorrelated;
-    }
-
-    public String uncorrelatedClassesToString(){
-        if (csvTtlUncorrelated == null) return "none";
-        StringBuilder result = new StringBuilder();
-        csvTtlUncorrelated.getValue().forEach(cls -> result.append(cls.getName()).append(" "));
-        return result.toString();
     }
 
     public String uncorrelatedToString(){
