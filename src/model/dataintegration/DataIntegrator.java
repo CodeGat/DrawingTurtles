@@ -123,8 +123,11 @@ public class DataIntegrator {
         if (klass.getRdfsLabel() != null && klass.getRdfsLabel().length() != 0)
             meta += name + " <http://www.w3.org/2000/01/rdf-schema#label> \"" + klass.getRdfsLabel() + "\" .\n";
 
-        if (klass.getRdfsComment() != null && klass.getRdfsComment().length() != 0)
-            meta += name + " <http://www.w3.org/2000/01/rdf-schema#comment> \"" + klass.getRdfsComment() + "\" .\n";
+        if (klass.getRdfsComment() != null && klass.getRdfsComment().length() != 0){
+            String quoteLevel = klass.getRdfsComment().contains("\n") ? "\"\"\"" : "\"";
+            meta += name + " <http://www.w3.org/2000/01/rdf-schema#comment> " + quoteLevel + klass.getRdfsComment() +
+                    quoteLevel + " .\n";
+        }
 
         return meta;
     }
