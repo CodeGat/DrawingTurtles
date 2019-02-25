@@ -250,8 +250,12 @@ public final class Controller implements Initializable {
             properties.clear();
 
             try (BufferedReader reader = new BufferedReader(new FileReader(loadFile))){
-                String graph = reader.readLine(); // TODO: 24/02/2019 may need to read more than one line in case of multiline rdfs:comment?
-                if (graph == null || graph.length() == 0){
+                StringBuilder graphLines = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) graphLines.append(line).append("\n");
+
+                String graph = graphLines.toString();
+                if (graph.length() == 0){
                     setWarnStatus("Graph Read failed: nothing in graph file.");
                     LOGGER.warning("Nothing in graph file.");
                     return;
