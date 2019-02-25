@@ -162,12 +162,12 @@ public final class Controller implements Initializable {
      * @param title the title of the new window.
      * @param data the parameters passed to the Controller.
      * @param <C> a Controller that can pass data to and recieve data from this method (extending
-     *           AbstractDataSharingController).
+     *           DataSharingController).
      * @param <T> the type of data passed to and from the Controller.
      * @return the data after it has been modified by the Controller.
      */
     @FXML @SuppressWarnings("unchecked")
-    private <C extends AbstractDataSharingController<T>, T> ArrayList<T> showWindow(String fxml, String title, ArrayList<T> data){
+    private <C extends DataSharingController<T>, T> ArrayList<T> showWindow(String fxml, String title, ArrayList<T> data){
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             Parent parent = loader.load();
@@ -739,20 +739,7 @@ public final class Controller implements Initializable {
      * Creates an instructional alert.
      */
     private void showInstructionsAlert() {
-        Alert instrAlert = new Alert(Alert.AlertType.INFORMATION);
-        instrAlert.setTitle("Instructions on using Drawing Turtles");
-        instrAlert.setHeaderText(null);
-        instrAlert.setContentText(
-                "How to use Drawing Turtles:\nClick once on the button corresponding to the graph element you want to" +
-                        " add to the canvas, then click somewhere on the canvas. Add a name (even in .ttl syntax!) an" +
-                        "d the item will be created in that position. \nIn regards to the Property button, you must c" +
-                        "lick on a valid (already existing) element in the graph as the subject, and then another as " +
-                        "the object. If you click on something that is not a Class or Literal, you will need toclick " +
-                        "the subject-object pair again.\nFeel free to add elements near the edge of the graph, it aut" +
-                        "omatically resizes! "
-        );
-
-        instrAlert.showAndWait();
+        showWindow("/view/instructions.fxml", "Instructions for Drawing Turtles", null);
     }
 
     /**

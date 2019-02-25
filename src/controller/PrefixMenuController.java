@@ -31,7 +31,7 @@ import static javafx.stage.FileChooser.*;
 /**
  * Controller for view.prefixmenu.fxml.
  */
-public class PrefixMenuController extends AbstractDataSharingController<Map<String, String>> implements Initializable {
+public class PrefixMenuController extends DataSharingController<Map<String, String>> implements Initializable {
 
     private static final Logger LOGGER = Logger.getLogger(PrefixMenuController.class.getName());
 

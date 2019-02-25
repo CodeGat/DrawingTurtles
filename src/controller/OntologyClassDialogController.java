@@ -17,7 +17,7 @@ import java.util.ResourceBundle;
 /**
  * The controller for ontologyClassDialog.fxml.
  */
-public class OntologyClassDialogController extends AbstractDataSharingController<String> implements Initializable {
+public class OntologyClassDialogController extends DataSharingController<String> implements Initializable {
     @FXML Button cmtBtn, cancelBtn;
     @FXML TextField typeTfd, nameTfd, labelTfd;
     @FXML TextArea commentTxa;

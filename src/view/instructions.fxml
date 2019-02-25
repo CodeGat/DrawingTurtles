@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controller.InstructionsController"
+            prefHeight="500.0" prefWidth="600.0">
+    <center>
+        <ScrollPane hbarPolicy="NEVER" fitToWidth="true">
+            <VBox>
+                <padding>
+                    <Insets left="10" top="10"/>
+                </padding>
+                <Label text="Click on the Canvas to add an element to the graph, and right-click to remove it. The application will automatically determine the type of element based on Turtle syntax convention.&#13;For example:" wrapText="true" />
+                <Label text="The following will be interpreted as Global Literals (Rectangles):"/>
+                <Label text="&quot;John Smith&quot;, 200.1, &quot;2456&quot;^^xsd:Postcode" style="-fx-font-family: 'Courier New'"/>
+                <Label text="The following will be interpreted as Classes (Ellipses):"/>
+                <Label text="http://xmlns.com/foaf/0.1/knows, :thing, a:Person" style="-fx-font-family: 'Courier New'"/>
+                <Label text="Anything outside of the Turtle syntax will be considered a Placeholder for instance-level Data (Dashed Rectangle): " wrapText="true" />
+                <Label text="Name, Work ID, Publication Place" style="-fx-font-family: 'Courier New'" />
+                <Label text="Properties between two graph elements are created by clicking on an existing element, then clicking on the other. Properties that are self referential are created similarly - clicking twice on an existing element.&#13;" wrapText="true"/>
+                <Label text="Workflow: exporting as .ttl" style="-fx-font-weight: bold;" />
+                <Label text="Exporting as a normal .ttl file is easy - just create your graph without any Placeholders, and click the 'export as .ttl' Button, remembering to add any defined prefixes to the Prefixes Menu. &#13;" wrapText="true"/>
+                <Label text="WorkFlow: populating the .ttl with data (instance-level .ttl)" style="-fx-font-weight: bold;"/>
+                <Label text="To populate your .ttl with data from a .csv, create Placeholders that will be filled with data on instance-level .ttl generation. For example, say we have this graph:" wrapText="true"/>
+                <ImageView><Image url="/view/images/example_graph.png"/></ImageView>
+                <Label text="And the .csv has headers called Name, Title and WorkID."/>
+                <Label text="First we would check that all our prefixes are defined in the Prefixes Menu, then ingest the .csv, and finally 'Generate Instance Data' (correlating the .csv headers with our already defined graph elements) - 'Name' from the .csv and graph will be auto-correlated, but we will manually have to add corrrelations between 'Title' and 'Work Title', and 'WorkID' and 'ids:ID'." wrapText="true"/>
+                <Label text="If there are no more correlations to do, you can commit them and see your instance-level .ttl!"/>
+            </VBox>
+        </ScrollPane>
+    </center>
+    <bottom>
+        <Button fx:id="closeBtn" prefWidth="600" GridPane.rowIndex="1" onMouseClicked="#closeAction" text="Close"/>
+    </bottom>
+</BorderPane>
