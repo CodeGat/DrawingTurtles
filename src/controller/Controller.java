@@ -11,7 +11,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import model.conceptual.Class;
 import model.conceptual.Edge;
+import model.conceptual.Literal;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
 import model.conceptual.Vertex.UndefinedElementTypeException;
@@ -620,7 +622,7 @@ public final class Controller implements Initializable {
 
         if (elementName.getText().equals("")){
             isClass = true;
-            elementName = new Text("_:" + Vertex.getNextBlankNodeName());
+            elementName = new Text("_:" + Class.getNextBlankNodeName());
         } else isClass = !elementName.getText().matches(globalLiteralRegex + "|" + instanceLiteralRegex);
 
         double textWidth = elementName.getBoundsInLocal().getWidth();
@@ -648,13 +650,22 @@ public final class Controller implements Initializable {
             if (isOntology && isClass) {
                 String rdfslabel = classInfo.get(2);
                 String rdfscomment = classInfo.get(3);
-                classes.add(new Vertex(compiledElement, rdfslabel, rdfscomment));
+                classes.add(new Class(compiledElement, rdfslabel, rdfscomment));
             } else if (isOntology){
                 String dataType = classInfo.get(1);
-                classes.add(new Vertex(compiledElement, dataType));
-            } else classes.add(new Vertex(compiledElement));
-        } catch (OutsideElementException | UndefinedElementTypeException e) {
-            e.printStackTrace();
+                classes.add(new Literal(compiledElement, dataType));
+            } else if (isClass) {
+                classes.add(new Class(compiledElement));
+            } else {
+                classes.add(new Literal(compiledElement));
+            }
+        } catch (UndefinedElementTypeException e) {
+            setErrorStatus("Adding the element failed: The name does not match Turtle syntax. Recreate the" +
+                    " graph. ");
+            LOGGER.log(Level.SEVERE, "Adding element failed: ", e);
+        } catch (OutsideElementException e) {
+            setErrorStatus("Somehow, you went outside the bounds of the canvas...");
+            LOGGER.log(Level.SEVERE, "Adding the element failed: ", e);
         }
     }
 
@@ -803,9 +814,7 @@ public final class Controller implements Initializable {
             return;
         }
 
-        LOGGER.info("AFTER Correlation:" +
-                "\nCorrelated: " + dataIntegrator.getCorrelations().toString() +
-                "\nUncorrelated (assumed constant): " + dataIntegrator.uncorrelatedClassesToString());
+        LOGGER.info("AFTER Correlation:" + "\nCorrelated: " + dataIntegrator.getCorrelations().toString());
 
         try {
             instanceData = dataIntegrator.generate();

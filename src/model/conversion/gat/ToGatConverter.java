@@ -2,14 +2,14 @@ package model.conversion.gat;
 
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
+import model.conceptual.Class;
 import model.conceptual.Edge;
+import model.conceptual.Literal;
 import model.conceptual.Vertex;
 import model.graph.Arrow;
 import model.graph.SelfReferentialArrow;
 
 import java.util.ArrayList;
-
-import static model.conceptual.Vertex.GraphElemType.*;
 
 /**
  * Class responsible for converting a graph into a .gat file.
@@ -98,24 +98,26 @@ public class ToGatConverter {
     private String traverseClasses() {
         StringBuilder result = new StringBuilder();
 
-        for (Vertex v : classes) {
+        for (Vertex vertex : classes) {
             result.append("[");
-            if (v.getElementType() == GLOBAL_CLASS || v.getElementType() == INSTANCE_CLASS){
-                Ellipse e = (Ellipse) v.getContainer().getChildren().get(0);
+            if (vertex instanceof Class){
+                Class klass = (Class) vertex;
+                Ellipse e = (Ellipse) vertex.getContainer().getChildren().get(0);
                 String shapeInfo = "C" + e.getCenterX() + "\\|" + e.getCenterY() + "\\|" + e.getRadiusX() + "\\|" +
                         e.getRadiusY() + "\\|" + e.getFill().toString();
                 String elemType = "\\|" + (e.getStrokeDashArray().size() != 0 ? "i" : "g");
-                String shapeName = "\\|" + v.getName();
-                String rdfsLabel = "\\|" + (v.getRdfsLabel() != null ? v.getRdfsLabel() : "");
-                String rdfsComment = "\\|" + (v.getRdfsComment() != null ? v.getRdfsComment() : "");
+                String shapeName = "\\|" + vertex.getName();
+                String rdfsLabel = "\\|" + (klass.getRdfsLabel() != null ? klass.getRdfsLabel() : "");
+                String rdfsComment = "\\|" + (klass.getRdfsComment() != null ? klass.getRdfsComment() : "");
                 result.append(shapeInfo).append(elemType).append(shapeName).append(rdfsLabel).append(rdfsComment);
             } else {
-                Rectangle r = (Rectangle) v.getContainer().getChildren().get(0);
+                Literal literal = (Literal) vertex;
+                Rectangle r = (Rectangle) vertex.getContainer().getChildren().get(0);
                 String shapeInfo = "L" + r.getParent().getLayoutX() + "\\|" + r.getParent().getLayoutY() + "\\|" +
                         r.getWidth() + "\\|" + r.getHeight() + "\\|" + r.getFill().toString();
                 String elemType = "\\|" + (r.getStrokeDashArray().size() != 0 ? "i" : "g");
-                String name = "\\|" + v.getName();
-                String dataType = "\\|" + (v.getDataType() != null ? v.getDataType() : "");
+                String name = "\\|" + vertex.getName();
+                String dataType = "\\|" + (literal.getDataType() != null ? literal.getDataType() : "");
                 result.append(shapeInfo).append(elemType).append(name).append(dataType);
             }
             result.append("]");

@@ -14,7 +14,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import model.conceptual.Class;
 import model.conceptual.Edge;
+import model.conceptual.Literal;
 import model.conceptual.Vertex;
 import model.conceptual.Vertex.OutsideElementException;
 import model.conceptual.Vertex.UndefinedElementTypeException;
@@ -122,17 +124,16 @@ public class FromGatConverter {
         compiledLit.getChildren().addAll(rect, name);
         compiledElements.add(compiledLit);
 
-        if (!dtype.equals("")) classes.add(new Vertex(compiledLit, dtype));
-        else classes.add(new Vertex(compiledLit));
+        if (!dtype.equals("")) classes.add(new Literal(compiledLit, dtype));
+        else classes.add(new Literal(compiledLit));
     }
 
     /**
      * Binds a class into both a human-friendly visual element of the graph, and a java-friendly Vertex.
      * @param cls the .gat String serialization of a Class.
      * @throws OutsideElementException if the Vertex is outside the canvas.
-     * @throws UndefinedElementTypeException if the name of the Vertex does not match up with Turtle syntax.
      */
-    private void bindClass(String cls) throws OutsideElementException, UndefinedElementTypeException {
+    private void bindClass(String cls) throws OutsideElementException {
         String[] clsElements = cls.split("\\\\\\|", -1);
         double x = Double.valueOf(clsElements[0].substring(1));
         double y = Double.valueOf(clsElements[1]);
@@ -161,8 +162,8 @@ public class FromGatConverter {
         compiledElements.add(compiledCls);
 
         if (!label.equals("") || !comment.equals(""))
-            classes.add(new Vertex(compiledCls, label, comment));
-        else classes.add(new Vertex(compiledCls));
+            classes.add(new Class(compiledCls, label, comment));
+        else classes.add(new Class(compiledCls));
     }
 
     /**
