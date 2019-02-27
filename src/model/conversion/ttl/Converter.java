@@ -130,7 +130,7 @@ public class Converter {
         StringBuilder prefixStrs = new StringBuilder();
 
         for (Map.Entry<String, String> prefix : prefixes.entrySet()){
-            String   prefixStr = "@prefix " + prefix.getKey() + " : <" + prefix.getValue() + "> .\n";
+            String   prefixStr = "@prefix " + prefix.getKey() + ": <" + prefix.getValue() + "> .\n";
             prefixStrs.append(prefixStr);
         }
 
